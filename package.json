@@ -9,7 +9,8 @@
   "scripts": {
     "test": "truffle test --network test",
     "deploy-test": "yarn && NODE_ENV=test node ./node_modules/.bin/webpack && surge ./dist dcity-test.surge.sh",
-    "deploy-prod": "yarn && NODE_ENV=production node ./node_modules/.bin/webpack && surge ./dist dcity.surge.sh"
+    "deploy-prod": "yarn && NODE_ENV=production node ./node_modules/.bin/webpack && surge ./dist dcity.surge.sh",
+    "migrate": "rm -rf build && truffle migrate --network local"
   },
   "repository": {
     "type": "git",

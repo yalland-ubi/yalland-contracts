@@ -16,7 +16,7 @@ pragma experimental "v0.5.0";
 
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/ownership/rbac/RBAC.sol";
-import "./ArraySet.sol";
+import "./utils/ArraySet.sol";
 
 library CityLibrary {
     struct Payment {
@@ -61,21 +61,22 @@ contract City is RBAC {
     uint256 public maxSupply;
     uint256 public confirmsToParticipation;
 
-    event TariffCreated(bytes32 indexed id, string indexed title, uint256 indexed payment, uint256 indexed paymentPeriod, uint8 indexed currency, address indexed currencyAddress);
-    event TariffEdited(bytes32 indexed id, string indexed title, uint256 indexed payment, uint256 indexed paymentPeriod, uint8 indexed currency, address indexed currencyAddress);
-    event TariffActiveChanged(bytes32 indexed id, bool indexed active);
-    event ParticipationRequest(address indexed requested);
-    event ParticipationConfirm(address indexed requested, address indexed confirmed, bool indexed fully);
-    event ParticipationAdded(address indexed cityManager, address indexed member, bytes32 indexed tariff);
+    event TariffCreated(bytes32 id, string title, uint256 payment, uint256 paymentPeriod, uint8 currency, address currencyAddress);
+    event TariffEdited(bytes32 id, string title, uint256 payment, uint256 paymentPeriod, uint8 currency, address currencyAddress);
+    event TariffActiveChanged(bytes32 id, bool active);
+    event ParticipationRequest(address requested);
+    event ParticipationConfirm(address requested, address confirmed, bool fully);
+    event ParticipationAdded(address cityManager, address member, bytes32 tariff);
+    event ParticipationTariffChanged(address cityManager, address member, bytes32 tariff);
 
     mapping (address => bool) public participants;
     ArraySet.AddressSet activeParticipants;
 
-    mapping (address => CityLibrary.Payment) public payments;
-    mapping (address => CityLibrary.ParticipationRequest) public participationRequests;
+    mapping (address => CityLibrary.Payment) private payments;
+    mapping (address => CityLibrary.ParticipationRequest) private participationRequests;
     ArraySet.AddressSet activeRequests;
 
-    mapping (bytes32 => ArraySet.Tariff) public tariffs;
+    mapping (bytes32 => CityLibrary.Tariff) private tariffs;
     ArraySet.Bytes32Set activeTariffs;
 
     constructor(uint256 _maxSupply, string _name, string _symbol) public {
@@ -90,25 +91,24 @@ contract City is RBAC {
         activeParticipants.add(msg.sender);
     }
 
-    function() public payable { }
+    function() external payable { }
 
     modifier onlyCityManager() {
         require(hasRole(msg.sender, CITY_MANAGER), "Only city manager");
         _;
     }
     
-    function createTariff(string _title, uint256 _payment, uint256 _paymentPeriod, CityLibrary.TariffCurrency _currency, address _currencyAddress) public onlyCityManager {
-        require(!tariffs[_id].active, "Tariff already created");
-        
+    function createTariff(string _title, uint256 _payment, uint256 _paymentPeriod, CityLibrary.TariffCurrency _currency, address _currencyAddress) public onlyCityManager returns(bytes32) {
         bytes32 _id = keccak256(
             abi.encodePacked(
                 msg.sender,
-                timestamp,
+                block.timestamp,
                 _payment,
                 _paymentPeriod,
                 _currencyAddress
             )
         );
+        require(!tariffs[_id].active, "Tariff already created");
         
         tariffs[_id].title = _title;
         tariffs[_id].payment = _payment;
@@ -120,6 +120,7 @@ contract City is RBAC {
         activeTariffs.add(_id);
         
         emit TariffCreated(_id, _title, _payment, _paymentPeriod, uint8(_currency), _currencyAddress);
+        return _id;
     }
     
     function setTariffActive(bytes32 _id, bool _active) public onlyCityManager {
@@ -133,7 +134,7 @@ contract City is RBAC {
             activeTariffs.remove(_id);
         }
         
-        emit TariffActiveChanged(_id);
+        emit TariffActiveChanged(_id, _active);
     }
     
     function editTariff(bytes32 _id, string _title, uint256 _payment, uint256 _paymentPeriod, CityLibrary.TariffCurrency _currency, address _currencyAddress) public onlyCityManager {
@@ -157,9 +158,9 @@ contract City is RBAC {
     function claimPayment(address claimFor) public returns (uint256 nextDate) {
         CityLibrary.Payment storage payment = payments[claimFor];
         CityLibrary.Tariff storage tariff = tariffs[payment.tariff];
-        assert(tariff.active, "Tariff not active");
-        assert(tariff.payment != 0, "Tariff payment is null");
-        assert(tariff.paymentPeriod != 0, "Tariff payment period is null");
+        require(tariff.active, "Tariff not active");
+        require(tariff.payment != 0, "Tariff payment is null");
+        require(tariff.paymentPeriod != 0, "Tariff payment period is null");
 
         require(participants[claimFor], "Not active");
         require(now - tariff.paymentPeriod >= payments[claimFor].lastTimestamp, "Too soon");
@@ -173,7 +174,7 @@ contract City is RBAC {
             ERC20(tariff.currencyAddress).transferFrom(address(this), claimFor, tariff.payment);
         }
 
-        tariff.paymentSent += payment;
+        tariff.paymentSent += tariff.payment;
 
         return payments[claimFor].lastTimestamp + tariff.paymentPeriod;
     }
@@ -187,7 +188,7 @@ contract City is RBAC {
 
         addParticipationUnsafe(_address, _tariff);
 
-        emit ParticipationAdded(msg.sender. _address, _tariff);
+        emit ParticipationAdded(msg.sender, _address, _tariff);
     }
     
     function addParticipationUnsafe(address _address, bytes32 _tariff) private {
@@ -195,13 +196,19 @@ contract City is RBAC {
         activeParticipants.add(_address);
         payments[_address].tariff = _tariff;
     }
+    
+    function changeParticipationTariff(address _address, bytes32 _tariff) public onlyCityManager {
+        payments[_address].tariff = _tariff;
+        
+        emit ParticipationTariffChanged(msg.sender, _address, _tariff);
+    }
 
     function requestParticipation(bytes32 _tariff) public {
         require(activeParticipants.size() < maxSupply, "Not enough supply");
         require(!participants[msg.sender], "Already participant");
         require(!participationRequests[msg.sender].sent, "Already sent");
 
-        participationRequests[msg.sender] = CityLibrary.participationRequest({ sent: true, confirmed: false, confirmationsCount: 0, tariff: _tariff });
+        participationRequests[msg.sender] = CityLibrary.ParticipationRequest({ sent: true, confirmed: false, confirmationsCount: 0, tariff: _tariff });
         activeRequests.add(msg.sender);
         
         emit ParticipationRequest(msg.sender);
@@ -242,10 +249,10 @@ contract City is RBAC {
     }
 
     function leaveParticipation() public {
-        require(participants[_participant], "Not participant");
+        require(participants[msg.sender], "Not participant");
 
         participants[msg.sender] = false;
-        activeParticipants.remove(_participant);
+        activeParticipants.remove(msg.sender);
     }
 
     function addRoleTo(address _operator, string _role) public onlyCityManager {
