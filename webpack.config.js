@@ -1,0 +1,160 @@
+"use strict";
+
+const webpack = require('webpack');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const {VueLoaderPlugin} = require('vue-loader');
+const JavaScriptObfuscator = require('webpack-obfuscator');
+
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+
+let webpackMode = 'production';
+if (process.env.NODE_ENV === 'local' || process.env.NODE_ENV === 'development') {
+    webpackMode = 'development';
+}
+
+let commonConfig = {
+    devtool: 'inline-source-map',
+    mode: webpackMode,
+    resolve: {
+        extensions: ['.ts', '.tsx', '.js'],
+        alias: {
+            vue: 'vue/dist/vue.esm.js'
+        }
+    },
+    module: {
+        rules: [
+            {
+                test: /\.tsx?$/,
+                loader: 'ts-loader',
+                options: {
+                    appendTsSuffixTo: [/\.vue$/]
+                },
+                exclude: /(node_modules)/
+            },
+            {
+                test: /\.vue$/,
+                loader: 'vue-loader',
+            },
+            {
+                test: /\.html$/,
+                use: {
+                    loader: 'html-loader',
+                    options: {
+                        attrs: [':data-src']
+                    }
+                }
+            },
+            {
+                test: /\.(css)$/,
+                loader: 'file-loader',
+                options: {
+                    name: 'build/[name].[ext]'
+                }
+            },
+            {
+                test: /\.(ttf|woff|woff2|eot)$/,
+                loader: 'file-loader',
+                options: {
+                    name: 'fonts/[name].[ext]'
+                }
+            },
+            {
+                test: /\.(png|jpg|gif|svg)$/,
+                loader: 'file-loader',
+                options: {
+                    name: 'images/[name].[ext]'
+                }
+            },
+            {
+                test: /\.scss$/,
+                use: [{
+                        loader: 'file-loader',
+                        options: {
+                            name: 'build/app.css',
+                        }
+                    },
+                    'extract-loader',
+                    'css-loader?-url',
+                    'postcss-loader',
+                    'sass-loader']
+            },
+            {
+                test: /\.(md|MD)$/,
+                use: [{
+                        loader: 'file-loader',
+                        options: {
+                            name: 'build/changelog.html'
+                        }
+                    },
+                    'extract-loader',
+                    "html-loader",
+                    "markdown-loader"
+                ]
+            }
+        ]
+    }
+};
+
+require('dotenv').config({path: __dirname + '/.env.' + process.env.NODE_ENV});
+
+process.env.VERSION = require("./package.json").version;
+
+let defineNodeEnv = {};
+for (const prop in process.env) {
+    defineNodeEnv["process.env." + prop] = JSON.stringify(process.env[prop]);
+}
+
+const plugins = [
+    new HtmlWebpackPlugin({
+        filename: 'index.html',
+        template: '!!underscore-template-loader!./index.html',
+        hash: new Date().getTime(),
+        inject: false
+    }),
+    new CopyWebpackPlugin([
+        // "./index.html",
+        {from: "./locale", to: "./locale"},
+        {from: "./node_modules/leaflet/dist/images", to: "./build/images"},
+        {from: "./node_modules/@galtproject/space-renderer/public/model-assets/", to: "./model-assets/"},
+    ]),
+    new VueLoaderPlugin(),
+    new webpack.DefinePlugin(defineNodeEnv)
+];
+
+if (webpackMode === 'production') {
+    commonConfig = Object.assign({}, commonConfig, {
+        optimization: {
+            minimizer: [
+                new UglifyJsPlugin({
+                    uglifyOptions: {
+                        output: {
+                            comments: false
+                        }
+                    }
+                })
+            ]
+        }
+    });
+
+    // plugins.push(new JavaScriptObfuscator({
+    //     rotateUnicodeArray: true
+    // }, []));
+}
+
+
+const UIThread = Object.assign({}, commonConfig, {
+    name: "GaltProject UI",
+    //https://github.com/vuematerial/vue-material/issues/1182#issuecomment-345764031
+    entry: {
+        'babel-polyfill': 'babel-polyfill',
+        'app.js': './src/main.ts',
+        'changelog.temp': './CHANGELOG.MD'
+    },
+    output: {
+        filename: './build/[name]'
+    },
+    plugins
+});
+
+module.exports = [UIThread];
