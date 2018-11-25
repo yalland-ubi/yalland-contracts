@@ -1,0 +1,23 @@
+<md-card>
+    <md-card-header>
+        <div class="md-title" v-locale="localeKey + '.title'"></div>
+    </md-card-header>
+
+    <md-card-content>
+        <md-list>
+            <md-subheader v-locale="localeKey + '.general_data'"></md-subheader>
+            
+            <md-list-item>
+                <span class="md-list-item-text row-direction">
+                    <span v-locale="localeKey + '.total_supply'"></span> <span>{{totalSupply}}</span>
+                </span>
+            </md-list-item>
+            
+            <md-list-item>
+                <span class="md-list-item-text row-direction">
+                    <span v-locale="localeKey + '.city_balance'"></span> <span>{{cityBalance}}</span>
+                </span>
+            </md-list-item>
+        </md-list>
+    </md-card-content>
+</md-card>

@@ -1,0 +1,81 @@
+{
+  "navbar": {
+    "project_title": "Decentralized City",
+    "rpc_server": "RPC Server:",
+    "alt_servers": "Альтернативные сервера"
+  },
+  "main_menu": {
+    "title": "Меню",
+    "admin": "Администрирование",
+    "personal_cabinet": "Личный кабинет"
+  },
+  "metamask_not_active": "MetaMask не активен. Пожалуйста запустите MetaMask и войдите в кошелек",
+  "wait_screen": {
+    "default_title": "Пожалуйста, дождитесь отправки и подтверждения всех транзакций",
+    "default_tip": "Обратите внимание на наличие новых транзакций",
+    
+    "transactions": {
+      "sent_count": "Отправлено транзанкций: <%= actual_value %> из <%= full_value %>",
+      "confirmed_count": "Подтверждено транзанкций: <%= actual_value %> из <%= full_value %>",
+      "rejected_count": "Ошибок транзанкций: <%= actual_value %> из <%= full_value %>",
+      "will_repeat": " => will repeat wih gas higher",
+      "repeat_of": ", repeat of ",
+      "sent_status": "Sent",
+      "error_status": "Error: ",
+      "reverted_status": "Failed: ",
+      "confirmations_status": "Confirmations: <%= value %>",
+      "mined_status": "Mined",
+      "tx_row": "#<%= number %> - <%= hash %>: "
+    }
+  },
+  "personal_cabinet": {
+    "title": "Личный кабинет",
+    "general_info": {
+      "title": "Общая информация",
+      "wallet": "Аккаунт",
+      "coin_balance": "Coin баланс",
+      "participant": "Житель города"
+    }
+  },
+  "rpc_screen": {
+    "not_correct": "Ваш RPC сервер в MetaMask установлен не корректно для работы с этим сайтом.<br/>Пожалуйста, используйте один из предложенных RPC серверов",
+    "you_can_use_tip": "Используйте MetaMask или Nifty",
+    "youtube_video_id": "dxasmHOsEFg"
+  },
+  "server_not_responding": {
+    "title": "Сервер не отвечает",
+    "description": "Контракт <%= contract_name %> с адресом <%= contract_address %> не отвечает на вызов <%= method_name %>"
+  },
+  "boolean": {
+    "true": "Да",
+    "false": "Нет"
+  },
+  "currency": {
+    "eth": "ETH",
+    "coin": "COIN",
+    "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359": "DAI"
+  },
+  "admin": {
+    "coin": {
+      "title": "Coin",
+      "general_data": "Общие данные",
+      "total_supply": "Total Supply:",
+      "city_balance": "Бюджет города:"
+    },
+    "tariffs": {
+      "title": "Управление тарифами",
+      "title_title": "Название",
+      "currency_title": "Валюта",
+      "active_title": "Активен",
+      "add_tariff_button": "Добавить тариф"
+    },
+    "members": {
+      "title": "Жители",
+      "member_control": "Управление",
+      "find_member_placeholder": "Поиск",
+      "address_title": "Аккаунт",
+      "tariff_title": "Тариф",
+      "active_title": "Житель"
+    }
+  }
+}

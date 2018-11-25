@@ -1,0 +1,58 @@
+<div style="height: 100%;">
+  <modal ref="modal"></modal>
+  <modal ref="sub_modal"></modal>
+  
+  <wait-screen></wait-screen>
+
+  <notifications :duration="7000" position="bottom right"></notifications>
+
+  <metamask-not-active v-if="showMetamaskNotActive"></metamask-not-active>
+
+  <md-app>
+    <md-app-toolbar class="md-accent" md-elevation="0">
+      <h3 class="md-title" v-locale="'navbar.project_title'"></h3>
+      <!--<a href @click.prevent.stop="showChangeLog()" style="margin-left: 10px; color: white;"><h5>v{{version}}</h5></a>-->
+
+      <span flex style="flex: 1"></span>
+      
+      <span style="margin-right: 15px;">
+        <span v-locale="'navbar.rpc_server'"></span> {{rpcServer}}
+        <a v-if="altServersExists" href @click.prevent.stop="alternativeServers()" style="color:white;"><br><span v-locale="'navbar.alt_servers'"></span></a>
+      </span>
+
+      <user-menu></user-menu>
+    </md-app-toolbar>
+
+    <md-app-drawer :md-active.sync="menuVisible" md-persistent="mini" :class="{'minimized': menuMinimized}">
+      <md-toolbar class="md-transparent" md-elevation="0">
+        <span v-if="menuVisible" v-locale="'main_menu.title'"></span>
+
+        <md-button class="md-icon-button show" @click="toggleMenu()" v-if="!menuVisible">
+          <md-icon>menu</md-icon>
+        </md-button>
+
+        <div class="md-toolbar-section-end">
+          <md-button class="md-icon-button md-dense" @click="toggleMenu" v-if="menuVisible">
+            <md-icon>keyboard_arrow_left</md-icon>
+          </md-button>
+        </div>
+      </md-toolbar>
+
+      <md-list>
+        <md-list-item to="/cabinet/">
+          <md-icon>account_box</md-icon>
+          <span class="md-list-item-text" v-locale="'main_menu.personal_cabinet'"></span>
+        </md-list-item>
+
+        <md-list-item to="/admin/" v-if="is_city_manager">
+          <md-icon>business_center</md-icon>
+          <span class="md-list-item-text" v-locale="'main_menu.admin'"></span>
+        </md-list-item>
+      </md-list>
+    </md-app-drawer>
+
+    <md-app-content>
+      <router-view></router-view>
+    </md-app-content>
+  </md-app>
+</div>

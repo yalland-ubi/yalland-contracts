@@ -1,0 +1,54 @@
+<md-card>
+    <md-card-header>
+        <div class="md-title" v-locale="localeKey + '.title'"></div>
+    </md-card-header>
+
+    <md-card-content>
+        <md-list>
+            <md-subheader v-locale="localeKey + '.member_control'"></md-subheader>
+            <md-list-item>
+                <md-field>
+                    <label v-locale="localeKey + '.find_member_placeholder'"></label>
+                    <md-input v-model="memberToFind" v-on:keyup="findMember()"></md-input>
+                </md-field>
+            </md-list-item>
+            
+            <md-list-item>
+                <md-table>
+                    <md-table-row>
+                        <md-table-head><span v-locale="localeKey + '.address_title'"></span></md-table-head>
+                        <md-table-head><span v-locale="localeKey + '.tariff_title'"></span></md-table-head>
+                        <md-table-head></md-table-head>
+                    </md-table-row>
+
+                    <md-table-row v-for="member in filteredMembers">
+                        <md-table-cell><hex-cut :hex="member.address"></hex-cut></md-table-cell>
+                        <md-table-cell>{{member.tariffTitle}}</md-table-cell>
+                        <md-table-cell>
+                            <md-button class="md-icon-button" @click="editMember(member.address)">
+                                <md-icon class="md-accent">edit</md-icon>
+                            </md-button>
+                            <md-button class="md-icon-button" v-if="member.active" @click="deactivateMember(member.address)">
+                                <md-icon class="md-accent">clear</md-icon>
+                            </md-button>
+                        </md-table-cell>
+                    </md-table-row>
+                </md-table>
+            </md-list-item>
+
+            <md-list-item v-if="memberNotFound">
+                <span v-locale="localeKey + '.not_found'"></span>
+            </md-list-item>
+
+            <md-list-item v-if="memberError">
+                <span v-locale="localeKey + '.invalid_address'"></span>
+            </md-list-item>
+            
+            <md-list-item>
+                <md-button class="md-icon-button md-raised" @click="editMember()">
+                    <md-icon>add</md-icon>
+                </md-button>
+            </md-list-item>
+        </md-list>
+    </md-card-content>
+</md-card>

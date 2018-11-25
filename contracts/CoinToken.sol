@@ -15,9 +15,9 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import "openzeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
+import "openzeppelin-solidity/contracts/ownership/rbac/RBAC.sol";
 
-
-contract CoinToken is MintableToken {
+contract CoinToken is MintableToken, RBAC {
   // solium-disable-next-line uppercase
   string public constant name = "Coin Token";
 
@@ -29,10 +29,25 @@ contract CoinToken is MintableToken {
 
   uint256 public constant INITIAL_SUPPLY = 0;
 
+  string public constant MINTER_ROLE = "minter";
+
   constructor() public MintableToken() {
     // TODO: figure out how the owner is assigned
     totalSupply_ = INITIAL_SUPPLY;
     balances[msg.sender] = INITIAL_SUPPLY;
     emit Transfer(address(0), msg.sender, INITIAL_SUPPLY);
+  }
+  
+  modifier hasMintPermission() {
+    require(hasRole(msg.sender, MINTER_ROLE), "Only minter");
+    _;
+  }
+
+  function addRoleTo(address _operator, string _role) public onlyOwner {
+    super.addRole(_operator, _role);
+  }
+
+  function removeRoleFrom(address _operator, string _role) public onlyOwner {
+    super.removeRole(_operator, _role);
   }
 }

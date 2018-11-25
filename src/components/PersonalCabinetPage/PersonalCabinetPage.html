@@ -1,0 +1,15 @@
+<div id="admin-page" style="height: 100%;" xmlns:v-on="">
+    <md-app-content class="padding">
+        <div class="md-title" style="margin-bottom: 10px;" v-locale="localeKey + '.title'"></div>
+
+        <div class="md-layout">
+            <div class="md-layout-item md-size-40">
+                <general-info v-if="user_wallet" :user-wallet="user_wallet"></general-info>
+            </div>
+            <div class="md-layout-item md-size-50">
+                <!--<validator-stakes v-if="user_wallet" :user-wallet="user_wallet"></validator-stakes>-->
+            </div>
+        </div>
+
+    </md-app-content>
+</div>

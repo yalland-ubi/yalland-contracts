@@ -1,0 +1,6 @@
+<div class="metamask-not-active" v-if="!closed">
+    <md-button class="md-icon-button small-button close" @click="closed = true;">
+        <md-icon>clear</md-icon>
+    </md-button>
+    <md-icon>warning</md-icon> <span v-locale="'metamask_not_active'"></span>
+</div>

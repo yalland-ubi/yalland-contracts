@@ -1,0 +1,44 @@
+<modal-item>
+  <template slot="header">
+    <md-button class="md-icon-button close" @click="cancel">
+      <md-icon>clear</md-icon>
+    </md-button>
+    <h4>
+      <div class="modal-title" v-locale="localeKey + '.title'"></div>
+    </h4>
+  </template>
+
+  <div class="modal-body" slot="body">
+    <div class="form-group fixed-table-container">
+      <md-field>
+        <label v-locale="localeKey + '.title'"></label>
+        <md-input v-model="tariff.title" required></md-input>
+      </md-field>
+      
+      <md-field>
+        <label v-locale="localeKey + '.paymentPeriod'"></label>
+        <md-input v-model="tariff.paymentPeriod" required></md-input>
+      </md-field>
+      
+      <md-field>
+        <label v-locale="localeKey + '.payment'"></label>
+        <md-input v-model="tariff.payment" required></md-input>
+      </md-field>
+
+      <md-autocomplete v-model="selectedCurrency" :md-options="currencies" @md-opened="getCurrencies" :disabled="disabled"><!--@md-changed="getCountries"-->
+        <label v-locale="localeKey + '.currency'"></label>
+
+        <template slot="md-autocomplete-item" slot-scope="{ item }">{{ item.name || '...' }}&nbsp;&nbsp;<small v-if="item.address">({{ item.address }})</small></template>
+      </md-autocomplete>
+      <md-field>
+        <label v-locale="localeKey + '.currency'"></label>
+        <md-input v-model="tariff.currency" required></md-input>
+      </md-field>
+    </div>
+  </div>
+
+  <template slot="footer">
+    <md-button @click="cancel" class="md-raised"><span v-locale="localeKey + '.cancel'"></span></md-button>
+    <md-button @click="ok" class="md-raised md-accent" :disabled="saveDisabled"><span v-locale="localeKey + '.ok'"></span></md-button>
+  </template>
+</modal-item>

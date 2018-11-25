@@ -54,7 +54,7 @@ contract City is RBAC {
     using ArraySet for ArraySet.AddressSet;
     using ArraySet for ArraySet.Bytes32Set;
 
-    string public constant CITY_MANAGER = "city_manager";
+    string public constant CITY_MANAGER_ROLE = "city_manager";
     
     string public name;
     string public symbol;
@@ -71,6 +71,7 @@ contract City is RBAC {
 
     mapping (address => bool) public participants;
     ArraySet.AddressSet activeParticipants;
+    address[] allParticipants;
 
     mapping (address => CityLibrary.Payment) private payments;
     mapping (address => CityLibrary.ParticipationRequest) private participationRequests;
@@ -78,6 +79,7 @@ contract City is RBAC {
 
     mapping (bytes32 => CityLibrary.Tariff) private tariffs;
     ArraySet.Bytes32Set activeTariffs;
+    bytes32[] allTariffs;
 
     constructor(uint256 _maxSupply, string _name, string _symbol) public {
         maxSupply = _maxSupply;
@@ -86,7 +88,7 @@ contract City is RBAC {
 
         confirmsToParticipation = 1;
 
-        super.addRole(msg.sender, CITY_MANAGER);
+        super.addRole(msg.sender, CITY_MANAGER_ROLE);
         participants[msg.sender] = true;
         activeParticipants.add(msg.sender);
     }
@@ -94,7 +96,7 @@ contract City is RBAC {
     function() external payable { }
 
     modifier onlyCityManager() {
-        require(hasRole(msg.sender, CITY_MANAGER), "Only city manager");
+        require(hasRole(msg.sender, CITY_MANAGER_ROLE), "Only city manager");
         _;
     }
     
@@ -118,6 +120,7 @@ contract City is RBAC {
         tariffs[_id].active = true;
 
         activeTariffs.add(_id);
+        allTariffs.push(_id);
         
         emit TariffCreated(_id, _title, _payment, _paymentPeriod, uint8(_currency), _currencyAddress);
         return _id;
@@ -194,11 +197,14 @@ contract City is RBAC {
     function addParticipationUnsafe(address _address, bytes32 _tariff) private {
         participants[_address] = true;
         activeParticipants.add(_address);
+        allParticipants.push(_address);
         payments[_address].tariff = _tariff;
+        payments[_address].lastTimestamp = 0;
     }
     
     function changeParticipationTariff(address _address, bytes32 _tariff) public onlyCityManager {
         payments[_address].tariff = _tariff;
+        payments[_address].totalAmount = 0;
         
         emit ParticipationTariffChanged(msg.sender, _address, _tariff);
     }
@@ -261,5 +267,59 @@ contract City is RBAC {
 
     function removeRoleFrom(address _operator, string _role) public onlyCityManager {
         super.removeRole(_operator, _role);
+    }
+    
+    function getAllTariffs() public view returns(bytes32[]) {
+        return allTariffs;
+    }
+
+    function getActiveTariffs() public view returns(bytes32[]) {
+        return activeTariffs.elements();
+    }
+    
+    function getTariff(bytes32 _id) public view returns(
+        string title,
+        bool active,
+        uint256 payment,
+        uint256 paymentPeriod,
+        uint256 paymentSent,
+        CityLibrary.TariffCurrency currency,
+        address currencyAddress
+    )
+    {
+        CityLibrary.Tariff storage t = tariffs[_id];
+        return (
+            t.title,
+            t.active,
+            t.payment,
+            t.paymentPeriod,
+            t.paymentSent,
+            t.currency,
+            t.currencyAddress
+        );
+    }
+    
+    function getAllParticipants() public view returns(address[]) {
+        return allParticipants;
+    }
+
+    function getActiveParticipants() public view returns(address[]) {
+        return activeParticipants.elements();
+    }
+    
+    function getParticipantInfo(address _participant) public view returns
+    (
+        bool active, 
+        bytes32 tariff, 
+        uint256 totalAmount, 
+        uint256 lastTimestamp
+    ) {
+        CityLibrary.Payment storage p = payments[_participant];
+        return (
+            participants[_participant],
+            p.tariff,
+            p.totalAmount,
+            p.lastTimestamp
+        );
     }
 }

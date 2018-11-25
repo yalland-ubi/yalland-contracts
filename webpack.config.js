@@ -115,8 +115,8 @@ const plugins = [
     new CopyWebpackPlugin([
         // "./index.html",
         {from: "./locale", to: "./locale"},
-        {from: "./node_modules/leaflet/dist/images", to: "./build/images"},
-        {from: "./node_modules/@galtproject/space-renderer/public/model-assets/", to: "./model-assets/"},
+        {from: "./deployed", to: "./deployed"},
+        // {from: "./node_modules/leaflet/dist/images", to: "./build/images"},
     ]),
     new VueLoaderPlugin(),
     new webpack.DefinePlugin(defineNodeEnv)
@@ -149,7 +149,7 @@ const UIThread = Object.assign({}, commonConfig, {
     entry: {
         'babel-polyfill': 'babel-polyfill',
         'app.js': './src/main.ts',
-        'changelog.temp': './CHANGELOG.MD'
+        // 'changelog.temp': './CHANGELOG.MD'
     },
     output: {
         filename: './build/[name]'
