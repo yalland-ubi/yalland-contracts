@@ -517,4 +517,8 @@ a[md-menu-trigger] {
     max-height: 250px;
   }
 }
+
+.md-table-cell.controls .md-table-cell-container {
+  padding: 0 5px;
+}
 @import 'adaptive';

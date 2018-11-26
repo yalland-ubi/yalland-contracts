@@ -198,6 +198,14 @@ export default {
             async changeMemberTariff(member, tariff) {
                 return await $contracts.$city.changeMemberTariff(sendOptions(), member, tariff);
             },
+
+            async deactivateTariff(tariff) {
+                return await $contracts.$city.deactivateTariff(sendOptions(), tariff);
+            },
+
+            async activateTariff(tariff) {
+                return await $contracts.$city.activateTariff(sendOptions(), tariff);
+            },
             
             async hasCityManagerRole() {
                 await onWalletReady();

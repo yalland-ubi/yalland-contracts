@@ -31,6 +31,32 @@ export default {
         async getTariffs(){
             this.tariffs = await this.$cityContract.getAllTariffs();
         },
+        editTariff(tariff){
+            this.$root.$asyncModal.open({
+                id: 'edit-tariff-modal',
+                component: EditTariffModal,
+                props: {
+                    tariff: tariff
+                },
+                onClose: (resultValidator) => {
+                    this.getTariffs();
+                }
+            });
+        }, 
+        activateTariff(tariff) {
+            GaltData.confirmModal({
+                title: this.$locale.get(this.localeKey + '.activate_confirm')
+            }).then(() => {
+                this.$galtUser.activateTariff(tariff).then(this.getTariffs)
+            })
+        },
+        deactivateTariff(tariff) {
+            GaltData.confirmModal({
+                title: this.$locale.get(this.localeKey + '.deactivate_confirm')
+            }).then(() => {
+                this.$galtUser.deactivateTariff(tariff).then(this.getTariffs)
+            })
+        },
         addTariff(){
             this.$root.$asyncModal.open({
                 id: 'edit-tariff-modal',

@@ -52,6 +52,22 @@ export default class CityContract extends EthContract {
             tariff);
     }
 
+    async deactivateTariff(sendOptions, tariff) {
+        return await this.sendMethod(
+            sendOptions,
+            "setTariffActive",
+            tariff.id,
+            false);
+    }
+
+    async activateTariff(sendOptions, tariff) {
+        return await this.sendMethod(
+            sendOptions,
+            "setTariffActive",
+            tariff.id,
+            true);
+    }
+
     async getActiveTariffs(options = {}){
         return this.massCallMethod("getActiveTariffs")
             .then(async (tariffsIds) => {
