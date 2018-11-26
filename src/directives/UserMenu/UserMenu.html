@@ -10,8 +10,7 @@
 
             <md-icon class="small-icon">ev_station</md-icon><a href="http://faucet-dev.galtproject.io/" target="_blank" v-locale="'user_menu.eth_faucet'"></a><br>
             
-            <b v-locale="'user_menu.galt_balance'"></b> {{user_coin_balance === null ? "..." : user_coin_balance}} <md-icon class="small-icon">language</md-icon><br>
-            <b v-locale="'user_menu.space_balance'"></b> {{user_space_balance === null ? "..." : user_space_balance}} <md-icon class="small-icon">map</md-icon><br>
+            <b v-locale="'user_menu.coin_balance'"></b> {{user_coin_balance === null ? "..." : user_coin_balance}} <md-icon class="small-icon">language</md-icon><br>
             <br>
 
             <b v-locale="'user_menu.internal_wallet.address'"></b><a href @click.prevent.stop="copyInternalWalletToClipboard()" v-locale="'user_menu.internal_wallet.export'"></a><br>
@@ -20,8 +19,7 @@
             <a href @click.prevent.stop="copyInternalWalletPrivateToClipboard()" v-locale="'user_menu.internal_wallet.export_private'"></a><br>
             <!--<b>Активен:</b> {{internal_wallet_active ? "Да" : "Нет"}}<br>-->
             <b v-locale="'user_menu.internal_wallet.eth_balance'"></b> {{internal_wallet_eth_balance}}<br>
-            <b v-locale="'user_menu.internal_wallet.galt_balance'"></b> {{internal_wallet_galt_balance}}<br>
-            <b v-locale="'user_menu.internal_wallet.space_balance'"></b> {{internal_wallet_space_balance}}<br>
+            <b v-locale="'user_menu.internal_wallet.coin_balance'"></b> {{internal_wallet_galt_balance}}<br>
             <!--Owns parcels:-->
             <!--<ul>-->
             <!--<li v-for="parcel in ownerOfParcels">-->

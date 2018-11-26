@@ -62,19 +62,19 @@ export default {
                 memberAddress = this.memberToFind;
             }
             
-            this.$root.$asyncModal.open({
-                id: 'edit-member-tariff-modal',
-                component: EditMemberTariffModal,
-                props: {
-                    memberAddress: memberAddress,
-                },
-                onClose: (resultMember) => {
-                    if(!resultMember) {
-                        return;
-                    }
-                    this.updateMemberInfo(resultMember.address);
-                }
-            });
+            // this.$root.$asyncModal.open({
+            //     id: 'edit-member-tariff-modal',
+            //     component: EditMemberTariffModal,
+            //     props: {
+            //         memberAddress: memberAddress,
+            //     },
+            //     onClose: (resultMember) => {
+            //         if(!resultMember) {
+            //             return;
+            //         }
+            //         this.updateMemberInfo(resultMember.address);
+            //     }
+            // });
         },
         deactivateMember(memberAddress){
             this.$galtUser.deactivateMember(memberAddress)

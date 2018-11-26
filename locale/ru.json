@@ -55,6 +55,25 @@
     "coin": "COIN",
     "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359": "DAI"
   },
+  "user_menu": {
+    "eth_address": "Ваш ETH адрес:",
+    "eth_balance": "ETH баланс: ",
+    "coin_balance": "COIN:",
+    "eth_faucet": "Пополнить тестовыми ETH",
+    "internal_wallet": {
+      "address": "Встроенный кошелек: ",
+      "export": "Скопировать в буфер обмена",
+      "export_private": "Скопировать приватный ключ",
+      "eth_address": "Ваш ETH адрес:",
+      "eth_balance": "ETH баланс: ",
+      "coin_balance": "COIN:"
+    },
+    "success": {
+      "internal_wallet_copied": "Адрес внутреннего кошелька скопирован в буфер обмена",
+      "internal_wallet_private_copied": "Приватный ключ внутреннего кошелька скопирован в буфер обмена"
+    },
+    "regenerate_confirm": "Вы уверены что хотите перегенерировать Встроенный кошелек и потерять к нему доступ из интерфейса?"
+  },
   "admin": {
     "coin": {
       "title": "Coin",
