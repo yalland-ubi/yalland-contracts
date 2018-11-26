@@ -10,66 +10,15 @@
 
   <div class="modal-body" slot="body">
     <div class="form-group">
-      <md-field>
-        <label v-locale="localeKey + '.address'"></label>
-        <md-input v-model="resultValidator.address" required></md-input>
-      </md-field>
-      
-      <md-field>
-        <label v-locale="localeKey + '.name'"></label>
-        <md-input v-model="resultValidator.name" required></md-input>
-      </md-field>
+      <p v-locale="[localeKey + '.description', {address: memberAddress}]"></p>
 
-      <md-field>
-        <label v-locale="localeKey + '.position'"></label>
-        <md-input v-model="resultValidator.position" required></md-input>
-      </md-field>
+      <md-autocomplete v-model="tariff" :md-options="tariffs" @md-opened="getTariffs" :disabled="saving"><!--@md-changed="getCountries"-->
+        <label v-locale="localeKey + '.tariff'"></label>
 
-      <md-card>
-        <md-card-header>
-          <label v-locale="localeKey + '.description_hashes'"></label>
-        </md-card-header>
+        <template slot="md-autocomplete-item" slot-scope="{ item }">{{ item.title || '...' }}</template>
+      </md-autocomplete>
 
-        <md-card-content>
-          <md-field v-for="(description, index) in resultValidator.descriptionHashes">
-            <label v-locale="localeKey + '.description_hash_item'"></label>
-            
-            <md-input v-model="resultValidator.descriptionHashes[index]" required></md-input>
-            
-            <md-button class="md-icon-button" @click="resultValidator.descriptionHashes.splice(index, 1)">
-              <md-icon>clear</md-icon>
-            </md-button>
-          </md-field>
-
-          <md-button class="md-icon-button md-raised" @click="resultValidator.descriptionHashes.push('')">
-            <md-icon>add</md-icon>
-          </md-button>
-        </md-card-content>
-      </md-card>
-
-      <md-card>
-        <md-card-header>
-          <label v-locale="localeKey + '.roles'"></label>
-        </md-card-header>
-        
-        <md-card-content>
-          <md-field v-for="(role, index) in resultValidator.roles">
-            <label v-locale="localeKey + '.role_item'"></label>
-            
-            <md-select v-model="resultValidator.roles[index]">
-              <md-option v-for="role in applicationRoles" :value="role.name">{{role.title}}</md-option>
-            </md-select>
-
-            <md-button class="md-icon-button" @click="resultValidator.roles.splice(index, 1)">
-              <md-icon>clear</md-icon>
-            </md-button>
-          </md-field>
-
-          <md-button class="md-icon-button md-raised" @click="resultValidator.roles.push('')">
-            <md-icon>add</md-icon>
-          </md-button>
-        </md-card-content>
-      </md-card>
+      <md-progress-bar class="md-accent" md-mode="indeterminate" v-if="saving"></md-progress-bar>
     </div>
   </div>
 

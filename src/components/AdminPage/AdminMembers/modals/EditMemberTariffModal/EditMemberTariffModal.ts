@@ -17,45 +17,40 @@ const _ = require('lodash');
 
 export default {
     template: require('./EditMemberTariffModal.html'),
-    props: ['validatorAddress'],
+    props: ['memberAddress'],
     components: {
         ModalItem
     },
-    created() {
-        if(this.validatorAddress) {
-            this.resultValidator.address = this.validatorAddress;
-
-            this.$cityContract.getMember(this.validatorAddress)
-                .then((validator) => {
-                    if(!validator.roles.length) {
-                        this.addressDisabled = false;
-                        return;
-                    }
-                    this.resultValidator = validator;
-                })
-                .catch(() => {
-                    this.addressDisabled = false;
-                })
-        }
-        
-        this.getApplicationRoles();
+    async created() {
+        await this.getTariffs();
+        this.$cityContract.getMember(this.memberAddress)
+            .then((member) => {
+                this.tariff = _.find(this.tariffs, {id: member.tariff});
+            });
     },
     methods: {
-        async getApplicationRoles() {
-            const rolesNames = await this.$galtUser.getApplicationRoles();
-            this.applicationRoles = await this.$locale.setTitlesByNamesInList(rolesNames.map((role) => {return {name: role}}), 'admin_validation_roles.');
+        async getTariffs() {
+            this.tariff = _.clone(this.tariff);
+            this.tariffs = await this.$cityContract.getActiveTariffs();
+            return this.tariffs;
+        },
+        opened () {
+            this.name = this.name.substring(0, this.name.length - 1)
         },
         ok() {
             this.saving = true;
             
-            this.$galtUser.editValidator(this.resultValidator)
+            this.$galtUser.changeMemberTariff(this.memberAddress, this.tariff.id)
                 .then(() => {
                     this.$notify({
                         type: 'success',
                         title: this.getLocale("success.save.title"),
                         text: this.getLocale("success.save.description")
                     });
-                    this.$root.$asyncModal.close('edit-validator-modal', this.resultValidator);
+                    this.$root.$asyncModal.close('edit-member-tariff-modal', {
+                        address: this.memberAddress,
+                        tariff: this.tariff
+                    });
                 })
                 .catch((e) => {
                     console.error(e);
@@ -69,7 +64,7 @@ export default {
                 })
         },
         cancel() {
-            this.$root.$asyncModal.close('edit-validator-modal');
+            this.$root.$asyncModal.close('edit-member-tariff-modal');
         },
         getLocale(key, options?) {
             return this.$locale.get(this.localeKey + "." + key, options);
@@ -77,21 +72,15 @@ export default {
     },
     computed: {
         saveDisabled(){
-            return this.saving || !this.resultValidator.address || !this.resultValidator.position || !this.resultValidator.roles.length || this.resultValidator.roles.some((role) => !role);
+            return this.saving || !this.tariff;
         }
     },
     watch: {},
     data: function () {
         return {
-            localeKey: 'admin.validators.edit_validator',
-            resultValidator: {
-                address: "",
-                name: "",
-                position: "",
-                descriptionHashes: [],
-                roles: [],
-            },
-            applicationRoles: [],
+            localeKey: 'admin.members.edit_member_tariff',
+            tariff: null,
+            tariffs: [],
             saving: false
         }
     }

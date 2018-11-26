@@ -195,6 +195,10 @@ export default {
                 });
             },
             
+            async changeMemberTariff(member, tariff) {
+                return await $contracts.$city.changeMemberTariff(sendOptions(), member, tariff);
+            },
+            
             async hasCityManagerRole() {
                 await onWalletReady();
                 return await $contracts.$city.hasRole(walletAddress, "city_manager");

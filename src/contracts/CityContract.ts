@@ -44,6 +44,14 @@ export default class CityContract extends EthContract {
             tariff.currency == 'eth' ? GaltData.nullAddress : tariff.currency);
     }
 
+    async changeMemberTariff(sendOptions, member, tariff) {
+        return await this.sendMethod(
+            sendOptions,
+            "changeParticipationTariff",
+            member,
+            tariff);
+    }
+
     async getActiveTariffs(options = {}){
         return this.massCallMethod("getActiveTariffs")
             .then(async (tariffsIds) => {
@@ -82,6 +90,10 @@ export default class CityContract extends EthContract {
         } else {
             tariff.currencyName = 'eth';
         }
+        
+        tariff.toLowerCase = tariff.toString = function(){
+            return tariff.title;
+        };
         return tariff;
     }
     
