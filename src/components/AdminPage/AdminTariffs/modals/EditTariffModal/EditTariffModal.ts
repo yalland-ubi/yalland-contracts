@@ -17,19 +17,19 @@ const _ = require('lodash');
 
 export default {
     template: require('./EditTariffModal.html'),
-    props: ['applicationTypeName'],
+    props: ['tariff'],
     components: {
         ModalItem
     },
     created() {
-        this.getValidatorsRoles();
+        this.editTariff = _.clone(this.tariff);
     },
     methods: {
         getCurrencies() {
             this.currencies = _.map(this.$locale.get('currency'), (currencyTitle, currencyName) => {
                 return {
                     name: currencyTitle,
-                    address: currencyName == 'galt' ? this.$galtTokenContract.address : currencyName,
+                    address: currencyName == 'coin' ? this.$coinTokenContract.address : currencyName,
                     toString: function () {
                         return this.name ? this.name + "(" + this.address + ")" : this.address;
                     },
@@ -43,14 +43,16 @@ export default {
         ok() {
             this.saving = true;
             
-            this.$galtUser.setApplicationRoles(this.validatorsRoles, this.applicationTypeName)
+            const promise = this.editTariff.id ? this.$galtUser.editTariff(this.editTariff) : this.$galtUser.createTariff(this.editTariff);
+
+            promise
                 .then(() => {
                     this.$notify({
                         type: 'success',
                         title: this.getLocale("success.save.title"),
                         text: this.getLocale("success.save.description")
                     });
-                    this.$root.$asyncModal.close('edit-roles-modal', this.validatorsRoles);
+                    this.$root.$asyncModal.close('edit-tariff-modal');
                 })
                 .catch((e) => {
                     console.error(e);
@@ -64,32 +66,23 @@ export default {
                 })
         },
         cancel() {
-            this.$root.$asyncModal.close('edit-roles-modal');
+            this.$root.$asyncModal.close('edit-tariff-modal');
         },
         getLocale(key, options?) {
             return this.$locale.get(this.localeKey + "." + key, options);
         }
     },
     computed: {
-        deleteDisabled(){
-            return this.deleted || this.deleting;
-        },
         saveDisabled(){
-            return !this.deleted || this.saving || !this.validatorsRoles.length || this.validatorsRoles.some((role) => !role.rewardShare) || this.validatorsRoles.some((role) => !role.name) || this.shareSumNot100;
-        },
-        shareSumNot100(){
-            let sum = 0;
-            this.validatorsRoles.forEach((role) => {
-                sum += parseInt(role.rewardShare);
-            });
-            return sum != 100;
+            return this.saving || !this.editTariff.title || !this.editTariff.paymentPeriod || !this.editTariff.payment || !this.editTariff.currency;
         }
     },
     watch: {},
     data: function () {
         return {
-            localeKey: 'admin.validators_roles.edit_roles',
-            validatorsRoles: [],
+            localeKey: 'admin.tariffs.edit_tariff',
+            currencies: [],
+            editTariff: null,
             deleted: false,
             deleting: false,
             saving: false

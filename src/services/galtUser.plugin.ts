@@ -178,11 +178,21 @@ export default {
             },
             
             async createTariff(tariff) {
-                return await $contracts.$city.createTariff(sendOptions(), tariff);
+                return await $contracts.$city.createTariff(sendOptions(), {
+                    title: tariff.title,
+                    payment: GaltData.etherToWei(tariff.payment),
+                    paymentPeriod: tariff.paymentPeriod,
+                    currency: tariff.currency.name == 'eth' ? tariff.currency.name : tariff.currency.address
+                });
             },
 
             async editTariff(tariff) {
-                return await $contracts.$city.editTariff(sendOptions(), tariff);
+                return await $contracts.$city.editTariff(sendOptions(), {
+                    title: tariff.title,
+                    payment: GaltData.etherToWei(tariff.payment),
+                    paymentPeriod: tariff.paymentPeriod,
+                    currency: tariff.currency.name == 'eth' ? tariff.currency.name : tariff.currency.address
+                });
             },
             
             async hasCityManagerRole() {

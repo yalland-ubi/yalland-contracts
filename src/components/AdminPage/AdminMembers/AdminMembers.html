@@ -43,10 +43,11 @@
             <md-list-item v-if="memberError">
                 <span v-locale="localeKey + '.invalid_address'"></span>
             </md-list-item>
-            
+
             <md-list-item>
-                <md-button class="md-icon-button md-raised" @click="editMember()">
-                    <md-icon>add</md-icon>
+                <md-button @click="editMember()">
+                    <md-icon class="md-accent">add</md-icon>
+                    <span v-locale="localeKey + '.add_member_button'"></span>
                 </md-button>
             </md-list-item>
         </md-list>

@@ -19,16 +19,16 @@ export default {
     template: require('./AdminTariffs.html'),
     props: [],
     async mounted() {
-        this.getValidatorsRoles();
+        this.getTariffs();
         // this.applicationsTypes = await this.$locale.setTitlesByNamesInList(GaltData.getApplicationsTypesList(), "application_contracts_types.");
     },
     watch: {
         applicationTypeName() {
-            this.getValidatorsRoles();
+            this.getTariffs();
         }
     },
     methods: {
-        async getValidatorsRoles(){
+        async getTariffs(){
             this.tariffs = await this.$cityContract.getAllTariffs();
         },
         addTariff(){
@@ -39,7 +39,7 @@ export default {
                     tariff: {}
                 },
                 onClose: (resultValidator) => {
-                    this.getValidatorsRoles();
+                    this.getTariffs();
                 }
             });
         },

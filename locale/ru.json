@@ -67,7 +67,16 @@
       "title_title": "Название",
       "currency_title": "Валюта",
       "active_title": "Активен",
-      "add_tariff_button": "Добавить тариф"
+      "add_tariff_button": "Добавить тариф",
+      "edit_tariff": {
+        "title": "Тариф",
+        "title_field": "Название",
+        "payment_period": "Период оплаты",
+        "payment": "Оплата",
+        "currency": "Валюта",
+        "cancel": "Отмена",
+        "ok": "Ок"
+      }
     },
     "members": {
       "title": "Жители",
@@ -75,7 +84,8 @@
       "find_member_placeholder": "Поиск",
       "address_title": "Аккаунт",
       "tariff_title": "Тариф",
-      "active_title": "Житель"
+      "active_title": "Житель",
+      "add_member_button": "Добавить жителя"
     }
   }
 }

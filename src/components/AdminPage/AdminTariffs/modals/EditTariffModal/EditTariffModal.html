@@ -11,29 +11,27 @@
   <div class="modal-body" slot="body">
     <div class="form-group fixed-table-container">
       <md-field>
-        <label v-locale="localeKey + '.title'"></label>
-        <md-input v-model="tariff.title" required></md-input>
+        <label v-locale="localeKey + '.title_field'"></label>
+        <md-input v-model="editTariff.title" required :disabled="saving"></md-input>
       </md-field>
       
       <md-field>
-        <label v-locale="localeKey + '.paymentPeriod'"></label>
-        <md-input v-model="tariff.paymentPeriod" required></md-input>
+        <label v-locale="localeKey + '.payment_period'"></label>
+        <md-input v-model="editTariff.paymentPeriod" required :disabled="saving"></md-input>
       </md-field>
       
       <md-field>
         <label v-locale="localeKey + '.payment'"></label>
-        <md-input v-model="tariff.payment" required></md-input>
+        <md-input v-model="editTariff.payment" required :disabled="saving"></md-input>
       </md-field>
 
-      <md-autocomplete v-model="selectedCurrency" :md-options="currencies" @md-opened="getCurrencies" :disabled="disabled"><!--@md-changed="getCountries"-->
+      <md-autocomplete v-model="editTariff.currency" :md-options="currencies" @md-opened="getCurrencies" :disabled="saving"><!--@md-changed="getCountries"-->
         <label v-locale="localeKey + '.currency'"></label>
 
         <template slot="md-autocomplete-item" slot-scope="{ item }">{{ item.name || '...' }}&nbsp;&nbsp;<small v-if="item.address">({{ item.address }})</small></template>
       </md-autocomplete>
-      <md-field>
-        <label v-locale="localeKey + '.currency'"></label>
-        <md-input v-model="tariff.currency" required></md-input>
-      </md-field>
+      
+      <md-progress-bar class="md-accent" md-mode="indeterminate" v-if="saving"></md-progress-bar>
     </div>
   </div>
 
