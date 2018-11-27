@@ -347,7 +347,7 @@ export default {
             GaltData.ethBalance(this.internal_wallet).then((ethBalance) => {
                 this.$store.commit('internal_wallet_eth_balance', ethBalance);
             });
-            GaltData.coinBalance(this.internal_wallet).then((ethBalance) => {
+            this.$coinTokenContract.balanceOf(this.internal_wallet).then((ethBalance) => {
                 this.$store.commit('internal_wallet_galt_balance', ethBalance);
             });
         },

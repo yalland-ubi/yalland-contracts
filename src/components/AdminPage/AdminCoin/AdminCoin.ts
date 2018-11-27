@@ -18,20 +18,56 @@ export default {
     template: require('./AdminCoin.html'),
     props: [],
     async mounted() {
-        this.totalSupply = await GaltData.coinTotalSupply();
-        this.cityBalance = await GaltData.coinBalance(this.$cityContract.address);
+        const interval = setInterval(() => {
+            this.getCoinData();
+        }, 10000);
+
+        this.intervals.push(interval);
+        this.getCoinData();
+    },
+    beforeDestroy() {
+        this.intervals.forEach(intervalId => clearInterval(intervalId));
     },
     watch: {
         
     },
     methods: {
-        
+        async getCoinData() {
+            this.totalSupply = await this.$coinTokenContract.totalSupply();
+            this.cityBalance = await this.$coinTokenContract.balanceOf(this.$cityContract.address);
+            this.transferFee = await this.$coinTokenContract.transferFee();
+            this.feePayout = await this.$coinTokenContract.feePayout();
+        },
+        async withdrawFee() {
+            await this.$galtUser.withdrawCoinFee();
+
+            this.$notify({
+                type: 'success',
+                title: this.getLocale("success.fee_payout.title"),
+                text: this.getLocale("success.fee_payout.description", {value: this.feePayout})
+            });
+        },
+        async editFee(currency) {
+            GaltData.specifyAmountModal({
+                title: this.getLocale("edit_fee.title"),
+                placeholder: this.getLocale("edit_fee.placeholder"),
+                defaultValue: this.transferFee
+            }).then(async (amount: any) => {
+                this.$galtUser.setCoinTransferFee(amount).then(this.getCoinData);
+            });
+        },
+        getLocale(key, options?) {
+            return this.$locale.get(this.localeKey + "." + key, options);
+        }
     },
     data() {
         return {
             localeKey: 'admin.coin',
+            intervals: [],
             totalSupply: null,
-            cityBalance: null
+            cityBalance: null,
+            transferFee: null,
+            feePayout: null
         }
     }
 }

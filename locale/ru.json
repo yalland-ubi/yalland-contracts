@@ -95,11 +95,24 @@
     }
   },
   "admin": {
+    "title": "Административная панель",
     "coin": {
       "title": "Coin",
       "general_data": "Общие данные",
       "total_supply": "Total Supply:",
-      "city_balance": "Бюджет города:"
+      "city_balance": "Бюджет города:",
+      "transfer_fee": "Комиссия за операцию:",
+      "fee_payout": "Сумма готовая к выплате:",
+      "success": {
+        "fee_payout": {
+          "title": "Вы успешно вывели комиссию",
+          "description": "Сумма выведенной комиссии составила <%=value%> COIN"
+        }
+      },
+      "edit_fee": {
+        "title": "Редактировать комиссию за операцию",
+        "placeholder": "Комиссия в %"
+      }
     },
     "tariffs": {
       "title": "Управление тарифами",

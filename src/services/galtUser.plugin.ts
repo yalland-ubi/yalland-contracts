@@ -155,19 +155,25 @@ export default {
             // Galt Contract
             async coinBalance() {
                 await onWalletReady();
-                return await GaltData.coinBalance(walletAddress);
+                return await $contracts.$coinToken.balanceOf(walletAddress);
             },
             async approveCoin(address, galtAmount) {
-                return await GaltData.approveCoin(sendOptions(), address, galtAmount);
+                return await $contracts.$coinToken.approve(sendOptions(), address, galtAmount);
+            },
+            async withdrawCoinFee() {
+                return await $contracts.$coinToken.withdrawFee(sendOptions());
+            },
+            async setCoinTransferFee(newFee) {
+                return await $contracts.$coinToken.setTransferFee(sendOptions(), newFee);
             },
             async getCoinAllowance(address) {
                 await onWalletReady();
-                return await GaltData.getCoinAllowance(walletAddress, address);
+                return await $contracts.$coinToken.allowance(walletAddress, address);
             },
             async waitForApproveCoin(addressForAprove, needGaltAmount){
                 return new Promise((resolve, reject) => {
                     const interval = setInterval(async () => {
-                        const galtAllowance = await this.getGaltAllowance(addressForAprove);
+                        const galtAllowance = await this.getCoinAllowance(addressForAprove);
 
                         if (galtAllowance >= needGaltAmount) {
                             clearInterval(interval);

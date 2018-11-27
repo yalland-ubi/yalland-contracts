@@ -92,6 +92,8 @@ contract CoinToken is MintableToken, RBAC {
   }
 
   function withdrawFee() public hasFeeManagerPermission {
+    require(balances[address(this)] > 0, "Nothing to withdraw");
+    
     uint256 _payout = balances[address(this)];
     
     balances[msg.sender] = balances[msg.sender].add(_payout);

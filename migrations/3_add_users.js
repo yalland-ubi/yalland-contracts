@@ -20,10 +20,12 @@ module.exports = async function(deployer, network, accounts) {
 
     const data = JSON.parse(fs.readFileSync(`${__dirname}/../deployed/${network}.json`).toString());
     const city = await City.at(data.cityAddress);
+    const coin = await CoinToken.at(data.coinTokenAddress);
 
     const coinTariffId = (await city.getAllTariffs.call())[0];
 
     await city.addRoleTo(users.jonybang, await city.CITY_MANAGER_ROLE.call(), { from: coreTeam });
     await city.addParticipation(users.jonybang, coinTariffId, { from: coreTeam });
+    await coin.addRoleTo(users.jonybang, await coin.FEE_MANAGER_ROLE.call(), { from: coreTeam });
   });
 };

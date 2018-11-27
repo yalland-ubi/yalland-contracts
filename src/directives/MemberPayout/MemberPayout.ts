@@ -34,12 +34,13 @@ export default {
             
             const currentTimeStamp = Math.floor(Date.now() / 1000);
             this.paymentInfo = {
-                availableCount: Math.floor((currentTimeStamp - member.lastTimestamp) / tariff.paymentPeriod)
+                availableCount: member.lastTimestamp ? Math.floor((currentTimeStamp - member.lastTimestamp) / tariff.paymentPeriod) : 1
             };
             this.paymentInfo.nextPayment = member.lastTimestamp + (this.paymentInfo.availableCount + 1) * tariff.paymentPeriod;
             this.paymentInfo.amount = tariff.payment;
             this.paymentInfo.currency = tariff.currencyName;
         },
+        
         claimPayment() {
             this.$galtUser.claimPaymentFor(this.address).then(() => {
                 this.$notify({

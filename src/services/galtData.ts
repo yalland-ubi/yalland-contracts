@@ -447,27 +447,6 @@ export default class GaltData {
     static async getErc20Allowance(erc20Address, userAddress, approveToWallet) {
         return GaltData.weiToEther(await GaltData.sendMassCallByAddress(erc20Address, GaltData.erc20Abi,'allowance', [userAddress, approveToWallet]));
     }
-    
-    // ===========================================================
-    // Galt Contract
-    // ===========================================================
-    static async coinBalance(userWallet) {
-        const balanceInWei = await GaltData.sendMassCall('coinTokenContract','balanceOf', [userWallet]);
-        return GaltData.weiToEtherRound(balanceInWei);
-    }
-
-    static async approveCoin(sendOptions, approveToWallet, approveAmount){
-        return await this.$root.$galtTokenContract.sendMethod(sendOptions, 'approve', approveToWallet, GaltData.etherToWei(approveAmount));
-    }
-
-    static async getCoinAllowance(userAddress, approveToWallet) {
-        return GaltData.weiToEther(await GaltData.sendMassCall('coinTokenContract','allowance', [userAddress, approveToWallet]));
-    }
-
-    static async coinTotalSupply() {
-        const balanceInWei = await GaltData.sendMassCall('coinTokenContract','totalSupply');
-        return GaltData.weiToEtherRound(balanceInWei);
-    }
 
     // ===========================================================
     // Modals

@@ -21,7 +21,7 @@ export default {
          GaltData.ethBalance(this.userWallet).then(ethBalance => {
              this.ethBalance = ethBalance;
          });
-        GaltData.coinBalance(this.userWallet).then(galtBalance => {
+        this.$coinTokenContract.balanceOf(this.userWallet).then(galtBalance => {
             this.coinBalance = galtBalance;
         });
         this.participant = await this.$cityContract.isMember(this.userWallet);
