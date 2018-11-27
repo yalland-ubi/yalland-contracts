@@ -43,13 +43,21 @@ export default class CityContract extends EthContract {
             tariff.currency == 'eth' ? "0" : "1",
             tariff.currency == 'eth' ? GaltData.nullAddress : tariff.currency);
     }
+    
+    async addMember(sendOptions, memberAddress, tariffId) {
+        return await this.sendMethod(
+            sendOptions,
+            "addParticipation",
+            memberAddress,
+            tariffId);
+    }
 
-    async changeMemberTariff(sendOptions, member, tariff) {
+    async changeMemberTariff(sendOptions, memberAddress, tariffId) {
         return await this.sendMethod(
             sendOptions,
             "changeParticipationTariff",
-            member,
-            tariff);
+            memberAddress,
+            tariffId);
     }
 
     async deactivateTariff(sendOptions, tariff) {
@@ -66,6 +74,20 @@ export default class CityContract extends EthContract {
             "setTariffActive",
             tariff.id,
             true);
+    }
+
+    async kickMember(sendOptions, member) {
+        return await this.sendMethod(
+            sendOptions,
+            "kickParticipation",
+            member.address);
+    }
+
+    async claimPaymentFor(sendOptions, memberAddress) {
+        return await this.sendMethod(
+            sendOptions,
+            "claimPayment",
+            memberAddress);
     }
 
     async getActiveTariffs(options = {}){
@@ -98,6 +120,7 @@ export default class CityContract extends EthContract {
     async getTariffById(tariffId, params: any = {}) {
         const tariff = await this.massCallMethod(params.method || "getTariff", [tariffId]);
         tariff.id = tariffId;
+        tariff.payment = GaltData.weiToEther(tariff.payment);
         
         this.tariffsTitleCache[tariffId] = tariff.title;
         
@@ -148,13 +171,20 @@ export default class CityContract extends EthContract {
         return _.reverse(applications);
     }
     async getMember(memberAddress, params: any = {}) {
+        if(!memberAddress) {
+            return {};
+        }
         const member = await this.massCallMethod(params.method || "getParticipantInfo", [memberAddress]);
         member.address = memberAddress;
         member.tariffTitle = "";
         
-        this.getTariffTitle(member.tariff).then((title) => {
-            member.tariffTitle = title;
-        });
+        if(member.tariff == GaltData.nullBytes32) {
+            member.tariff = null;
+        } else {
+            this.getTariffTitle(member.tariff).then((title) => {
+                member.tariffTitle = title;
+            });
+        }
         
         return member;
     }

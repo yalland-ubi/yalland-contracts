@@ -195,8 +195,12 @@ export default {
                 });
             },
             
-            async changeMemberTariff(member, tariff) {
-                return await $contracts.$city.changeMemberTariff(sendOptions(), member, tariff);
+            async changeMemberTariff(memberAddress, tariffId) {
+                return await $contracts.$city.changeMemberTariff(sendOptions(), memberAddress, tariffId);
+            },
+
+            async addMember(memberAddress, tariffId) {
+                return await $contracts.$city.addMember(sendOptions(), memberAddress, tariffId);
             },
 
             async deactivateTariff(tariff) {
@@ -205,6 +209,14 @@ export default {
 
             async activateTariff(tariff) {
                 return await $contracts.$city.activateTariff(sendOptions(), tariff);
+            },
+            
+            async kickMember(member) {
+                return await $contracts.$city.kickMember(sendOptions(), member);
+            },
+
+            async claimPaymentFor(memberAddress) {
+                return await $contracts.$city.claimPaymentFor(sendOptions(), memberAddress);
             },
             
             async hasCityManagerRole() {

@@ -13,11 +13,14 @@
 
 import GaltData from "../../../services/galtData";
 import EditMemberTariffModal from "./modals/EditMemberTariffModal/EditMemberTariffModal";
+import AddMemberModal from "./modals/AddMemberModal/AddMemberModal";
+import MemberPayout from "../../../directives/MemberPayout/MemberPayout";
 const _ = require('lodash');
 
 export default {
     name: 'admin-members',
     template: require('./AdminMembers.html'),
+    components: { MemberPayout },
     props: [],
     mounted() {
         this.getAllMembers();
@@ -27,7 +30,7 @@ export default {
     },
     methods: {
         async getAllMembers(){
-            this.members = await this.$cityContract.getAllMembers();
+            this.members = await this.$cityContract.getActiveMembers();
             this.filteredMembers = this.members;
         },
         fetchMemberToFind(){
@@ -57,16 +60,12 @@ export default {
                 return member.address == memberAddress;
             })
         },
-        editMember(memberAddress?){
-            if(!memberAddress && this.memberNotFound) {
-                memberAddress = this.memberToFind;
-            }
-            
+        editMember(member){
             this.$root.$asyncModal.open({
                 id: 'edit-member-tariff-modal',
                 component: EditMemberTariffModal,
                 props: {
-                    memberAddress: memberAddress,
+                    memberAddress: member.address,
                 },
                 onClose: (resultMember) => {
                     if(!resultMember) {
@@ -76,26 +75,52 @@ export default {
                 }
             });
         },
-        deactivateMember(memberAddress){
-            this.$galtUser.deactivateMember(memberAddress)
-                .then(() => {
-                    this.updateMemberInfo(memberAddress);
-                    
-                    this.$notify({
-                        type: 'success',
-                        title: this.getLocale("success.deactivate.title"),
-                        text: this.getLocale("success.deactivate.description")
-                    });
-                })
-                .catch((e) => {
-                    console.error(e);
-                    
-                    this.$notify({
-                        type: 'error',
-                        title: this.getLocale("error.deactivate.title"),
-                        text: this.getLocale("error.deactivate.description")
-                    });
-                })
+        addMember(){
+            let memberAddress = null;
+            if(this.memberToFind && this.memberNotFound) {
+                memberAddress = this.memberToFind;
+            }
+
+            this.$root.$asyncModal.open({
+                id: 'add-member-modal',
+                component: AddMemberModal,
+                props: {
+                    memberAddress: memberAddress,
+                },
+                onClose: (resultMember) => {
+                    if(!resultMember) {
+                        return;
+                    }
+                    this.getAllMembers();
+                }
+            });
+        },
+        kickMember(member){
+            GaltData.confirmModal({
+                title: this.$locale.get(this.localeKey + '.deactivate_confirm')
+            }).then(() => {
+                
+                this.$galtUser.kickMember(member)
+                    .then(() => {
+                        this.getAllMembers();
+
+                        this.$notify({
+                            type: 'success',
+                            title: this.getLocale("success.deactivate.title"),
+                            text: this.getLocale("success.deactivate.description")
+                        });
+                    })
+                    .catch((e) => {
+                        console.error(e);
+
+                        this.$notify({
+                            type: 'error',
+                            title: this.getLocale("error.deactivate.title"),
+                            text: this.getLocale("error.deactivate.description")
+                        });
+                    })
+            })
+            
         },
         getLocale(key, options?) {
             return this.$locale.get(this.localeKey + "." + key, options);

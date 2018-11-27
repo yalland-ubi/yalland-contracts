@@ -9,6 +9,7 @@
     "admin": "Администрирование",
     "personal_cabinet": "Личный кабинет"
   },
+  "transaction_in_process": "Идет отправка транзанкции, пожалуйста, проверьте MetaMask.",
   "metamask_not_active": "MetaMask не активен. Пожалуйста запустите MetaMask и войдите в кошелек",
   "wait_screen": {
     "default_title": "Пожалуйста, дождитесь отправки и подтверждения всех транзакций",
@@ -79,6 +80,20 @@
     "cancel": "Отмена",
     "ok": "Ок"
   },
+  "member_payout": {
+    "success": {
+      "claim": {
+        "title": "Оплата успешно получена",
+        "description": "Оплата получена в размере <%= amount %> валюты <% currency.toUpperCase() %>"
+      }
+    },
+    "error": {
+      "claim": {
+        "title": "Произошла ошибка при получении оплаты",
+        "description": " "
+      }
+    }
+  },
   "admin": {
     "coin": {
       "title": "Coin",
@@ -94,6 +109,16 @@
       "add_tariff_button": "Добавить тариф",
       "activate_confirm": "Вы уверены что хотите активировать тариф? Все жители, испольщующие этот тариф снова смогут получать оплату.",
       "deactivate_confirm": "Вы уверены что хотите деактивировать тариф? Все жители, использующие этот тариф не смогут получать оплату пока их тариф не изменится.",
+      "success": {
+        "activate": {
+          "title": "Тариф успешно активирован",
+          "description": " "
+        },
+        "deactivate": {
+          "title": "Тариф успешно деактивирован",
+          "description": " "
+        }
+      },
       "edit_tariff": {
         "title": "Тариф",
         "title_field": "Название",
@@ -110,14 +135,59 @@
       "find_member_placeholder": "Поиск",
       "address_title": "Аккаунт",
       "tariff_title": "Тариф",
-      "active_title": "Житель",
+      "last_payment": "Выплата доступна",
+      "total_amount": "Выплачено",
+      "tariff_edit": "Изменить тариф",
+      "kick": "Убрать из города",
       "add_member_button": "Добавить жителя",
+      "deactivate_confirm": "Вы уверены что хотите убрать жителя из города?",
+      "success": {
+        "deactivate": {
+          "title": "Житель успешно убран из города",
+          "description": " "
+        }
+      },
       "edit_member_tariff": {
         "title": "Редактировать тариф жителя",
         "description": "Вы можете изменить тариф у жителя с адресом <%= address %>. Период для получения оплаты начнется с последнего получения оплаты жителем с прошлого тарифа.",
         "tariff": "Тариф",
         "cancel": "Отмена",
-        "ok": "Ок"
+        "ok": "Ок",
+        "success": {
+          "save": {
+            "title": "Тариф у жителя успешно изменен",
+            "description": " "
+          }
+        },
+        "error": {
+          "save": {
+            "title": "Неизвестная ошибка при изменении тарифа",
+            "description": " "
+          }
+        }
+      },
+      "add_member": {
+        "title": "Добавить жителя",
+        "address": "Адрес",
+        "tariff": "Тариф",
+        "cancel": "Отмена",
+        "ok": "Ок",
+        "success": {
+          "save": {
+            "title": "Житель успешно добавлен",
+            "description": " "
+          }
+        },
+        "error": {
+          "save": {
+            "title": "Ошибка при добавлении жителя, возможно житель уже добавлен",
+            "description": " "
+          },
+          "already_member": {
+            "title": "Этот адрес уже числится как житель в городе",
+            "description": " "
+          }
+        }
       }
     }
   }

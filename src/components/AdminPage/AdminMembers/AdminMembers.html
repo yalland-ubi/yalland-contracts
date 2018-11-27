@@ -18,19 +18,33 @@
                     <md-table-row>
                         <md-table-head><span v-locale="localeKey + '.address_title'"></span></md-table-head>
                         <md-table-head><span v-locale="localeKey + '.tariff_title'"></span></md-table-head>
+                        <md-table-head><span v-locale="localeKey + '.total_amount'"></span></md-table-head>
                         <md-table-head></md-table-head>
                     </md-table-row>
 
                     <md-table-row v-for="member in filteredMembers">
                         <md-table-cell><hex-cut :hex="member.address"></hex-cut></md-table-cell>
                         <md-table-cell>{{member.tariffTitle}}</md-table-cell>
-                        <md-table-cell>
-                            <md-button class="md-icon-button" @click="editMember(member.address)">
-                                <md-icon class="md-accent">edit</md-icon>
-                            </md-button>
-                            <md-button class="md-icon-button" @click="deactivateMember(member.address)">
-                                <md-icon class="md-accent">clear</md-icon>
-                            </md-button>
+                        <md-table-cell>{{member.totalAmount}}</md-table-cell>
+                        <md-table-cell class="controls">
+                            <div style="width: 120px;">
+                                <member-payout :address="member.address" :icon-mode="true"></member-payout>
+                            
+                                <md-menu md-direction="bottom-start">
+                                    <md-button md-menu-trigger class="md-icon-button md-raised md-accent" style="margin-left: 15px;"><md-icon>menu</md-icon></md-button>
+
+                                    <md-menu-content>
+                                        <md-menu-item @click="editMember(member)">
+                                            <md-icon>edit</md-icon>
+                                            <span v-locale="localeKey + '.tariff_edit'"></span>
+                                        </md-menu-item>
+                                        <md-menu-item @click="kickMember(member)">
+                                            <md-icon>close</md-icon>
+                                            <span v-locale="localeKey + '.kick'"></span>
+                                        </md-menu-item>
+                                    </md-menu-content>
+                                </md-menu>
+                            </div>
                         </md-table-cell>
                     </md-table-row>
                 </md-table>
@@ -45,7 +59,7 @@
             </md-list-item>
 
             <md-list-item>
-                <md-button @click="editMember()">
+                <md-button @click="addMember()">
                     <md-icon class="md-accent">add</md-icon>
                     <span v-locale="localeKey + '.add_member_button'"></span>
                 </md-button>

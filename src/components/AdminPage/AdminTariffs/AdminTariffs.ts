@@ -47,14 +47,26 @@ export default {
             GaltData.confirmModal({
                 title: this.$locale.get(this.localeKey + '.activate_confirm')
             }).then(() => {
-                this.$galtUser.activateTariff(tariff).then(this.getTariffs)
+                this.$galtUser.activateTariff(tariff).then(this.getTariffs);
+                
+                this.$notify({
+                    type: 'success',
+                    title: this.getLocale("success.activate.title"),
+                    text: this.getLocale("success.activate.description")
+                });
             })
         },
         deactivateTariff(tariff) {
             GaltData.confirmModal({
                 title: this.$locale.get(this.localeKey + '.deactivate_confirm')
             }).then(() => {
-                this.$galtUser.deactivateTariff(tariff).then(this.getTariffs)
+                this.$galtUser.deactivateTariff(tariff).then(this.getTariffs);
+                
+                this.$notify({
+                    type: 'success',
+                    title: this.getLocale("success.deactivate.title"),
+                    text: this.getLocale("success.deactivate.description")
+                });
             })
         },
         addTariff(){

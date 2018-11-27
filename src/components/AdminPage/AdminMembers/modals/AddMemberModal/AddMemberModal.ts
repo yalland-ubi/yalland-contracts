@@ -16,16 +16,20 @@ import GaltData from "../../../../../services/galtData";
 const _ = require('lodash');
 
 export default {
-    template: require('./EditMemberTariffModal.html'),
+    template: require('./AddMemberModal.html'),
     props: ['memberAddress'],
     components: {
         ModalItem
     },
     async created() {
+        this.address = this.memberAddress;
+        
         await this.getTariffs();
         this.$cityContract.getMember(this.memberAddress)
             .then((member) => {
-                this.tariff = _.find(this.tariffs, {id: member.tariff});
+                if(member.tariff) {
+                    this.tariff = _.find(this.tariffs, {id: member.tariff});
+                }
             });
     },
     methods: {
@@ -33,18 +37,29 @@ export default {
             this.tariffs = await this.$cityContract.getActiveTariffs();
             return this.tariffs;
         },
-        ok() {
+        async ok() {
             this.saving = true;
             
-            this.$galtUser.changeMemberTariff(this.memberAddress, this.tariff.id)
+            const isMember = await this.$cityContract.isMember(this.address);
+            if(isMember) {
+                this.saving = false;
+                
+                return this.$notify({
+                    type: 'error',
+                    title: this.getLocale("error.already_member.title"),
+                    text: this.getLocale("error.already_member.description")
+                });
+            }
+            
+            this.$galtUser.addMember(this.address, this.tariff.id)
                 .then(() => {
                     this.$notify({
                         type: 'success',
                         title: this.getLocale("success.save.title"),
                         text: this.getLocale("success.save.description")
                     });
-                    this.$root.$asyncModal.close('edit-member-tariff-modal', {
-                        address: this.memberAddress,
+                    this.$root.$asyncModal.close('add-member-modal', {
+                        address: this.address,
                         tariff: this.tariff
                     });
                 })
@@ -60,7 +75,7 @@ export default {
                 })
         },
         cancel() {
-            this.$root.$asyncModal.close('edit-member-tariff-modal');
+            this.$root.$asyncModal.close('add-member-modal');
         },
         getLocale(key, options?) {
             return this.$locale.get(this.localeKey + "." + key, options);
@@ -68,13 +83,14 @@ export default {
     },
     computed: {
         saveDisabled(){
-            return this.saving || !this.tariff;
+            return this.saving || !this.tariff || !this.address;
         }
     },
     watch: {},
     data: function () {
         return {
-            localeKey: 'admin.members.edit_member_tariff',
+            localeKey: 'admin.members.add_member',
+            address: null,
             tariff: null,
             tariffs: [],
             saving: false

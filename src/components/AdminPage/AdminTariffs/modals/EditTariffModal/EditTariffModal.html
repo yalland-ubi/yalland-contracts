@@ -32,6 +32,7 @@
       </md-autocomplete>
       
       <md-progress-bar class="md-accent" md-mode="indeterminate" v-if="saving"></md-progress-bar>
+      <div class="warn" v-if="saving" v-locale="'transaction_in_process'"></div>
     </div>
   </div>
 

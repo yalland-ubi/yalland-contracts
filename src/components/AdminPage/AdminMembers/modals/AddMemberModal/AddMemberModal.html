@@ -10,7 +10,10 @@
 
   <div class="modal-body" slot="body">
     <div class="form-group">
-      <p v-locale="[localeKey + '.description', {address: memberAddress}]"></p>
+      <md-field>
+        <label v-locale="localeKey + '.address'"></label>
+        <md-input v-model="address" required :disabled="saving"></md-input>
+      </md-field>
 
       <md-autocomplete v-model="tariff" :md-options="tariffs" @md-opened="getTariffs" :disabled="saving"><!--@md-changed="getCountries"-->
         <label v-locale="localeKey + '.tariff'"></label>
