@@ -166,15 +166,19 @@ contract City is RBAC {
         require(tariff.paymentPeriod != 0, "Tariff payment period is null");
 
         require(participants[claimFor], "Not active");
-        require(now - tariff.paymentPeriod >= payments[claimFor].lastTimestamp, "Too soon");
+        require(payments[claimFor].lastTimestamp + tariff.paymentPeriod <= now, "Too soon");
 
-        payments[claimFor].lastTimestamp += tariff.paymentPeriod;
+        if(payments[claimFor].lastTimestamp == 0) {
+            payments[claimFor].lastTimestamp = now;
+        } else {
+            payments[claimFor].lastTimestamp += tariff.paymentPeriod;
+        }
         payments[claimFor].totalAmount += tariff.payment;
-
+//
         if(tariff.currency == CityLibrary.TariffCurrency.ETH) {
             claimFor.transfer(tariff.payment);
         } else {
-            ERC20(tariff.currencyAddress).transferFrom(address(this), claimFor, tariff.payment);
+            ERC20(tariff.currencyAddress).transfer(claimFor, tariff.payment);
         }
 
         tariff.paymentSent += tariff.payment;
