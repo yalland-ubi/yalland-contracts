@@ -15,32 +15,73 @@ import GaltData from "../../../services/galtData";
 import EditMemberTariffModal from "./modals/EditMemberTariffModal/EditMemberTariffModal";
 import AddMemberModal from "./modals/AddMemberModal/AddMemberModal";
 import MemberPayout from "../../../directives/MemberPayout/MemberPayout";
+
 const _ = require('lodash');
+const pIteration = require('p-iteration');
 
 export default {
     name: 'admin-members',
     template: require('./AdminMembers.html'),
-    components: { MemberPayout },
+    components: {MemberPayout},
     props: [],
     mounted() {
         this.getAllMembers();
     },
-    watch: {
-        
-    },
+    watch: {},
     methods: {
-        async getAllMembers(){
+        async getAllMembers() {
             this.membersCount = await this.$cityContract.getActiveMembersCount();
             this.members = await this.$cityContract.getActiveMembers();
             this.loaded = true;
         },
-        fetchMemberToFind(){
-            if(!this.memberToFind) {
+        async claimToAll() {
+            this.$waitScreen.show();
+            
+            const currentTimestamp = Date.now() / 1000;
+            
+            const membersToClaim = await pIteration.filter(this.members, async (member: any) => {
+                if (!member.resolved) {
+                    await member.resolvePromise;
+                }
+                
+                return !member.lastTimestamp || currentTimestamp > member.lastTimestamp + member.tariffObject.paymentPeriod;
+            });
+            
+            const txPrice = await GaltData.gasPrice(150000);
+            
+            const mode = await GaltData.useInternalWalletModal('City', this.$cityContract.address, membersToClaim.length, txPrice).catch(() => {
+                this.$waitScreen.hide();
+            });
+            
+            if(!mode) {
+                return;
+            }
+
+            const operationId = this.$galtUser.claimPaymentForMultipleMembers(membersToClaim);
+            
+            this.$waitScreen.setOperationId(operationId);
+
+            this.$web3Worker.callMethod('waitForOperationMined', operationId).then(async (operationState) => {
+                if(mode == 'internal_wallet') {
+                    await this.$galtUser.releaseInternalWallet('City');
+                }
+
+                this.$waitScreen.hide();
+
+                this.$notify({
+                    type: 'success',
+                    title: this.getLocale('success.claim_to_all.title'),
+                    text: this.getLocale('success.claim_to_all.description')
+                });
+            })
+        },
+        fetchMemberToFind() {
+            if (!this.memberToFind) {
                 return;
             }
             this.$cityContract.getMember(this.memberToFind)
                 .then((member) => {
-                    if(!member.roles.length) {
+                    if (!member.roles.length) {
                         this.memberNotFound = true;
                         return;
                     }
@@ -52,15 +93,18 @@ export default {
         },
         updateMemberInfo(memberAddress) {
             this.members.some(member => {
-                if(member.address == memberAddress) {
+                if (member.address == memberAddress) {
                     this.$cityContract.getMember(member.address)
-                        .then((getMember) => { _.extend(member, getMember); })
-                        .catch(() => {})
+                        .then((getMember) => {
+                            _.extend(member, getMember);
+                        })
+                        .catch(() => {
+                        })
                 }
                 return member.address == memberAddress;
             })
         },
-        editMember(member){
+        editMember(member) {
             this.$root.$asyncModal.open({
                 id: 'edit-member-tariff-modal',
                 component: EditMemberTariffModal,
@@ -68,16 +112,16 @@ export default {
                     memberAddress: member.address,
                 },
                 onClose: (resultMember) => {
-                    if(!resultMember) {
+                    if (!resultMember) {
                         return;
                     }
                     this.updateMemberInfo(resultMember.address);
                 }
             });
         },
-        addMember(){
+        addMember() {
             let memberAddress = null;
-            if(this.memberToFind && this.memberNotFound) {
+            if (this.memberToFind && this.memberNotFound) {
                 memberAddress = this.memberToFind;
             }
 
@@ -88,18 +132,18 @@ export default {
                     memberAddress: memberAddress,
                 },
                 onClose: (resultMember) => {
-                    if(!resultMember) {
+                    if (!resultMember) {
                         return;
                     }
                     this.getAllMembers();
                 }
             });
         },
-        kickMember(member){
+        kickMember(member) {
             GaltData.confirmModal({
                 title: this.$locale.get(this.localeKey + '.deactivate_confirm')
             }).then(() => {
-                
+
                 this.$galtUser.kickMember(member)
                     .then(() => {
                         this.getAllMembers();
@@ -120,7 +164,7 @@ export default {
                         });
                     })
             })
-            
+
         },
         getLocale(key, options?) {
             return this.$locale.get(this.localeKey + "." + key, options);

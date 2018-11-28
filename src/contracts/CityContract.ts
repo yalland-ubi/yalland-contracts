@@ -19,7 +19,7 @@ const EthContract = require('../libs/EthContract');
 
 export default class CityContract extends EthContract {
     
-    tariffsTitleCache = {};
+    tariffsCache = {};
 
     async createTariff(sendOptions, tariff) {
         return await this.sendMethod(
@@ -123,7 +123,7 @@ export default class CityContract extends EthContract {
         tariff.payment = GaltData.weiToEther(tariff.payment);
         tariff.paymentPeriod = parseInt(tariff.paymentPeriod);
         
-        this.tariffsTitleCache[tariffId] = tariff.title;
+        this.tariffsCache[tariffId] = tariff;
         
         if(tariff.currency == "1") {
             tariff.currencyName = tariff.currencyAddress.toLowerCase() == GaltData.contractsConfig.coinTokenAddress.toLowerCase() ? 'coin' : tariff.currencyAddress;
@@ -138,10 +138,10 @@ export default class CityContract extends EthContract {
     }
     
     async getTariffTitle(tariffId) {
-        if(!this.tariffsTitleCache[tariffId]) {
+        if(!this.tariffsCache[tariffId]) {
             await this.getTariffById(tariffId);
         }
-        return this.tariffsTitleCache[tariffId];
+        return this.tariffsCache[tariffId].title;
     }
     
     async getActiveMembersCount(){
@@ -184,12 +184,18 @@ export default class CityContract extends EthContract {
         member.totalAmount = GaltData.weiToEtherRound(member.totalAmount);
         member.lastTimestamp = parseInt(member.lastTimestamp);
         member.tariffTitle = "";
+        member.tariffObject = null;
+        
+        member.resolved = false;
         
         if(member.tariff == GaltData.nullBytes32) {
             member.tariff = null;
+            member.resolved = true;
         } else {
-            this.getTariffTitle(member.tariff).then((title) => {
+            member.resolvePromise = this.getTariffTitle(member.tariff).then((title) => {
                 member.tariffTitle = title;
+                member.tariffObject = this.tariffsCache[member.tariff];
+                member.resolved = true;
             });
         }
         

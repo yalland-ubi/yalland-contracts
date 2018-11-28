@@ -132,6 +132,8 @@ export default {
         
         this.$galtUser.init(this.$internalWallet, this.$contracts, this.$store);
         
+        this.$galtUser.releaseInternalWallet();
+        
         this.$locale.init(this.$store).then(() => {
             this.$store.commit('locale_loaded', true);
             this.language = this.$locale.lang;

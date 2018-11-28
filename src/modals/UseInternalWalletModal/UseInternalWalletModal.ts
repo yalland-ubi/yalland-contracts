@@ -62,39 +62,6 @@ export default {
             });
         },
         async ok() {
-            if(this.contractName == 'SplitMerge') {
-                const isApproved = await this.$galtUser.isApprovedSpace(this.internal_wallet, this.subjectId);
-
-                if(isApproved) {
-                    this.successClose();
-                } else {
-                    this.waitingForApprove = true;
-                    this.$galtUser.approveAllSpace(this.internal_wallet,true).then(async () => {
-                        await this.$galtUser.waitForApproveToSpaceToken(this.internal_wallet, this.subjectId);
-                        this.successClose();
-                    });
-                }
-            } else if(this.contractName == 'PlotManagerContract') {
-                const isApproved = await this.$galtUser.isApprovedApplicationForOperator(this.internal_wallet, this.subjectId);
-
-                if(isApproved) {
-                    this.successClose();
-                } else {
-                    this.waitingForApprove = true;
-                    this.$galtUser.approveApplicationForOperator(this.internal_wallet, this.subjectId).then(async () => {
-                        await this.$galtUser.waitForApproveToApplication(this.internal_wallet, this.subjectId);
-                        this.successClose();
-                    });
-                }
-            } else {
-                this.$notify({
-                    type: 'error',
-                    title: this.$locale.get('use_internal_wallet.error.something_wrong.title'),
-                    text: this.$locale.get('use_internal_wallet.error.something_wrong.description', {value: this.contractName})
-                });
-            }
-        },
-        successClose(){
             this.$internalWallet.setActive(true);
             this.$galtUser.setInternalWalletActive(true);
             this.$root.$asyncModal.close('use-internal-wallet-modal', 'internal_wallet');

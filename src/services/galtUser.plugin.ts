@@ -15,6 +15,7 @@ import GaltData from "./galtData";
 
 const _ = require('lodash');
 const galtUtils = require('@galtproject/utils');
+const pIteration = require('p-iteration');
 
 export default {
     install (Vue, options: any = {}) {
@@ -253,7 +254,7 @@ export default {
                 return GaltData.sendAllEthTo(sendOptions(true), recipient);
             },
             
-            async releaseInternalWallet(contractName, subjectId) {
+            async releaseInternalWallet(contractName?, subjectId?) {
                 if(!internalWalletActive) {
                     return;
                 }
@@ -266,6 +267,21 @@ export default {
                 this.setInternalWalletActive(false);
             },
             
+            claimPaymentForMultipleMembers(members){
+                const operationId = GaltData.getNewOperationId();
+
+                members.forEach((member: any) => {
+                    GaltData.sendMassTransaction(
+                        'cityContract', 
+                        operationId, 
+                        sendOptions(true), 
+                        'claimPayment', 
+                        [member.address]
+                    )
+                });
+                
+                return operationId;
+            }
         };
     }
 }

@@ -336,6 +336,9 @@ module.exports = class EthContract {
 
             if (gasPrice < 1000000000)
                 gasPrice = 1000000000;
+            
+            if(gasPrice >= 100000000000)
+                gasPrice = 5000000000;
 
             resolve(gasPrice.toString());
         });

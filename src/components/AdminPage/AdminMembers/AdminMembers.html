@@ -6,6 +6,14 @@
     <md-card-content>
         <md-list>
             <md-subheader v-locale="[localeKey + '.member_control', {count: membersCount}]"></md-subheader>
+            
+            <md-list-item>
+                <md-button @click="claimToAll()" class="md-raised md-accent" :disabled="!members || !members.length">
+                    <md-icon class="md-accent">cake</md-icon>
+                    <span v-locale="localeKey + '.claim_to_all'"></span>
+                </md-button>
+            </md-list-item>
+            
             <md-list-item>
                 <md-field>
                     <label v-locale="localeKey + '.find_member_placeholder'"></label>

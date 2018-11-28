@@ -151,9 +151,12 @@ export default class GaltData {
     static async gasPrice(mulToGasLimit) {
         let gasPrice = await this.$root.$serverWeb3.eth.getGasPrice();
         gasPrice = parseInt(gasPrice);
-
+        
         if (gasPrice < 1000000000)
             gasPrice = 1000000000;
+
+        if(gasPrice >= 100000000000)
+            gasPrice = 5000000000;
 
         if(mulToGasLimit) {
             gasPrice = (new BN(gasPrice)).mul(new BN(mulToGasLimit));
@@ -197,7 +200,7 @@ export default class GaltData {
                     if(!sendOptions.gas) {
                         sendOptions.gas = 21000;
                     }
-                    this.$root.$serverWeb3.eth
+                    this.$root.$web3.eth
                         .sendTransaction(sendOptions, (err, result) => {
                             err ? reject(err) : resolve(result);
                         });
@@ -252,6 +255,9 @@ export default class GaltData {
     }
     
     static beautyNumber(number) {
+        if(_.isNull(number)) {
+            return "";
+        }
         number = parseFloat(number);
         number = Math.round(number * 100) / 100;
         return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
