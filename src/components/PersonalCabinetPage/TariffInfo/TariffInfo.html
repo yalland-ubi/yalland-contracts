@@ -1,0 +1,26 @@
+<md-card>
+    <md-card-header>
+        <div class="md-title" v-locale="localeKey + '.title'"></div>
+    </md-card-header>
+
+    <md-card-content>
+        <md-list>
+            <!--<md-subheader v-locale="localeKey + '.general_data'"></md-subheader>-->
+
+            <md-list-item>
+                <span class="md-list-item-text row-direction">
+                <span v-locale="localeKey + '.wallet'"></span> <hex-cut :hex="userWallet"></hex-cut></span>
+            </md-list-item>
+
+            <md-list-item>
+                <span class="md-list-item-text row-direction">
+                <span v-locale="localeKey + '.participant'"></span> <span v-locale="'boolean.' + participant"></span></span>
+            </md-list-item>
+            
+            <md-list-item>
+                <span class="md-list-item-text row-direction">
+                <span v-locale="localeKey + '.coin_balance'"></span> <span>{{coinBalance}} COIN</span></span>
+            </md-list-item>
+        </md-list>
+    </md-card-content>
+</md-card>

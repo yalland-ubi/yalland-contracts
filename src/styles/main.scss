@@ -457,51 +457,6 @@ a[md-menu-trigger] {
   background: green;
 }
 
-.space-token-card {
-  .md-card-header {
-    position: relative;
-    &, .md-icon, a, a:hover, a:active, a:focus {
-      color: black;
-    }
-    .md-avatar {
-      position: relative;
-      top: -10px;
-    }
-    .md-title {
-      font-size: 14px;
-      font-weight: 500;
-      line-height: 20px;
-    }
-    .md-badge {
-      position: absolute;
-      right: 10px;
-      bottom: 10px;
-      background-color: #2196F3;
-      height: 28px;
-      font-size: 12px;
-    }
-  }
-
-  $spaceColors: #66BB6A #FFECB3 #FFE57F #FFE082 #FFD740 #FFD54F #FFCA28 #FFC107 #FFB300 #FFA000 #FF8F00;
-
-  @each $color in $spaceColors {
-    $i: index($spaceColors, $color) - 1;
-    &.space-level-#{$i} .md-card-header {
-      background: $color;
-    }
-  }
-
-  &.space-level-none .md-card-header {
-    background: #9E9E9E;
-  }
-  
-  &.space-info {
-    .md-card-header {
-      background: #00B8D4 !important;
-    }
-  }
-}
-
 .vertical-layout {
   display: flex;
   flex-direction: column;
@@ -521,4 +476,16 @@ a[md-menu-trigger] {
 .md-table-cell.controls .md-table-cell-container {
   padding: 0 5px;
 }
+
+.md-list-item-content .md-badge {
+  position: absolute;
+  top: -10px;
+  bottom: 0;
+  right: 0;
+  border: 1px solid white;
+  font-size: 10px;
+  width: 22px;
+  height: 22px;
+}
+
 @import 'adaptive';

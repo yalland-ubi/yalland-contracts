@@ -1,6 +1,12 @@
-<md-button v-if="iconMode" class="md-icon-button md-accent md-raised" @click="claimPayment()" :disabled="!paymentInfo || !paymentInfo.availableCount">
-    <md-icon class="md-accent">cake</md-icon><span v-if="paymentInfo"> ({{paymentInfo.availableCount}})</span>
-</md-button>
-<md-button v-else class="md-accent md-raised" @click="claimPayment()" :disabled="!paymentInfo">
-    <md-icon class="md-accent">cake</md-icon>
-</md-button>
+<md-badge v-if="iconMode" :md-content="paymentInfo ? paymentInfo.availableCount : 0" md-dense>
+    <md-button class="md-icon-button md-accent md-raised" @click="claimPayment()" :disabled="!paymentInfo || !paymentInfo.availableCount">
+        <md-icon class="md-accent">cake</md-icon>
+    </md-button>
+</md-badge>
+
+<md-badge v-else :md-content="paymentInfo ? paymentInfo.availableCount : 0" md-dense>
+    <md-button class="md-accent md-raised" @click="claimPayment()" :disabled="!paymentInfo">
+        <md-icon class="md-accent">cake</md-icon>
+    </md-button>
+</md-badge>
+
