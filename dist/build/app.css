@@ -5349,64 +5349,6 @@ a[md-menu-trigger] {
 .bg-green {
   background: green; }
 
-.space-token-card .md-card-header {
-  position: relative; }
-  .space-token-card .md-card-header, .space-token-card .md-card-header .md-icon, .space-token-card .md-card-header a, .space-token-card .md-card-header a:hover, .space-token-card .md-card-header a:active, .space-token-card .md-card-header a:focus {
-    color: black; }
-  .space-token-card .md-card-header .md-avatar {
-    position: relative;
-    top: -10px; }
-  .space-token-card .md-card-header .md-title {
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 20px; }
-  .space-token-card .md-card-header .md-badge {
-    position: absolute;
-    right: 10px;
-    bottom: 10px;
-    background-color: #2196F3;
-    height: 28px;
-    font-size: 12px; }
-
-.space-token-card.space-level-0 .md-card-header {
-  background: #66BB6A; }
-
-.space-token-card.space-level-1 .md-card-header {
-  background: #FFECB3; }
-
-.space-token-card.space-level-2 .md-card-header {
-  background: #FFE57F; }
-
-.space-token-card.space-level-3 .md-card-header {
-  background: #FFE082; }
-
-.space-token-card.space-level-4 .md-card-header {
-  background: #FFD740; }
-
-.space-token-card.space-level-5 .md-card-header {
-  background: #FFD54F; }
-
-.space-token-card.space-level-6 .md-card-header {
-  background: #FFCA28; }
-
-.space-token-card.space-level-7 .md-card-header {
-  background: #FFC107; }
-
-.space-token-card.space-level-8 .md-card-header {
-  background: #FFB300; }
-
-.space-token-card.space-level-9 .md-card-header {
-  background: #FFA000; }
-
-.space-token-card.space-level-10 .md-card-header {
-  background: #FF8F00; }
-
-.space-token-card.space-level-none .md-card-header {
-  background: #9E9E9E; }
-
-.space-token-card.space-info .md-card-header {
-  background: #00B8D4 !important; }
-
 .vertical-layout {
   display: -ms-flexbox;
   display: flex;
@@ -5420,6 +5362,19 @@ a[md-menu-trigger] {
   background-color: var(--md-theme-default-background, #424242); }
   .md-menu-content-container > .md-list {
     max-height: 250px; }
+
+.md-table-cell.controls .md-table-cell-container {
+  padding: 0 5px; }
+
+.md-list-item-content .md-badge {
+  position: absolute;
+  top: -10px;
+  bottom: 0;
+  right: 0;
+  border: 1px solid white;
+  font-size: 10px;
+  width: 22px;
+  height: 22px; }
 
 /*!
  * Copyright ©️ 2018 Galt•Space Society Construction and Terraforming Company 

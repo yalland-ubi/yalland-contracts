@@ -17,7 +17,19 @@
 //@import "fonts";
 
 @import '~vue-material/dist/vue-material.min.css';
-@import '~vue-material/dist/theme/default-dark.css';
+
+@import "~vue-material/dist/theme/engine"; // Import the theme engine
+
+@include md-register-theme("default", (
+        accent: #4e88dd, // The primary color of your application
+        background: #293658,
+  //accent: md-get-palette-color(red, A200), // The accent or secondary color
+        theme: dark // This can be dark or light
+));
+
+@import "~vue-material/dist/theme/all"; // Apply the theme
+
+
 //@import '~leaflet/dist/leaflet.css';
 
 @import '../directives/AsyncModal/modal.css';
@@ -38,6 +50,10 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden !important;
+}
+
+.modal-content {
+  background: #293658;
 }
 
 .md-app {
@@ -82,8 +98,8 @@ body {
   background-color: var(--md-theme-default-fieldvariant, #ff1744);
 }
 
-.md-card.md-theme-default  {
-  background: #303030;
+.md-card.md-theme-default {
+  background: #161f38;
   margin-left: 0;
   margin-bottom: 30px;
 }
@@ -111,7 +127,7 @@ body {
 }
 
 .fa-broadcast-tower {
-  color: #ff5252;
+  color: #4e88dd;
 }
 
 .md-datepicker-body-content {
@@ -199,7 +215,7 @@ body {
   }
 
   .galtdex-currency {
-    background-color: #ff5252;
+    background-color: #4e88dd;
     padding: 0 8px;
     display: -webkit-box;
     display: flex;
