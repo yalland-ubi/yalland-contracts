@@ -71,6 +71,8 @@ Vue.filter('beautyNumber', GaltData.beautyNumber);
 
 Vue.filter('beautyDate', GaltData.beautyDate);
 
+Vue.filter('beautyPeriod', (period) => {return GaltData.beautyPeriod(period)});
+
 function setElContentByLocale(el, key) {
     el.innerHTML = Locale.get(key);
 }

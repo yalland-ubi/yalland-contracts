@@ -143,6 +143,10 @@ export default class CityContract extends EthContract {
         }
         return this.tariffsTitleCache[tariffId];
     }
+    
+    async getActiveMembersCount(){
+        return await this.massCallMethod("getActiveParticipantsCount");
+    }
 
     async getActiveMembers(options = {}){
         return this.massCallMethod("getActiveParticipants")

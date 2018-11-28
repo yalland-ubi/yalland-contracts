@@ -1,5 +1,5 @@
 {
-  "coinTokenAddress": "0x634599ebd5e7f739d7342d3f5b9450f43d31691e",
+  "coinTokenAddress": "0xc5caab91c02b3e7da54996af957e9ebf4ca095aa",
   "coinTokenAbi": [
     {
       "constant": true,
@@ -632,7 +632,7 @@
       "type": "function"
     }
   ],
-  "cityAddress": "0x6d80b16571b77e06dee8783140e0801eb5f70eff",
+  "cityAddress": "0x543b75e3c2ea6539ff1e548924c5a245927b9742",
   "cityAbi": [
     {
       "constant": true,
@@ -1384,6 +1384,20 @@
         {
           "name": "",
           "type": "address[]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getActiveParticipantsCount",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
         }
       ],
       "payable": false,

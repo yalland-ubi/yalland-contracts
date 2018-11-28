@@ -270,6 +270,36 @@ export default class GaltData {
             return mDate.fromNow();
     }
 
+    static beautyPeriod(period, unit:any = "seconds") {
+        var eventMDuration = moment.duration(period, unit);
+        var eventDurationArray = [];
+        if (eventMDuration.years() > 0) {
+            eventDurationArray.push(eventMDuration.years() + ' years');
+            eventMDuration.subtract(eventMDuration.years(), 'years')
+        }
+        if (eventMDuration.months() > 0) {
+            eventDurationArray.push(eventMDuration.months() + ' months');
+            eventMDuration.subtract(eventMDuration.months(), 'months')
+        }
+        if (eventMDuration.weeks() > 0) {
+            eventDurationArray.push(eventMDuration.weeks() + ' weeks');
+            eventMDuration.subtract(eventMDuration.weeks(), 'weeks')
+        }
+        if (eventMDuration.days() > 0) {
+            eventDurationArray.push(eventMDuration.days() + ' days');
+            eventMDuration.subtract(eventMDuration.days(), 'days')
+        }
+        if (eventMDuration.hours() > 0) {
+            eventDurationArray.push(eventMDuration.hours() + ' hours');
+            eventMDuration.subtract(eventMDuration.hours(), 'hours')
+        }
+        if (eventMDuration.minutes() > 0) {
+            eventDurationArray.push(eventMDuration.minutes() + ' minutes');
+        }
+        return eventDurationArray.length === 1 ? eventDurationArray[0] :
+            eventDurationArray.join(' and ')
+    }
+
     static async sendMassTransaction(contractName, operationId, sendOptions, method, args) {
         const contract = this.$root['$' + contractName];
 

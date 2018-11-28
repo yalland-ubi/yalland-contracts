@@ -30,7 +30,9 @@ export default {
     },
     methods: {
         async getAllMembers(){
+            this.membersCount = await this.$cityContract.getActiveMembersCount();
             this.members = await this.$cityContract.getActiveMembers();
+            this.loaded = true;
         },
         fetchMemberToFind(){
             if(!this.memberToFind) {
@@ -134,12 +136,17 @@ export default {
     data() {
         return {
             memberToFind: "",
+            membersCount: null,
+            loaded: false,
             members: [],
             localeKey: 'admin.members',
             memberForChangeStatus: null,
             memberInfo: null,
             memberNotFound: false,
-            memberError: false
+            memberError: false,
+            showAll: false,
+            countPerShow: 10,
+            showCount: 10
         }
     }
 }

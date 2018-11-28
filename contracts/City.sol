@@ -310,6 +310,10 @@ contract City is RBAC {
     function getActiveParticipants() public view returns(address[]) {
         return activeParticipants.elements();
     }
+
+    function getActiveParticipantsCount() public view returns(uint256) {
+        return activeParticipants.size();
+    }
     
     function getParticipantInfo(address _participant) public view returns
     (
