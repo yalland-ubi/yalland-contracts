@@ -12,33 +12,36 @@
  */
 
 import GaltData from "../../../services/galtData";
+import MemberPayout from "../../../directives/MemberPayout/MemberPayout";
 
 export default {
     name: 'tariff-info',
     template: require('./TariffInfo.html'),
+    components: {MemberPayout},
     props: ['userWallet'],
     async mounted() {
-        const member = 
-         GaltData.ethBalance(this.userWallet).then(ethBalance => {
-             this.ethBalance = ethBalance;
-         });
-        this.$coinTokenContract.balanceOf(this.userWallet).then(galtBalance => {
-            this.coinBalance = galtBalance;
-        });
-        this.participant = await this.$cityContract.isMember(this.userWallet);
+        this.getTariffInfo();
     },
     watch: {
         
     },
     methods: {
-        
+        async getTariffInfo() {
+            const member = await this.$cityContract.getMember(this.userWallet);
+            this.tariff = await this.$cityContract.getTariffById(member.tariff);
+            
+            if(member.lastTimestamp) {
+                this.nextPayment = new Date((member.lastTimestamp + this.tariff.paymentPeriod) * 1000);
+            } else {
+                this.nextPayment = new Date(new Date().getTime() + this.tariff.paymentPeriod * 1000);
+            }
+        }
     },
     data() {
         return {
-            localeKey: 'personal_cabinet.general_info',
-            ethBalance: null,
-            coinBalance: null,
-            participant: null
+            localeKey: 'personal_cabinet.tariff_info',
+            tariff: null,
+            nextPayment: null
         }
     }
 }

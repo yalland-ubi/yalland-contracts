@@ -31,7 +31,6 @@ export default {
     methods: {
         async getAllMembers(){
             this.members = await this.$cityContract.getActiveMembers();
-            this.filteredMembers = this.members;
         },
         fetchMemberToFind(){
             if(!this.memberToFind) {
@@ -44,7 +43,6 @@ export default {
                         return;
                     }
                     this.members.push(member);
-                    this.findMember();
                 })
                 .catch(() => {
                     this.memberError = true;
@@ -126,11 +124,17 @@ export default {
             return this.$locale.get(this.localeKey + "." + key, options);
         }
     },
+    computed: {
+        filteredMembers() {
+            return this.members.filter((member) => {
+                return member.address.indexOf(this.memberToFind) != -1 || member.tariffTitle.toLowerCase().indexOf(this.memberToFind.toLowerCase()) != -1;
+            });
+        }
+    },
     data() {
         return {
             memberToFind: "",
             members: [],
-            filteredMembers: [],
             localeKey: 'admin.members',
             memberForChangeStatus: null,
             memberInfo: null,

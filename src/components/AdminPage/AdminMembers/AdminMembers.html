@@ -9,7 +9,7 @@
             <md-list-item>
                 <md-field>
                     <label v-locale="localeKey + '.find_member_placeholder'"></label>
-                    <md-input v-model="memberToFind" v-on:keyup="findMember()"></md-input>
+                    <md-input v-model="memberToFind" v-on:keyup="fetchMemberToFind()"></md-input>
                 </md-field>
             </md-list-item>
             
@@ -52,10 +52,6 @@
 
             <md-list-item v-if="memberNotFound">
                 <span v-locale="localeKey + '.not_found'"></span>
-            </md-list-item>
-
-            <md-list-item v-if="memberError">
-                <span v-locale="localeKey + '.invalid_address'"></span>
             </md-list-item>
 
             <md-list-item>

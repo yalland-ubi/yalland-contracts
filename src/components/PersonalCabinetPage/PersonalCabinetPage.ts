@@ -12,11 +12,12 @@
  */
 
 import GeneralInfo from "./GeneralInfo/GeneralInfo";
+import TariffInfo from "./TariffInfo/TariffInfo";
 
 export default {
     name: 'personal-cabinet-page',
     template: require('./PersonalCabinetPage.html'),
-    components: {GeneralInfo},
+    components: {GeneralInfo, TariffInfo},
     created() {
 
     },

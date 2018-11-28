@@ -36,6 +36,15 @@
       "wallet": "Аккаунт",
       "coin_balance": "Coin баланс",
       "participant": "Житель города"
+    },
+    "tariff_info": {
+      "title": "Информация о тарифе",
+      "title_field": "Название:",
+      "id": "ID тарифа:",
+      "payment": "Оплата:",
+      "payment_period": "Период оплаты:",
+      "currency": "Валюта:",
+      "next_payment": "Следующая выплата:"
     }
   },
   "rpc_screen": {
@@ -56,6 +65,7 @@
     "coin": "COIN",
     "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359": "DAI"
   },
+  "claim_payment_button": "Получить оплату",
   "user_menu": {
     "eth_address": "Ваш ETH адрес:",
     "eth_balance": "ETH баланс: ",
@@ -79,6 +89,9 @@
     "title": "Подтверждение",
     "cancel": "Отмена",
     "ok": "Ок"
+  },
+  "hex_cut": {
+    "address_copied_to_clipboard": "Скопировано в буфер обмена"
   },
   "member_payout": {
     "success": {
@@ -154,6 +167,7 @@
       "kick": "Убрать из города",
       "add_member_button": "Добавить жителя",
       "deactivate_confirm": "Вы уверены что хотите убрать жителя из города?",
+      "not_found": "Не найдено",
       "success": {
         "deactivate": {
           "title": "Житель успешно убран из города",

@@ -258,7 +258,7 @@ export default class GaltData {
     }
 
     static beautyDate(date) {
-        if(_.isNumber(parseInt(date))) {
+        if(_.isNumber(parseInt(date)) && !_.isNaN(parseInt(date))) {
             date = new Date(parseInt(date) * 1000);
         }
         let mDate = moment(date);

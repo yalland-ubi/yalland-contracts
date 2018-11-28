@@ -4,9 +4,10 @@
     </md-button>
 </md-badge>
 
-<md-badge v-else :md-content="paymentInfo ? paymentInfo.availableCount : 0" md-dense>
-    <md-button class="md-accent md-raised" @click="claimPayment()" :disabled="!paymentInfo">
+<md-badge v-else :md-content="paymentInfo ? paymentInfo.availableCount : 0" md-dense style="margin-top: 7px;">
+    <md-button class="md-accent md-raised" @click="claimPayment()" :disabled="!paymentInfo || !paymentInfo.availableCount">
         <md-icon class="md-accent">cake</md-icon>
+        <span v-locale="'claim_payment_button'"></span>
     </md-button>
 </md-badge>
 

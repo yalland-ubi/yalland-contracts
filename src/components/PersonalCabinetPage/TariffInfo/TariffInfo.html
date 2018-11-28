@@ -1,4 +1,4 @@
-<md-card>
+<md-card v-if="tariff">
     <md-card-header>
         <div class="md-title" v-locale="localeKey + '.title'"></div>
     </md-card-header>
@@ -9,17 +9,36 @@
 
             <md-list-item>
                 <span class="md-list-item-text row-direction">
-                <span v-locale="localeKey + '.wallet'"></span> <hex-cut :hex="userWallet"></hex-cut></span>
+                <span v-locale="localeKey + '.title_field'"></span> <span>{{tariff.title}}</span></span>
             </md-list-item>
 
             <md-list-item>
                 <span class="md-list-item-text row-direction">
-                <span v-locale="localeKey + '.participant'"></span> <span v-locale="'boolean.' + participant"></span></span>
+                <span v-locale="localeKey + '.id'"></span> <hex-cut :hex="tariff.id"></hex-cut></span>
+            </md-list-item>
+
+            <md-list-item>
+                <span class="md-list-item-text row-direction">
+                <span v-locale="localeKey + '.payment_period'"></span> <span>{{tariff.paymentPeriod}}</span></span>
+            </md-list-item>
+
+            <md-list-item>
+                <span class="md-list-item-text row-direction">
+                <span v-locale="localeKey + '.payment'"></span> <span>{{tariff.payment}}</span></span>
+            </md-list-item>
+
+            <md-list-item>
+                <span class="md-list-item-text row-direction">
+                <span v-locale="localeKey + '.currency'"></span> <span>{{tariff.currencyName}}</span></span>
             </md-list-item>
             
             <md-list-item>
                 <span class="md-list-item-text row-direction">
-                <span v-locale="localeKey + '.coin_balance'"></span> <span>{{coinBalance}} COIN</span></span>
+                <span v-locale="localeKey + '.next_payment'"></span> <span>{{nextPayment | beautyDate}}</span></span>
+            </md-list-item>
+
+            <md-list-item>
+                <member-payout :address="userWallet" v-on:claim-finish="getTariffInfo()"></member-payout>
             </md-list-item>
         </md-list>
     </md-card-content>
