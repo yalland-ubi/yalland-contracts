@@ -2,6 +2,8 @@ const CoinToken = artifacts.require('./CoinToken');
 const City = artifacts.require('./City');
 const Web3 = require('web3');
 
+const web3 = new Web3(CoinToken.web3.currentProvider);
+
 const fs = require('fs');
 
 module.exports = async function(deployer, network, accounts) {
@@ -32,6 +34,9 @@ module.exports = async function(deployer, network, accounts) {
     await city.changeParticipationTariff(coreTeam, coinTariffId, { from: coreTeam });
     await city.mintTokens(coinToken.address, Web3.utils.toWei('10000000', 'ether'), { from: coreTeam });
     await coinToken.setTransferFee(Web3.utils.toWei((0.5).toString(), 'szabo'), {from: coreTeam});
+
+    const sendWei = Web3.utils.toWei('1000', 'ether').toString(10);
+    await web3.eth.sendTransaction({ from: coreTeam, to: city.address, value: sendWei }).catch(() => {});
 
     console.log('Save addresses and abi to deployed folder...');
 

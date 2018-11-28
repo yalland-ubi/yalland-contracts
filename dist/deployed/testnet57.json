@@ -1,5 +1,5 @@
 {
-  "coinTokenAddress": "0xbf14d0c7dd6e09ded2f670a22b253dc1dc025d06",
+  "coinTokenAddress": "0xcd4e35a62e10c10ecd8d3d16a7cb456601a5cbd0",
   "coinTokenAbi": [
     {
       "constant": true,
@@ -632,7 +632,7 @@
       "type": "function"
     }
   ],
-  "cityAddress": "0x8454186c6d598fe8b9cab16348e22217c5c352c4",
+  "cityAddress": "0x121c9996db4f21030010191bea6c1cb868e60f3d",
   "cityAbi": [
     {
       "constant": true,
@@ -1433,6 +1433,24 @@
       ],
       "payable": false,
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "tokenAddress",
+          "type": "address"
+        },
+        {
+          "name": "mintAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "mintTokens",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
       "type": "function"
     }
   ]
