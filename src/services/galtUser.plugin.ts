@@ -187,7 +187,7 @@ export default {
             async createTariff(tariff) {
                 return await $contracts.$city.createTariff(sendOptions(), {
                     title: tariff.title,
-                    payment: GaltData.etherToWei(tariff.payment),
+                    payment: tariff.payment,
                     paymentPeriod: tariff.paymentPeriod,
                     currency: tariff.currency.name == 'eth' ? tariff.currency.name : tariff.currency.address
                 });
@@ -195,8 +195,9 @@ export default {
 
             async editTariff(tariff) {
                 return await $contracts.$city.editTariff(sendOptions(), {
+                    id: tariff.id,
                     title: tariff.title,
-                    payment: GaltData.etherToWei(tariff.payment),
+                    payment: tariff.payment,
                     paymentPeriod: tariff.paymentPeriod,
                     currency: tariff.currency.name == 'eth' ? tariff.currency.name : tariff.currency.address
                 });

@@ -22,7 +22,32 @@ export default {
         ModalItem
     },
     created() {
+        this.getCurrencies();
+        
         this.editTariff = _.clone(this.tariff);
+
+        this.periodUnits = [
+            {value: 'hours', name: this.getLocale('payment_period.unit_hours')},
+            {value: 'days', name: this.getLocale('payment_period.unit_days')}
+        ];
+        
+        if(this.editTariff.id) {
+            if(this.editTariff.currency == 0) {
+                this.editTariff.currency = this.currencies[0];
+            } else {
+                this.editTariff.currency = _.find(this.currencies, (currency) => {
+                    return currency.address.toLowerCase() === this.editTariff.currencyAddress.toLowerCase();
+                });
+            }
+
+            if(this.tariff.paymentPeriod >= this.dayUnit) {
+                this.editTariff.paymentPeriodUnit = 'days';
+                this.editTariff.paymentPeriod /= this.dayUnit;
+            } else {
+                this.editTariff.paymentPeriodUnit = 'hours';
+                this.editTariff.paymentPeriod /= this.hourUnit;
+            }
+        }
     },
     methods: {
         getCurrencies() {
@@ -43,7 +68,15 @@ export default {
         ok() {
             this.saving = true;
             
-            const promise = this.editTariff.id ? this.$galtUser.editTariff(this.editTariff) : this.$galtUser.createTariff(this.editTariff);
+            const tariffToSave = {
+                id: this.editTariff.id,
+                title: this.editTariff.title,
+                payment: this.editTariff.payment,
+                paymentPeriod: this.editTariff.paymentPeriodUnit == 'days' ? this.editTariff.paymentPeriod * this.dayUnit : this.editTariff.paymentPeriod * this.hourUnit,
+                currency: this.editTariff.currency
+            };
+            
+            const promise = this.editTariff.id ? this.$galtUser.editTariff(tariffToSave) : this.$galtUser.createTariff(tariffToSave);
 
             promise
                 .then(() => {
@@ -82,6 +115,9 @@ export default {
         return {
             localeKey: 'admin.tariffs.edit_tariff',
             currencies: [],
+            periodUnits: [],
+            dayUnit: 60 * 60 * 24,
+            hourUnit: 60 * 60,
             editTariff: null,
             deleted: false,
             deleting: false,

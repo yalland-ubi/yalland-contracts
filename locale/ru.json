@@ -186,11 +186,28 @@
       "edit_tariff": {
         "title": "Тариф",
         "title_field": "Название",
-        "payment_period": "Период оплаты",
+        "payment_period": {
+          "value": "Период оплаты",
+          "unit": "Единица измерения",
+          "unit_hours": "Часы",
+          "unit_days": "Дни"
+        },
         "payment": "Оплата",
         "currency": "Валюта",
         "cancel": "Отмена",
-        "ok": "Ок"
+        "ok": "Ок",
+        "success": {
+          "save": {
+            "title": "Тариф успешно сохранен",
+            "description": " "
+          }
+        },
+        "error": {
+          "save": {
+            "title": "Ошибка при сохранении тарифа",
+            "description": "Проверьте правильность данных и наличие у вас прав для этого действия"
+          }
+        }
       }
     },
     "members": {

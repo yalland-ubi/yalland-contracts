@@ -14,11 +14,26 @@
         <label v-locale="localeKey + '.title_field'"></label>
         <md-input v-model="editTariff.title" required :disabled="saving"></md-input>
       </md-field>
+
+      <div class="md-layout md-gutter">
+        <div class="md-layout-item">
+          <md-field>
+            <label v-locale="localeKey + '.payment_period.value'"></label>
+            <md-input v-model="editTariff.paymentPeriod" required :disabled="saving"></md-input>
+          </md-field>
+        </div>
+
+        <div class="md-layout-item">
+          <md-field>
+            <label v-locale="localeKey + '.payment_period.unit'"></label>
+            
+            <md-select v-model="editTariff.paymentPeriodUnit">
+              <md-option :value="unit.value" v-for="unit in periodUnits">{{unit.name}}</md-option>
+            </md-select>
+          </md-field>
+        </div>
+      </div>
       
-      <md-field>
-        <label v-locale="localeKey + '.payment_period'"></label>
-        <md-input v-model="editTariff.paymentPeriod" required :disabled="saving"></md-input>
-      </md-field>
       
       <md-field>
         <label v-locale="localeKey + '.payment'"></label>
