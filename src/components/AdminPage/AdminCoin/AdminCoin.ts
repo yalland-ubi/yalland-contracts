@@ -47,13 +47,51 @@ export default {
                 text: this.getLocale("success.fee_payout.description", {value: this.feePayout})
             });
         },
-        async editFee(currency) {
+        async editFee() {
             GaltData.specifyAmountModal({
                 title: this.getLocale("edit_fee.title"),
                 placeholder: this.getLocale("edit_fee.placeholder"),
                 defaultValue: this.transferFee
             }).then(async (amount: any) => {
-                this.$galtUser.setCoinTransferFee(amount).then(this.getCoinData);
+                await this.$galtUser.setCoinTransferFee(amount).then(() => {
+                    this.getCoinData();
+
+                    this.$notify({
+                        type: 'success',
+                        title: this.getLocale("success.edit_fee.title"),
+                        text: this.getLocale("success.edit_fee.description", {value: amount})
+                    });
+                }).catch(() => {
+                    this.$notify({
+                        type: 'error',
+                        title: this.getLocale("error.edit_fee.title"),
+                        text: this.getLocale("error.edit_fee.description", {value: amount})
+                    });
+                });
+            });
+        },
+        async mintCoin() {
+            GaltData.specifyAmountModal({
+                title: this.getLocale("mint_coin.title"),
+                placeholder: this.getLocale("mint_coin.placeholder"),
+                defaultValue: 0
+            }).then(async (amount: any) => {
+                await this.$galtUser.mintCoinToCity(amount).then(() => {
+                    this.getCoinData();
+
+                    this.$notify({
+                        type: 'success',
+                        title: this.getLocale("success.mint_coin.title"),
+                        text: this.getLocale("success.mint_coin.description", {value: amount})
+                    });
+                }).catch(() => {
+                    this.$notify({
+                        type: 'error',
+                        title: this.getLocale("error.mint_coin.title"),
+                        text: this.getLocale("error.mint_coin.description", {value: amount})
+                    });
+                });
+                
             });
         },
         getLocale(key, options?) {

@@ -153,7 +153,7 @@ export default {
                 return await GaltData.getErc20Allowance(erc20Address, walletAddress, address);
             },
 
-            // Galt Contract
+            // Coin Contract
             async coinBalance() {
                 await onWalletReady();
                 return await $contracts.$coinToken.balanceOf(walletAddress);
@@ -225,6 +225,10 @@ export default {
 
             async claimPaymentFor(memberAddress) {
                 return await $contracts.$city.claimPaymentFor(sendOptions(), memberAddress);
+            },
+            
+            async mintCoinToCity(tokensAmount) {
+                return await $contracts.$city.mintTokens(sendOptions(), $contracts.$coinToken.address, tokensAmount);
             },
             
             async hasCityManagerRole() {

@@ -13,10 +13,13 @@
                 </span>
             </md-list-item>
             
-            <md-list-item>
+            <md-list-item class="right-button-container">
                 <span class="md-list-item-text row-direction">
                     <span v-locale="localeKey + '.city_balance'"></span> <span>{{cityBalance | beautyNumber}} COIN</span>
                 </span>
+                <md-button class="md-icon-button md-list-action md-raised" @click="mintCoin()">
+                    <md-icon class="md-accent">trending_up</md-icon>
+                </md-button>
             </md-list-item>
 
             <md-list-item class="right-button-container">

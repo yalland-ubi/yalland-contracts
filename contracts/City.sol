@@ -14,6 +14,7 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
+import "openzeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/ownership/rbac/RBAC.sol";
 import "./utils/ArraySet.sol";
@@ -329,5 +330,9 @@ contract City is RBAC {
             p.totalAmount,
             p.lastTimestamp
         );
+    }
+    
+    function mintTokens(address tokenAddress, uint256 mintAmount) public onlyCityManager {
+        MintableToken(tokenAddress).mint(address(this), mintAmount);
     }
 }

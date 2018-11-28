@@ -90,6 +90,14 @@ export default class CityContract extends EthContract {
             memberAddress);
     }
 
+    async mintTokens(sendOptions, tokenAddress, tokensAmount) {
+        return await this.sendMethod(
+            sendOptions,
+            "mintTokens",
+            tokenAddress,
+            GaltData.etherToWei(tokensAmount));
+    }
+
     async getActiveTariffs(options = {}){
         return this.massCallMethod("getActiveTariffs")
             .then(async (tariffsIds) => {

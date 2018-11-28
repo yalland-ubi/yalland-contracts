@@ -21,6 +21,7 @@ module.exports = async function(deployer, network, accounts) {
 
     console.log('Set roles...');
     await coinToken.addRoleTo(coreTeam, "minter", { from: coreTeam });
+    await coinToken.addRoleTo(city.address, "minter", { from: coreTeam });
     await coinToken.addRoleTo(coreTeam, "fee_manager", { from: coreTeam });
 
     console.log('Fill initial data...');
@@ -29,7 +30,7 @@ module.exports = async function(deployer, network, accounts) {
     const coinTariffId = coinTariffResponse.logs[0].args.id;
     await city.createTariff("Pay ether", Web3.utils.toWei('1', 'ether'), (60 * 60 * 5).toString(), "0", '0x0000000000000000000000000000000000000000', { from: coreTeam });
     await city.changeParticipationTariff(coreTeam, coinTariffId, { from: coreTeam });
-    await coinToken.mint(city.address, Web3.utils.toWei('10000000', 'ether'), { from: coreTeam });
+    await city.mintTokens(coinToken.address, Web3.utils.toWei('10000000', 'ether'), { from: coreTeam });
     await coinToken.setTransferFee(Web3.utils.toWei((0.5).toString(), 'szabo'), {from: coreTeam});
 
     console.log('Save addresses and abi to deployed folder...');
