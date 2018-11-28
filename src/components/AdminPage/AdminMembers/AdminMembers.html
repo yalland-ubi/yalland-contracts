@@ -28,7 +28,7 @@
                         <md-table-cell>{{member.totalAmount}}</md-table-cell>
                         <md-table-cell class="controls">
                             <div style="width: 120px;">
-                                <member-payout :address="member.address" :icon-mode="true"></member-payout>
+                                <member-payout :address="member.address" :icon-mode="true" v-on:claim-finish="getAllMembers()"></member-payout>
                             
                                 <md-menu md-direction="bottom-start">
                                     <md-button md-menu-trigger class="md-icon-button md-raised md-accent" style="margin-left: 15px;"><md-icon>menu</md-icon></md-button>

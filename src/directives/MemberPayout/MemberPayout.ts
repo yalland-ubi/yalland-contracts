@@ -49,6 +49,7 @@ export default {
                     text: this.getLocale("success.claim.description", this.paymentInfo)
                 });
                 this.getPaymentInfo();
+                this.$emit('claim-finish');
             }).catch(() => {
                 this.$notify({
                     type: 'error',

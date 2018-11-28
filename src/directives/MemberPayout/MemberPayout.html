@@ -1,4 +1,4 @@
-<md-button v-if="iconMode" class="md-icon-button md-accent md-raised" @click="claimPayment()" :disabled="!paymentInfo">
+<md-button v-if="iconMode" class="md-icon-button md-accent md-raised" @click="claimPayment()" :disabled="!paymentInfo || !paymentInfo.availableCount">
     <md-icon class="md-accent">cake</md-icon><span v-if="paymentInfo"> ({{paymentInfo.availableCount}})</span>
 </md-button>
 <md-button v-else class="md-accent md-raised" @click="claimPayment()" :disabled="!paymentInfo">
