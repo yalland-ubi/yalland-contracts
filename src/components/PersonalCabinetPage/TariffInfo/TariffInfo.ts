@@ -20,6 +20,10 @@ export default {
     components: {MemberPayout},
     props: ['userWallet'],
     async mounted() {
+        this.$store.watch(
+            (state) => state.user_wallet,
+            (user_wallet) => this.getTariffInfo());
+        
         this.getTariffInfo();
     },
     watch: {
@@ -28,6 +32,11 @@ export default {
     methods: {
         async getTariffInfo() {
             const member = await this.$cityContract.getMember(this.userWallet);
+            if(!member.tariff) {
+                this.tariff = null;
+                this.nextPayment = null;
+                return;
+            }
             this.tariff = await this.$cityContract.getTariffById(member.tariff);
             
             if(member.lastTimestamp) {

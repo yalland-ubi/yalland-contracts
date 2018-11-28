@@ -18,23 +18,39 @@ export default {
     template: require('./GeneralInfo.html'),
     props: ['userWallet'],
     async mounted() {
-         GaltData.ethBalance(this.userWallet).then(ethBalance => {
-             this.ethBalance = ethBalance;
-         });
-        this.$coinTokenContract.balanceOf(this.userWallet).then(galtBalance => {
-            this.coinBalance = galtBalance;
-        });
-        this.participant = await this.$cityContract.isMember(this.userWallet);
+        this.$store.watch(
+            (state) => state.user_wallet,
+            (user_wallet) => this.getGeneralInfo());
+        
+        this.getGeneralInfo();
+
+        const interval = setInterval(async () => {
+            this.getGeneralInfo();
+        }, 10000);
+        
+        this.intervals.push(interval);
+    },
+    beforeDestroy() {
+        this.intervals.forEach(intervalId => clearInterval(intervalId));
     },
     watch: {
         
     },
     methods: {
-        
+        async getGeneralInfo() {
+            GaltData.ethBalance(this.userWallet).then(ethBalance => {
+                this.ethBalance = ethBalance;
+            });
+            this.$coinTokenContract.balanceOf(this.userWallet).then(galtBalance => {
+                this.coinBalance = galtBalance;
+            });
+            this.participant = await this.$cityContract.isMember(this.userWallet);
+        }
     },
     data() {
         return {
             localeKey: 'personal_cabinet.general_info',
+            intervals: [],
             ethBalance: null,
             coinBalance: null,
             participant: null
