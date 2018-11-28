@@ -48,6 +48,7 @@ export default {
                     title: this.getLocale("success.claim.title", this.paymentInfo),
                     text: this.getLocale("success.claim.description", this.paymentInfo)
                 });
+                this.getPaymentInfo();
             }).catch(() => {
                 this.$notify({
                     type: 'error',

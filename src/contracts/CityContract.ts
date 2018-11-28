@@ -121,6 +121,7 @@ export default class CityContract extends EthContract {
         const tariff = await this.massCallMethod(params.method || "getTariff", [tariffId]);
         tariff.id = tariffId;
         tariff.payment = GaltData.weiToEther(tariff.payment);
+        tariff.paymentPeriod = parseInt(tariff.paymentPeriod);
         
         this.tariffsTitleCache[tariffId] = tariff.title;
         
