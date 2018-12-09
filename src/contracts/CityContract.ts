@@ -190,7 +190,7 @@ export default class CityContract extends EthContract {
         }
         const member = await this.massCallMethod(params.method || "getParticipantInfo", [memberAddress]);
         member.address = memberAddress;
-        member.totalAmount = GaltData.weiToEtherRound(member.totalAmount);
+        member.claimed = GaltData.weiToEtherRound(member.claimed);
         member.lastTimestamp = parseInt(member.lastTimestamp);
         member.tariffTitle = "";
         member.tariffObject = null;

@@ -24,6 +24,7 @@ module.exports = async function(deployer, network, accounts) {
     console.log('Set roles...');
     await coinToken.addRoleTo(coreTeam, "minter", { from: coreTeam });
     await coinToken.addRoleTo(city.address, "minter", { from: coreTeam });
+    await coinToken.addRoleTo(city.address, "burner", { from: coreTeam });
     await coinToken.addRoleTo(coreTeam, "fee_manager", { from: coreTeam });
 
     console.log('Fill initial data...');

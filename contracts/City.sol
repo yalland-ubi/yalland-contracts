@@ -15,6 +15,7 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import "openzeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/ownership/rbac/RBAC.sol";
 import "./utils/ArraySet.sol";
@@ -23,7 +24,8 @@ library CityLibrary {
     struct Payment {
         bytes32 tariff;
         uint256 lastTimestamp;
-        uint256 totalAmount;
+        uint256 minted;
+        uint256 claimed;
     }
     struct ParticipationRequest {
         bytes32 tariff;
@@ -38,6 +40,7 @@ library CityLibrary {
         uint256 payment;
         uint256 paymentPeriod;
         uint256 paymentSent;
+        uint256 mintForPeriods;
         TariffCurrency currency;
         address currencyAddress;
         ArraySet.AddressSet activeParticipants;
@@ -101,7 +104,7 @@ contract City is RBAC {
         _;
     }
     
-    function createTariff(string _title, uint256 _payment, uint256 _paymentPeriod, CityLibrary.TariffCurrency _currency, address _currencyAddress) public onlyCityManager returns(bytes32) {
+    function createTariff(string _title, uint256 _payment, uint256 _paymentPeriod, uint256 _mintForPeriods, CityLibrary.TariffCurrency _currency, address _currencyAddress) public onlyCityManager returns(bytes32) {
         bytes32 _id = keccak256(
             abi.encodePacked(
                 msg.sender,
@@ -116,6 +119,7 @@ contract City is RBAC {
         tariffs[_id].title = _title;
         tariffs[_id].payment = _payment;
         tariffs[_id].paymentPeriod = _paymentPeriod;
+        tariffs[_id].mintForPeriods = _mintForPeriods;
         tariffs[_id].currency = _currency;
         tariffs[_id].currencyAddress = _currencyAddress;
         tariffs[_id].active = true;
@@ -141,10 +145,11 @@ contract City is RBAC {
         emit TariffActiveChanged(_id, _active);
     }
     
-    function editTariff(bytes32 _id, string _title, uint256 _payment, uint256 _paymentPeriod, CityLibrary.TariffCurrency _currency, address _currencyAddress) public onlyCityManager {
+    function editTariff(bytes32 _id, string _title, uint256 _payment, uint256 _paymentPeriod, uint256 _mintForPeriods, CityLibrary.TariffCurrency _currency, address _currencyAddress) public onlyCityManager {
         tariffs[_id].title = _title;
         tariffs[_id].payment = _payment;
         tariffs[_id].paymentPeriod = _paymentPeriod;
+        tariffs[_id].mintForPeriods = _mintForPeriods;
         tariffs[_id].currency = _currency;
         tariffs[_id].currencyAddress = _currencyAddress;
         
@@ -174,7 +179,8 @@ contract City is RBAC {
         } else {
             payments[claimFor].lastTimestamp += tariff.paymentPeriod * periodsNumber;
         }
-        payments[claimFor].totalAmount += tariff.payment * periodsNumber;
+        
+        payments[claimFor].claimed += tariff.payment * periodsNumber;
 //
         if(tariff.currency == CityLibrary.TariffCurrency.ETH) {
             claimFor.transfer(tariff.payment * periodsNumber);
@@ -199,17 +205,24 @@ contract City is RBAC {
         emit ParticipationAdded(msg.sender, _address, _tariff);
     }
     
-    function addParticipationUnsafe(address _address, bytes32 _tariff) private {
+    function addParticipationUnsafe(address _address, bytes32 _tariff) internal {
         participants[_address] = true;
         activeParticipants.add(_address);
         allParticipants.push(_address);
+        
+        if(tariffs[_tariff].currencyAddress != address(0) && tariffs[_tariff].mintForPeriods > 0) {
+            uint256 mintAmount = tariffs[_tariff].mintForPeriods * tariffs[_tariff].payment;
+            MintableToken(tariffs[_tariff].currencyAddress).mint(address(this), mintAmount);
+            payments[_address].minted = mintAmount;
+        }
+        
         payments[_address].tariff = _tariff;
         payments[_address].lastTimestamp = now - tariffs[_tariff].paymentPeriod;
     }
     
     function changeParticipationTariff(address _address, bytes32 _tariff) public onlyCityManager {
         payments[_address].tariff = _tariff;
-        payments[_address].totalAmount = 0;
+        payments[_address].claimed = 0;
         
         emit ParticipationTariffChanged(msg.sender, _address, _tariff);
     }
@@ -255,15 +268,29 @@ contract City is RBAC {
     function kickParticipation(address _participant) public onlyCityManager {
         require(participants[_participant], "Not participant");
 
-        participants[_participant] = false;
-        activeParticipants.remove(_participant);
+        removeParticipationUnsafe(_participant);
     }
 
     function leaveParticipation() public {
         require(participants[msg.sender], "Not participant");
 
+        removeParticipationUnsafe(msg.sender);
+    }
+
+    function removeParticipationUnsafe(address _participant) internal {
         participants[msg.sender] = false;
         activeParticipants.remove(msg.sender);
+        
+        burnRemainingFor(_participant);
+    }
+
+    function burnRemainingFor(address _participant) internal {
+        CityLibrary.Payment storage payment = payments[_participant];
+        CityLibrary.Tariff storage tariff = tariffs[payment.tariff];
+
+        if(payment.minted > payment.claimed && tariff.active) {
+            BurnableToken(tariff.currencyAddress).burn(payment.minted - payment.claimed);
+        }
     }
 
     function addRoleTo(address _operator, string _role) public onlyCityManager {
@@ -320,14 +347,16 @@ contract City is RBAC {
     (
         bool active, 
         bytes32 tariff, 
-        uint256 totalAmount, 
+        uint256 claimed,
+        uint256 minted,
         uint256 lastTimestamp
     ) {
         CityLibrary.Payment storage p = payments[_participant];
         return (
             participants[_participant],
             p.tariff,
-            p.totalAmount,
+            p.claimed,
+            p.minted,
             p.lastTimestamp
         );
     }
