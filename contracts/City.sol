@@ -159,7 +159,7 @@ contract City is RBAC {
         confirmsToParticipation = _confirmsToParticipation;
     }
 
-    function claimPayment(address claimFor) public returns (uint256 nextDate) {
+    function claimPayment(address claimFor, uint256 periodsNumber) public returns (uint256 nextDate) {
         CityLibrary.Payment storage payment = payments[claimFor];
         CityLibrary.Tariff storage tariff = tariffs[payment.tariff];
         require(tariff.active, "Tariff not active");
@@ -167,22 +167,22 @@ contract City is RBAC {
         require(tariff.paymentPeriod != 0, "Tariff payment period is null");
 
         require(participants[claimFor], "Not active");
-        require(payments[claimFor].lastTimestamp + tariff.paymentPeriod <= now, "Too soon");
+        require(payments[claimFor].lastTimestamp + (tariff.paymentPeriod * periodsNumber) <= now, "Too soon");
 
         if(payments[claimFor].lastTimestamp == 0) {
             payments[claimFor].lastTimestamp = now;
         } else {
-            payments[claimFor].lastTimestamp += tariff.paymentPeriod;
+            payments[claimFor].lastTimestamp += tariff.paymentPeriod * periodsNumber;
         }
-        payments[claimFor].totalAmount += tariff.payment;
+        payments[claimFor].totalAmount += tariff.payment * periodsNumber;
 //
         if(tariff.currency == CityLibrary.TariffCurrency.ETH) {
-            claimFor.transfer(tariff.payment);
+            claimFor.transfer(tariff.payment * periodsNumber);
         } else {
-            ERC20(tariff.currencyAddress).transfer(claimFor, tariff.payment);
+            ERC20(tariff.currencyAddress).transfer(claimFor, tariff.payment * periodsNumber);
         }
 
-        tariff.paymentSent += tariff.payment;
+        tariff.paymentSent += tariff.payment * periodsNumber;
 
         return payments[claimFor].lastTimestamp + tariff.paymentPeriod;
     }

@@ -37,16 +37,20 @@ contract('City', ([deployer, alice, bob]) => {
 
             await city.addParticipation(alice, coinTariffId);
             
-            await city.claimPayment(alice);
+            await city.claimPayment(alice, 1);
             let aliceBalance = await coinToken.balanceOf(alice);
             assert.equal(aliceBalance.toString(10), payByTariff.toString(10))
             
             await waitSeconds(payPeriod);
             
-            await city.claimPayment(alice);
+            await city.claimPayment(alice, 1);
+
+            await waitSeconds(payPeriod * 2);
+
+            await city.claimPayment(alice, 2);
             
             aliceBalance = await coinToken.balanceOf(alice);
-            assert.equal(aliceBalance.toString(10), Web3.utils.toWei('20', 'ether').toString(10));
+            assert.equal(aliceBalance.toString(10), Web3.utils.toWei('40', 'ether').toString(10));
         });
         
         it('should disallow claimPayment if period not over', async function () {
@@ -57,8 +61,8 @@ contract('City', ([deployer, alice, bob]) => {
 
             await city.addParticipation(alice, coinTariffId);
 
-            await city.claimPayment(alice);
-            await assertRevert(city.claimPayment(alice));
+            await city.claimPayment(alice, 1);
+            await assertRevert(city.claimPayment(alice, 1));
         });
     });
 });
