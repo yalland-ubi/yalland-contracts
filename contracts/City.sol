@@ -168,7 +168,7 @@ contract City is RBAC {
 
         require(participants[claimFor], "Not active");
         require(payments[claimFor].lastTimestamp + (tariff.paymentPeriod * periodsNumber) <= now, "Too soon");
-
+        
         if(payments[claimFor].lastTimestamp == 0) {
             payments[claimFor].lastTimestamp = now;
         } else {
@@ -204,7 +204,7 @@ contract City is RBAC {
         activeParticipants.add(_address);
         allParticipants.push(_address);
         payments[_address].tariff = _tariff;
-        payments[_address].lastTimestamp = 0;
+        payments[_address].lastTimestamp = now - tariffs[_tariff].paymentPeriod;
     }
     
     function changeParticipationTariff(address _address, bytes32 _tariff) public onlyCityManager {

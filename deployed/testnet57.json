@@ -1,5 +1,5 @@
 {
-  "coinTokenAddress": "0x6f646ce00affddc2dd9ca9b160a5e580afb05ef8",
+  "coinTokenAddress": "0x4123fc05236b1da66e43ae78811d4572ba222d31",
   "coinTokenAbi": [
     {
       "constant": true,
@@ -632,7 +632,7 @@
       "type": "function"
     }
   ],
-  "cityAddress": "0xf46cd0b1a11f60d5ac1e9a01869a3b8631224ceb",
+  "cityAddress": "0x286a7b63796ad40240a8467d970619d00378df8d",
   "cityAbi": [
     {
       "constant": true,
@@ -1112,6 +1112,10 @@
         {
           "name": "claimFor",
           "type": "address"
+        },
+        {
+          "name": "periodsNumber",
+          "type": "uint256"
         }
       ],
       "name": "claimPayment",

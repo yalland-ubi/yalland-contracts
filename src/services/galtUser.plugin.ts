@@ -223,8 +223,8 @@ export default {
                 return await $contracts.$city.kickMember(sendOptions(), member);
             },
 
-            async claimPaymentFor(memberAddress) {
-                return await $contracts.$city.claimPaymentFor(sendOptions(), memberAddress);
+            async claimPaymentFor(memberAddress, periodsNumber = 1) {
+                return await $contracts.$city.claimPaymentFor(sendOptions(), memberAddress, periodsNumber);
             },
             
             async mintCoinToCity(tokensAmount) {
@@ -274,14 +274,19 @@ export default {
             
             claimPaymentForMultipleMembers(members){
                 const operationId = GaltData.getNewOperationId();
+                
+                const currentTimestamp = Date.now() / 1000;
 
                 members.forEach((member: any) => {
+                    const claimForPeriods = Math.floor((currentTimestamp - member.lastTimestamp) / member.tariffObject.paymentPeriod);
+                    console.log('claimForPeriods', claimForPeriods, member.address);
+                    
                     GaltData.sendMassTransaction(
                         'cityContract', 
                         operationId, 
                         sendOptions(true), 
                         'claimPayment', 
-                        [member.address]
+                        [member.address, claimForPeriods]
                     )
                 });
                 

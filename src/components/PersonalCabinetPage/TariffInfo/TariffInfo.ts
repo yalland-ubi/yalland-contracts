@@ -38,12 +38,10 @@ export default {
                 return;
             }
             this.tariff = await this.$cityContract.getTariffById(member.tariff);
-            
-            if(member.lastTimestamp) {
-                this.nextPayment = new Date((member.lastTimestamp + this.tariff.paymentPeriod) * 1000);
-            } else {
-                this.nextPayment = new Date(new Date().getTime() + this.tariff.paymentPeriod * 1000);
-            }
+
+            const currentTimeStamp = Math.floor(Date.now() / 1000);
+            const availableCount = Math.floor((currentTimeStamp - member.lastTimestamp) / this.tariff.paymentPeriod);
+            this.nextPayment = new Date((member.lastTimestamp + (availableCount + 1) * this.tariff.paymentPeriod) * 1000);
         }
     },
     data() {

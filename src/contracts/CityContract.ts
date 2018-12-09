@@ -83,11 +83,12 @@ export default class CityContract extends EthContract {
             member.address);
     }
 
-    async claimPaymentFor(sendOptions, memberAddress) {
+    async claimPaymentFor(sendOptions, memberAddress, periodsNumber = 1) {
         return await this.sendMethod(
             sendOptions,
             "claimPayment",
-            memberAddress);
+            memberAddress,
+            periodsNumber);
     }
 
     async mintTokens(sendOptions, tokenAddress, tokensAmount) {
