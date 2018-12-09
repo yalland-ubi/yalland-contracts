@@ -40,6 +40,7 @@ library CityLibrary {
         uint256 payment;
         uint256 paymentPeriod;
         uint256 paymentSent;
+        uint256 totalMinted;
         uint256 mintForPeriods;
         TariffCurrency currency;
         address currencyAddress;
@@ -93,8 +94,6 @@ contract City is RBAC {
         confirmsToParticipation = 1;
 
         super.addRole(msg.sender, CITY_MANAGER_ROLE);
-        participants[msg.sender] = true;
-        activeParticipants.add(msg.sender);
     }
 
     function() external payable { }
@@ -214,6 +213,7 @@ contract City is RBAC {
             uint256 mintAmount = tariffs[_tariff].mintForPeriods * tariffs[_tariff].payment;
             MintableToken(tariffs[_tariff].currencyAddress).mint(address(this), mintAmount);
             payments[_address].minted = mintAmount;
+            tariffs[_tariff].totalMinted += mintAmount;
         }
         
         payments[_address].tariff = _tariff;
@@ -314,6 +314,8 @@ contract City is RBAC {
         bool active,
         uint256 payment,
         uint256 paymentPeriod,
+        uint256 mintForPeriods,
+        uint256 totalMinted,
         uint256 paymentSent,
         CityLibrary.TariffCurrency currency,
         address currencyAddress
@@ -325,6 +327,8 @@ contract City is RBAC {
             t.active,
             t.payment,
             t.paymentPeriod,
+            t.mintForPeriods,
+            t.totalMinted,
             t.paymentSent,
             t.currency,
             t.currencyAddress

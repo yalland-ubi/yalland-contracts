@@ -28,6 +28,7 @@ export default class CityContract extends EthContract {
             tariff.title,
             GaltData.etherToWei(tariff.payment),
             tariff.paymentPeriod,
+            tariff.mintForPeriods,
             tariff.currency == 'eth' ? "0" : "1",
             tariff.currency == 'eth' ? GaltData.nullAddress : tariff.currency);
     }
@@ -40,6 +41,7 @@ export default class CityContract extends EthContract {
             tariff.title,
             GaltData.etherToWei(tariff.payment),
             tariff.paymentPeriod,
+            tariff.mintForPeriods,
             tariff.currency == 'eth' ? "0" : "1",
             tariff.currency == 'eth' ? GaltData.nullAddress : tariff.currency);
     }
