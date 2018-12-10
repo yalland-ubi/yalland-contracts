@@ -41,6 +41,7 @@ library CityLibrary {
         uint256 paymentPeriod;
         uint256 paymentSent;
         uint256 totalMinted;
+        uint256 totalBurned;
         uint256 mintForPeriods;
         TariffCurrency currency;
         address currencyAddress;
@@ -53,9 +54,6 @@ library CityLibrary {
 }
 
 contract City is RBAC {
-//    using CityLibrary for CityLibrary.payment;
-//    using CityLibrary for CityLibrary.participationRequest;
-    
     using ArraySet for ArraySet.AddressSet;
     using ArraySet for ArraySet.Bytes32Set;
 
@@ -180,11 +178,18 @@ contract City is RBAC {
         }
         
         payments[claimFor].claimed += tariff.payment * periodsNumber;
-//
+
         if(tariff.currency == CityLibrary.TariffCurrency.ETH) {
             claimFor.transfer(tariff.payment * periodsNumber);
         } else {
             ERC20(tariff.currencyAddress).transfer(claimFor, tariff.payment * periodsNumber);
+
+            if(tariff.mintForPeriods > 0 && payments[claimFor].claimed >= payments[claimFor].minted) {
+                uint256 mintAmount = tariff.mintForPeriods * tariff.payment;
+                MintableToken(tariff.currencyAddress).mint(address(this), mintAmount);
+                payments[claimFor].minted += mintAmount;
+                tariff.totalMinted += mintAmount;
+            }
         }
 
         tariff.paymentSent += tariff.payment * periodsNumber;
@@ -212,7 +217,7 @@ contract City is RBAC {
         if(tariffs[_tariff].currencyAddress != address(0) && tariffs[_tariff].mintForPeriods > 0) {
             uint256 mintAmount = tariffs[_tariff].mintForPeriods * tariffs[_tariff].payment;
             MintableToken(tariffs[_tariff].currencyAddress).mint(address(this), mintAmount);
-            payments[_address].minted = mintAmount;
+            payments[_address].minted += mintAmount;
             tariffs[_tariff].totalMinted += mintAmount;
         }
         
@@ -278,8 +283,8 @@ contract City is RBAC {
     }
 
     function removeParticipationUnsafe(address _participant) internal {
-        participants[msg.sender] = false;
-        activeParticipants.remove(msg.sender);
+        participants[_participant] = false;
+        activeParticipants.remove(_participant);
         
         burnRemainingFor(_participant);
     }
@@ -289,7 +294,9 @@ contract City is RBAC {
         CityLibrary.Tariff storage tariff = tariffs[payment.tariff];
 
         if(payment.minted > payment.claimed && tariff.active) {
-            BurnableToken(tariff.currencyAddress).burn(payment.minted - payment.claimed);
+            uint256 burnAmount = payment.minted - payment.claimed;
+            BurnableToken(tariff.currencyAddress).burn(burnAmount);
+            tariff.totalBurned += burnAmount;
         }
     }
 
@@ -316,6 +323,7 @@ contract City is RBAC {
         uint256 paymentPeriod,
         uint256 mintForPeriods,
         uint256 totalMinted,
+        uint256 totalBurned,
         uint256 paymentSent,
         CityLibrary.TariffCurrency currency,
         address currencyAddress
@@ -329,6 +337,7 @@ contract City is RBAC {
             t.paymentPeriod,
             t.mintForPeriods,
             t.totalMinted,
+            t.totalBurned,
             t.paymentSent,
             t.currency,
             t.currencyAddress

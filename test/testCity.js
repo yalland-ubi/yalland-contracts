@@ -40,31 +40,32 @@ contract('City', ([deployer, alice, bob]) => {
 
             let aliceInfo = await city.getParticipantInfo(alice);
             assert.equal(aliceInfo[3].toString(10), Web3.utils.toWei('100', 'ether').toString(10));
-            
+
             await city.claimPayment(alice, 1);
             let aliceBalance = await coinToken.balanceOf(alice);
             assert.equal(aliceBalance.toString(10), payByTariff.toString(10));
-            
+
             let contractBalance = await coinToken.balanceOf(city.address);
             assert.equal(contractBalance.toString(10), Web3.utils.toWei('90', 'ether').toString(10));
-            
+
             await waitSeconds(payPeriod);
-            
+
             await city.claimPayment(alice, 1);
 
             await waitSeconds(payPeriod * 2);
 
             await city.claimPayment(alice, 2);
-            
+
             aliceBalance = await coinToken.balanceOf(alice);
             assert.equal(aliceBalance.toString(10), Web3.utils.toWei('40', 'ether').toString(10));
 
             contractBalance = await coinToken.balanceOf(city.address);
             assert.equal(contractBalance.toString(10), Web3.utils.toWei('60', 'ether').toString(10));
-            
+
             aliceInfo = await city.getParticipantInfo(alice);
             assert.equal(aliceInfo[2].toString(10), Web3.utils.toWei('40', 'ether').toString(10));
-            
+            assert.equal(aliceInfo[3].toString(10), Web3.utils.toWei('100', 'ether').toString(10));
+
             await city.kickParticipation(alice);
             contractBalance = await coinToken.balanceOf(city.address);
             assert.equal(contractBalance.toString(10), Web3.utils.toWei('0', 'ether').toString(10));
