@@ -23,8 +23,14 @@ export default {
         this.$store.watch(
             (state) => state.user_wallet,
             (user_wallet) => this.getTariffInfo());
-        
-        this.getTariffInfo();
+
+        this.$cityContract.isMember(this.userWallet).then(participant => {
+            this.participant = participant;
+
+            if(!this.participant) {
+                this.getTariffInfo();
+            }
+        });
     },
     watch: {
         
@@ -47,6 +53,7 @@ export default {
     data() {
         return {
             localeKey: 'personal_cabinet.tariff_info',
+            participant: false,
             tariff: null,
             nextPayment: null
         }
