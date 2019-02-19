@@ -33,7 +33,7 @@
                     <md-table-row v-for="(member, index) in filteredMembers" v-if="index < showCount || showAll">
                         <md-table-cell><hex-cut :hex="member.address"></hex-cut></md-table-cell>
                         <md-table-cell>{{member.tariffTitle}}</md-table-cell>
-                        <md-table-cell>{{member.totalAmount}}</md-table-cell>
+                        <md-table-cell>{{member.claimed}}</md-table-cell>
                         <md-table-cell class="controls">
                             <div style="width: 120px;">
                                 <member-payout :address="member.address" :icon-mode="true" v-on:claim-finish="getAllMembers()"></member-payout>

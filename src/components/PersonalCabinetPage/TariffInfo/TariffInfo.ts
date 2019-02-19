@@ -32,6 +32,10 @@ export default {
     methods: {
         async getTariffInfo() {
             const member = await this.$cityContract.getMember(this.userWallet);
+            if(!member.active) {
+                this.tariff = null;
+                return;
+            }
             if(!member.tariff) {
                 this.tariff = null;
                 this.nextPayment = null;

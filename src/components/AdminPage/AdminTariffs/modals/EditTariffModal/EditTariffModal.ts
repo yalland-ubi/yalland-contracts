@@ -72,6 +72,7 @@ export default {
                 id: this.editTariff.id,
                 title: this.editTariff.title,
                 payment: this.editTariff.payment,
+                mintForPeriods: this.editTariff.mintForPeriods || 0,
                 paymentPeriod: this.editTariff.paymentPeriodUnit == 'days' ? this.editTariff.paymentPeriod * this.dayUnit : this.editTariff.paymentPeriod * this.hourUnit,
                 currency: this.editTariff.currency
             };
@@ -107,7 +108,7 @@ export default {
     },
     computed: {
         saveDisabled(){
-            return this.saving || !this.editTariff.title || !this.editTariff.paymentPeriod || !this.editTariff.payment || !this.editTariff.currency;
+            return this.saving || !this.editTariff.title || !this.editTariff.paymentPeriod || !this.editTariff.payment || !this.editTariff.mintForPeriods || !this.editTariff.currency;
         }
     },
     watch: {},

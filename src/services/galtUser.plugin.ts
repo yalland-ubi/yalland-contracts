@@ -189,6 +189,7 @@ export default {
                     title: tariff.title,
                     payment: tariff.payment,
                     paymentPeriod: tariff.paymentPeriod,
+                    mintForPeriods: tariff.mintForPeriods,
                     currency: tariff.currency.name == 'eth' ? tariff.currency.name : tariff.currency.address
                 });
             },
@@ -199,6 +200,7 @@ export default {
                     title: tariff.title,
                     payment: tariff.payment,
                     paymentPeriod: tariff.paymentPeriod,
+                    mintForPeriods: tariff.mintForPeriods,
                     currency: tariff.currency.name == 'eth' ? tariff.currency.name : tariff.currency.address
                 });
             },

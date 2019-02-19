@@ -34,7 +34,6 @@
         </div>
       </div>
       
-      
       <md-field>
         <label v-locale="localeKey + '.payment'"></label>
         <md-input v-model="editTariff.payment" required :disabled="saving"></md-input>
@@ -45,6 +44,11 @@
 
         <template slot="md-autocomplete-item" slot-scope="{ item }">{{ item.name || '...' }}&nbsp;&nbsp;<small v-if="item.address">({{ item.address }})</small></template>
       </md-autocomplete>
+
+      <md-field v-if="editTariff.currency.address !== 'eth'">
+        <label v-locale="localeKey + '.mint_for_periods'"></label>
+        <md-input v-model="editTariff.mintForPeriods" required :disabled="saving"></md-input>
+      </md-field>
       
       <md-progress-bar class="md-accent" md-mode="indeterminate" v-if="saving"></md-progress-bar>
       <div class="warn" v-if="saving" v-locale="'transaction_in_process'"></div>

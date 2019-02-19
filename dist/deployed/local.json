@@ -1325,7 +1325,7 @@
           "type": "bytes32"
         },
         {
-          "name": "totalAmount",
+          "name": "claimed",
           "type": "uint256"
         },
         {
