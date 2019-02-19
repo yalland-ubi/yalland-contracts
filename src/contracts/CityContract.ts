@@ -28,6 +28,7 @@ export default class CityContract extends EthContract {
             tariff.title,
             GaltData.etherToWei(tariff.payment),
             tariff.paymentPeriod,
+            tariff.mintForPeriods,
             tariff.currency == 'eth' ? "0" : "1",
             tariff.currency == 'eth' ? GaltData.nullAddress : tariff.currency);
     }
@@ -40,6 +41,7 @@ export default class CityContract extends EthContract {
             tariff.title,
             GaltData.etherToWei(tariff.payment),
             tariff.paymentPeriod,
+            tariff.mintForPeriods,
             tariff.currency == 'eth' ? "0" : "1",
             tariff.currency == 'eth' ? GaltData.nullAddress : tariff.currency);
     }
@@ -83,11 +85,12 @@ export default class CityContract extends EthContract {
             member.address);
     }
 
-    async claimPaymentFor(sendOptions, memberAddress) {
+    async claimPaymentFor(sendOptions, memberAddress, periodsNumber = 1) {
         return await this.sendMethod(
             sendOptions,
             "claimPayment",
-            memberAddress);
+            memberAddress,
+            periodsNumber);
     }
 
     async mintTokens(sendOptions, tokenAddress, tokensAmount) {
@@ -189,7 +192,7 @@ export default class CityContract extends EthContract {
         }
         const member = await this.massCallMethod(params.method || "getParticipantInfo", [memberAddress]);
         member.address = memberAddress;
-        member.totalAmount = GaltData.weiToEtherRound(member.totalAmount);
+        member.claimed = GaltData.weiToEtherRound(member.claimed);
         member.lastTimestamp = parseInt(member.lastTimestamp);
         member.tariffTitle = "";
         member.tariffObject = null;

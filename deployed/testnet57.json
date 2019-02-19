@@ -1,5 +1,5 @@
 {
-  "coinTokenAddress": "0x6f646ce00affddc2dd9ca9b160a5e580afb05ef8",
+  "coinTokenAddress": "0xa8a8e062799c504fba008569777fc5748554c55a",
   "coinTokenAbi": [
     {
       "constant": true,
@@ -124,6 +124,20 @@
     {
       "constant": true,
       "inputs": [],
+      "name": "BURNER_ROLE",
+      "outputs": [
+        {
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
       "name": "INITIAL_SUPPLY",
       "outputs": [
         {
@@ -182,6 +196,20 @@
           "type": "bool"
         }
       ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_value",
+          "type": "uint256"
+        }
+      ],
+      "name": "burn",
+      "outputs": [],
       "payable": false,
       "stateMutability": "nonpayable",
       "type": "function"
@@ -412,6 +440,23 @@
       "inputs": [
         {
           "indexed": true,
+          "name": "burner",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "Burn",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
           "name": "to",
           "type": "address"
         },
@@ -632,7 +677,7 @@
       "type": "function"
     }
   ],
-  "cityAddress": "0xf46cd0b1a11f60d5ac1e9a01869a3b8631224ceb",
+  "cityAddress": "0x1228a407c032d6cc1c903c36fe0682bd032204a6",
   "cityAbi": [
     {
       "constant": true,
@@ -1007,6 +1052,10 @@
           "type": "uint256"
         },
         {
+          "name": "_mintForPeriods",
+          "type": "uint256"
+        },
+        {
           "name": "_currency",
           "type": "uint8"
         },
@@ -1064,6 +1113,10 @@
           "type": "uint256"
         },
         {
+          "name": "_mintForPeriods",
+          "type": "uint256"
+        },
+        {
           "name": "_currency",
           "type": "uint8"
         },
@@ -1112,6 +1165,10 @@
         {
           "name": "claimFor",
           "type": "address"
+        },
+        {
+          "name": "periodsNumber",
+          "type": "uint256"
         }
       ],
       "name": "claimPayment",
@@ -1346,6 +1403,14 @@
           "type": "uint256"
         },
         {
+          "name": "mintForPeriods",
+          "type": "uint256"
+        },
+        {
+          "name": "totalMinted",
+          "type": "uint256"
+        },
+        {
           "name": "paymentSent",
           "type": "uint256"
         },
@@ -1423,7 +1488,11 @@
           "type": "bytes32"
         },
         {
-          "name": "totalAmount",
+          "name": "claimed",
+          "type": "uint256"
+        },
+        {
+          "name": "minted",
           "type": "uint256"
         },
         {

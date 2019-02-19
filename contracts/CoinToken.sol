@@ -16,8 +16,9 @@ pragma experimental "v0.5.0";
 
 import "openzeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
 import "openzeppelin-solidity/contracts/ownership/rbac/RBAC.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
 
-contract CoinToken is MintableToken, RBAC {
+contract CoinToken is MintableToken, BurnableToken, RBAC {
   // solium-disable-next-line uppercase
   string public constant name = "Coin Token";
 
@@ -30,6 +31,7 @@ contract CoinToken is MintableToken, RBAC {
   uint256 public constant INITIAL_SUPPLY = 0;
 
   string public constant MINTER_ROLE = "minter";
+  string public constant BURNER_ROLE = "burner";
   string public constant FEE_MANAGER_ROLE = "fee_manager";
 
   uint256 public constant feePrecision = 1 szabo;
@@ -44,6 +46,11 @@ contract CoinToken is MintableToken, RBAC {
   
   modifier hasMintPermission() {
     require(hasRole(msg.sender, MINTER_ROLE), "Only minter");
+    _;
+  }
+  
+  modifier hasBurnPermission() {
+    require(hasRole(msg.sender, BURNER_ROLE), "Only burner");
     _;
   }
 
