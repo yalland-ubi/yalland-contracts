@@ -6,8 +6,8 @@
 
     <title>DCity</title>
     <script>
-      if(window.location.protocol != 'http:' && location.href.indexOf('http://localhost') !== 0 && location.href.indexOf('http://127.0.0.1') !== 0) {
-        location.href = location.href.replace("https://", "http://");
+      if(window.location.protocol != 'https:' && location.href.indexOf('http://localhost') !== 0 && location.href.indexOf('http://127.0.0.1') !== 0) {
+        location.href = location.href.replace("http://", "https://");
       }
       var scriptLoaded = false;
       function checkScriptLoaded() {
