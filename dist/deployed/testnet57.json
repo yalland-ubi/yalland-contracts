@@ -1,5 +1,5 @@
 {
-  "coinTokenAddress": "0xa8a8e062799c504fba008569777fc5748554c55a",
+  "coinTokenAddress": "0xd07e48b37e590c2b281e4f6ecc76b96082642276",
   "coinTokenAbi": [
     {
       "constant": true,
@@ -677,7 +677,7 @@
       "type": "function"
     }
   ],
-  "cityAddress": "0x1228a407c032d6cc1c903c36fe0682bd032204a6",
+  "cityAddress": "0x5b5c36f54dc5a373b8745a132e5e5b7f306a8291",
   "cityAbi": [
     {
       "constant": true,
@@ -1408,6 +1408,10 @@
         },
         {
           "name": "totalMinted",
+          "type": "uint256"
+        },
+        {
+          "name": "totalBurned",
           "type": "uint256"
         },
         {
