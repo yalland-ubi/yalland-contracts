@@ -12,6 +12,7 @@
  */
 
 import GaltData from "../../../services/galtData";
+import SpecifyAddressAndAmountModal from "../../../modals/SpecifyAddressAndAmountModal/SpecifyAddressAndAmountModal";
 
 export default {
     name: 'general-info',
@@ -45,6 +46,34 @@ export default {
                 this.coinBalance = galtBalance;
             });
             this.participant = await this.$cityContract.isMember(this.userWallet);
+        },
+        sendCoin() {
+            this.$root.$asyncModal.open({
+                id: 'specify-address-and-amount-modal',
+                component: SpecifyAddressAndAmountModal,
+                props: {
+                    locale: 'transfer_coin'
+                },
+                onClose: (data) => {
+                    if(!data) {
+                        return;
+                    }
+
+                    this.$galtUser.transferCoin(data.address, data.amount).then(() => {
+                        this.$notify({
+                            type: 'success',
+                            title: this.$locale.get(this.localeKey + '.success.token_sent.title'),
+                            text: this.$locale.get(this.localeKey + '.success.token_sent.description', data)
+                        });
+                    }).catch(() => {
+                        this.$notify({
+                            type: 'error',
+                            title: this.$locale.get(this.localeKey + '.error.token_sent.title'),
+                            text: this.$locale.get(this.localeKey + '.error.token_sent.description', data)
+                        });
+                    });
+                }
+            });
         }
     },
     data() {

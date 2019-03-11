@@ -35,7 +35,19 @@
       "title": "Общая информация",
       "wallet": "Аккаунт",
       "coin_balance": "Coin баланс",
-      "participant": "Житель города"
+      "participant": "Житель города",
+      "success": {
+        "token_sent": {
+          "title": "COIN успешно отправлены",
+          "description": "Вы успешно отправили <%= amount %> COIN получателю"
+        }
+      },
+      "error": {
+        "token_sent": {
+          "title": "Ошибка при отправке COIN",
+          "description": "Возможно у вас недостаточно баланса"
+        }
+      }
     },
     "tariff_info": {
       "title": "Информация о тарифе",
@@ -141,6 +153,15 @@
         "title": "Произошла ошибка при получении оплаты",
         "description": " "
       }
+    }
+  },
+  "specify_address_and_amount": {
+    "transfer_coin": {
+      "title": "Отправить COIN",
+      "address_placeholder": "Адрес получателя",
+      "amount_placeholder": "Сумма COIN",
+      "cancel": "Отмена",
+      "ok": "Ок"
     }
   },
   "admin": {

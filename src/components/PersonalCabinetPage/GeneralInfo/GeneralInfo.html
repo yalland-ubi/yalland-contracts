@@ -17,9 +17,13 @@
                 <span v-locale="localeKey + '.participant'"></span> <span v-locale="'boolean.' + participant"></span></span>
             </md-list-item>
             
-            <md-list-item>
+            <md-list-item class="right-button-container">
                 <span class="md-list-item-text row-direction">
                 <span v-locale="localeKey + '.coin_balance'"></span> <span>{{coinBalance}} COIN</span></span>
+
+                <md-button class="md-icon-button md-list-action" @click="sendCoin()"><!--  v-if="user_wallet === userWallet" -->
+                    <md-icon class="md-accent">call_made</md-icon>
+                </md-button>
             </md-list-item>
         </md-list>
     </md-card-content>

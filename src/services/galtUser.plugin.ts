@@ -158,6 +158,9 @@ export default {
                 await onWalletReady();
                 return await $contracts.$coinToken.balanceOf(walletAddress);
             },
+            async transferCoin(recipient, galtAmount) {
+                return await GaltData.transferCoin(sendOptions(), recipient, galtAmount);
+            },
             async approveCoin(address, galtAmount) {
                 return await $contracts.$coinToken.approve(sendOptions(), address, galtAmount);
             },

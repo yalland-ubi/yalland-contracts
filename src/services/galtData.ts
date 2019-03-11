@@ -169,6 +169,15 @@ export default class GaltData {
         return 53000;
     }
 
+    static async transferCoin(sendOptions, recipient, coinAmount) {
+        return this.$root.$coinTokenContract.sendMethod(
+            _.extend(sendOptions),
+            "transfer",
+            recipient,
+            GaltData.etherToWei(coinAmount)
+        );
+    }
+
     static async sendEthTo(sendOptions, recipient, ethAmount) {
         return new Promise((resolve, reject) => {
 
