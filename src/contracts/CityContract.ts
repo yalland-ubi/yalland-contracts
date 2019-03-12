@@ -220,6 +220,14 @@ export default class CityContract extends EthContract {
     async hasRole(userWallet, roleName) {
         return await this.massCallMethod("hasRole", [userWallet, roleName]);
     }
+
+    async addRoleTo(sendOptions, address, role) {
+        return await this.sendMethod(
+            sendOptions,
+            "addRoleTo",
+            address,
+            role);
+    }
     
     //
     // async exchangeGaltToEth(sendOptions, galtAmount) {
