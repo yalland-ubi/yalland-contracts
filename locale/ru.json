@@ -169,6 +169,7 @@
     "coin": {
       "title": "Coin",
       "general_data": "Общие данные",
+      "address": "Адрес:",
       "total_supply": "Total Supply:",
       "city_balance": "Бюджет города:",
       "transfer_fee": "Комиссия за операцию:",

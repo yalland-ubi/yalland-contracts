@@ -196,10 +196,6 @@ contract City is RBAC {
 
         return payments[claimFor].lastTimestamp + tariff.paymentPeriod;
     }
-
-    function isParticipant(address _address) public view returns (bool) {
-        return participants[_address];
-    }
     
     function addParticipation(address _address, bytes32 _tariff) public onlyCityManager {
         require(!participants[_address], "Already participant");
@@ -354,6 +350,10 @@ contract City is RBAC {
 
     function getActiveParticipantsCount() public view returns(uint256) {
         return activeParticipants.size();
+    }
+
+    function isParticipant(address _address) public view returns (bool) {
+        return participants[_address];
     }
     
     function getParticipantInfo(address _participant) public view returns

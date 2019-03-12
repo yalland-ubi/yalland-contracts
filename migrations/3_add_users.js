@@ -18,13 +18,15 @@ module.exports = async function (deployer, network, accounts) {
 
         const admins = {
             jonybang: '0xf0430bbb78C3c359c22d4913484081A563B86170',
-            nickAdmin: '0x84131ce9f499667c6fd7ec9e0860d8dfaba63ed9'
+            nickAdmin: '0x84131ce9f499667c6fd7ec9e0860d8dfaba63ed9',
+            nickAdmin1: '0xb9a8f8b45cb6d3e6822ab28911679b8f4b8c68d2'
         };
 
         const members = {
             nickMember1: '0x075c3e0d1a4829c866ea9048a335bd3955e8da33',
             nickMember2: '0xafc0fd8153bd835fa6e57e8b5c5b3210c44c5069',
-            nickMember3: '0xef7751e98c135d28af63d1353cb02dc502b72ee6'
+            nickMember3: '0xef7751e98c135d28af63d1353cb02dc502b72ee6',
+            igor: '0x06Dba6eb6A1044B8cBcaA0033EA3897BF37E6671'
         };
 
         const data = JSON.parse(fs.readFileSync(`${__dirname}/../deployed/${network}.json`).toString());

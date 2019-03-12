@@ -62,14 +62,14 @@
                 <md-progress-bar style="height: 4px; width: 100%;" class="md-accent" md-mode="indeterminate"></md-progress-bar>
             </md-list-item>
 
-            <md-list-item v-if="loaded && filteredMembers.length > showCount">
+            <md-list-item v-if="loaded && filteredMembers.length > showCount && !memberNotFound">
                 <md-button @click="showCount += countPerShow">
                     <md-icon class="md-accent">keyboard_arrow_down</md-icon>
                     <span v-locale="[localeKey + '.show_more', {value: filteredMembers.length - showCount}]"></span>
                 </md-button>
             </md-list-item>
 
-            <md-list-item v-if="loaded && showCount >= filteredMembers.length">
+            <md-list-item v-if="loaded && showCount >= filteredMembers.length && !memberNotFound && filteredMembers.length > countPerShow">
                 <md-button @click="showCount = countPerShow">
                     <md-icon class="md-accent">keyboard_arrow_up</md-icon>
                     <span v-locale="[localeKey + '.show_less']"></span>

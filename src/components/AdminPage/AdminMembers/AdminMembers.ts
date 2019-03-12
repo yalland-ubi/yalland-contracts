@@ -79,13 +79,17 @@ export default {
             if (!this.memberToFind) {
                 return;
             }
+            if(_.find(this.members, (member) => member.address.toLowerCase() === this.memberToFind.toLowerCase())) {
+                return;
+            }
             this.$cityContract.getMember(this.memberToFind)
                 .then((member) => {
-                    if (!member.roles.length) {
+                    if (!member.active) {
                         this.memberNotFound = true;
                         return;
                     }
                     this.members.push(member);
+                    this.members = _.clone(this.members);
                 })
                 .catch(() => {
                     this.memberError = true;
@@ -173,7 +177,7 @@ export default {
     computed: {
         filteredMembers() {
             return this.members.filter((member) => {
-                return member.address.indexOf(this.memberToFind) != -1 || member.tariffTitle.toLowerCase().indexOf(this.memberToFind.toLowerCase()) != -1;
+                return _.includes(member.address.toLowerCase(), this.memberToFind.toLowerCase()) || _.includes(member.tariffTitle.toLowerCase(), this.memberToFind.toLowerCase());
             });
         }
     },

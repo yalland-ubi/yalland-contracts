@@ -24,6 +24,9 @@ export default {
 
         this.intervals.push(interval);
         this.getCoinData();
+        
+        await this.$coinTokenContract.onReady();
+        this.tokenAddress = this.$coinTokenContract.address;
     },
     beforeDestroy() {
         this.intervals.forEach(intervalId => clearInterval(intervalId));
@@ -102,6 +105,7 @@ export default {
         return {
             localeKey: 'admin.coin',
             intervals: [],
+            tokenAddress: null,
             totalSupply: null,
             cityBalance: null,
             transferFee: null,

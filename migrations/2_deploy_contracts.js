@@ -19,7 +19,7 @@ module.exports = async function(deployer, network, accounts) {
     // Deploy contracts...
     console.log('Create contract instances...');
     const coinToken = await CoinToken.new({ from: coreTeam });
-    const city = await City.new(10000, "City", "CT", { from: coreTeam });
+    const city = await City.new(10000, "Yaland", "YAL", { from: coreTeam });
 
     console.log('Set roles...');
     await coinToken.addRoleTo(coreTeam, "minter", { from: coreTeam });

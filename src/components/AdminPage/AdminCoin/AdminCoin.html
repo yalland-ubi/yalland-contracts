@@ -6,6 +6,12 @@
     <md-card-content>
         <md-list>
             <md-subheader v-locale="localeKey + '.general_data'"></md-subheader>
+
+            <md-list-item>
+                <span class="md-list-item-text row-direction">
+                    <span v-locale="localeKey + '.address'"></span> <hex-cut :hex="tokenAddress"></hex-cut>
+                </span>
+            </md-list-item>
             
             <md-list-item>
                 <span class="md-list-item-text row-direction">
