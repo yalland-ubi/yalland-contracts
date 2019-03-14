@@ -127,7 +127,7 @@ export default class GaltData {
             if (this.cachedLocale[language])
                 return resolve(this.cachedLocale[language]);
 
-            this.$http.get('/locale/' + language + '.json').then((response) => {
+            this.$http.get('locale/' + language + '.json').then((response) => {
                 if(!response || !response.data) {
                     setTimeout(() => GaltData.getLocale(language), 1000);
                     return;
