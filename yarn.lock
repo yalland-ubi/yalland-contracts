@@ -4607,6 +4607,29 @@ javascript-obfuscator@0.18.0:
     string-template "1.0.0"
     tslib "1.9.3"
 
+javascript-obfuscator@^0.18.1:
+  version "0.18.1"
+  resolved "https://registry.yarnpkg.com/javascript-obfuscator/-/javascript-obfuscator-0.18.1.tgz#ed536645bd64998c8d284c1ab87957d6d8d8294c"
+  dependencies:
+    "@babel/runtime" "7.0.0-rc.1"
+    chalk "2.4.1"
+    chance "1.0.16"
+    class-validator "0.9.1"
+    commander "2.17.1"
+    escodegen-wallaby "1.6.19"
+    espree "4.0.0"
+    estraverse "4.2.0"
+    inversify "4.13.0"
+    js-string-escape "1.0.1"
+    md5 "2.2.1"
+    mkdirp "0.5.1"
+    multimatch "2.1.0"
+    opencollective "1.0.3"
+    reflect-metadata "0.1.12"
+    source-map-support "0.5.8"
+    string-template "1.0.0"
+    tslib "1.9.3"
+
 js-base64@^2.1.8, js-base64@^2.1.9:
   version "2.4.9"
   resolved "https://registry.yarnpkg.com/js-base64/-/js-base64-2.4.9.tgz#748911fb04f48a60c4771b375cac45a80df11c03"

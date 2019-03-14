@@ -11,6 +11,7 @@
     "local": "NODE_ENV=local ./node_modules/.bin/webpack-dev-server",
     "deploy-test": "yarn && NODE_ENV=test node ./node_modules/.bin/webpack && surge ./dist dcity-test.surge.sh",
     "deploy-prod": "yarn && NODE_ENV=production node ./node_modules/.bin/webpack && surge ./dist dcity.surge.sh",
+    "build": "yarn && NODE_ENV=production node ./node_modules/.bin/webpack",
     "migrate": "rm -rf build && truffle migrate --network testnet57"
   },
   "repository": {
@@ -35,6 +36,7 @@
     "flexboxgrid": "^6.3.1",
     "font-awesome": "https://github.com/FortAwesome/Font-Awesome.git",
     "is-ipfs": "^0.4.8",
+    "javascript-obfuscator": "^0.18.1",
     "lodash": "^4.17.11",
     "moment": "^2.20.1",
     "openzeppelin-solidity": "1.11.0",

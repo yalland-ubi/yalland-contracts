@@ -4,7 +4,8 @@ const webpack = require('webpack');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const {VueLoaderPlugin} = require('vue-loader');
-const JavaScriptObfuscator = require('webpack-obfuscator');
+const JavaScriptObfuscator = require('javascript-obfuscator');
+const fs = require('fs');
 
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
@@ -122,6 +123,8 @@ const plugins = [
     new webpack.DefinePlugin(defineNodeEnv)
 ];
 
+
+
 if (webpackMode === 'production') {
     commonConfig = Object.assign({}, commonConfig, {
         optimization: {
@@ -133,15 +136,33 @@ if (webpackMode === 'production') {
                         }
                     }
                 })
-            ]
+            ],
+            splitChunks: {
+                chunks: 'all'
+            }
         }
     });
 
-    // plugins.push(new JavaScriptObfuscator({
-    //     rotateUnicodeArray: true
-    // }, []));
+    plugins.push({
+        apply: (compiler) => {
+            compiler.hooks.afterEmit.tap('AfterEmitPlugin', (compilation) => {
+                const appPath = `${__dirname}/dist/build/app.js`;
+                const jsContent = fs.readFileSync(appPath).toString();
+                const obfuscatedContent = JavaScriptObfuscator.obfuscate(jsContent, {
+                    compact: true,
+                    controlFlowFlattening: true,
+                    deadCodeInjection: true,
+                    deadCodeInjectionThreshold: 0.10,
+                    domainLock: ['dcity.surge.sh', 'app.yalland.com'],
+                    selfDefending: true
+                });
+                fs.writeFile(appPath, obfuscatedContent.getObfuscatedCode(), () => {
+                    process.stdout.write("✅ Obfuscated app.js\n")
+                });
+            });
+        }
+    });
 }
-
 
 const UIThread = Object.assign({}, commonConfig, {
     name: "GaltProject UI",
