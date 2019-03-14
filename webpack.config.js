@@ -153,7 +153,7 @@ if (webpackMode === 'production') {
                     controlFlowFlattening: true,
                     deadCodeInjection: true,
                     deadCodeInjectionThreshold: 0.10,
-                    domainLock: ['dcity.surge.sh', 'app.yalland.com'],
+                    domainLock: ['dcity.surge.sh', 'app.yalland.com', 'yalland.com'],
                     selfDefending: true
                 });
                 fs.writeFile(appPath, obfuscatedContent.getObfuscatedCode(), () => {
