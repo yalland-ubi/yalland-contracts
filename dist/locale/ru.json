@@ -1,6 +1,6 @@
 {
   "navbar": {
-    "project_title": "Decentralized City",
+    "project_title": "Yalland Cabinet",
     "rpc_server": "RPC Server:",
     "alt_servers": "Альтернативные сервера"
   },
@@ -34,17 +34,17 @@
     "general_info": {
       "title": "Общая информация",
       "wallet": "Аккаунт",
-      "coin_balance": "Coin баланс",
+      "coin_balance": "YAL баланс",
       "participant": "Житель города",
       "success": {
         "token_sent": {
-          "title": "COIN успешно отправлены",
-          "description": "Вы успешно отправили <%= amount %> COIN получателю"
+          "title": "YAL успешно отправлены",
+          "description": "Вы успешно отправили <%= amount %> YAL получателю"
         }
       },
       "error": {
         "token_sent": {
-          "title": "Ошибка при отправке COIN",
+          "title": "Ошибка при отправке YAL",
           "description": "Возможно у вас недостаточно баланса"
         }
       }
@@ -74,14 +74,14 @@
   },
   "currency": {
     "eth": "ETH",
-    "coin": "COIN",
+    "yal": "YAL",
     "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359": "DAI"
   },
   "claim_payment_button": "Получить оплату",
   "user_menu": {
     "eth_address": "Ваш ETH адрес:",
     "eth_balance": "ETH баланс: ",
-    "coin_balance": "COIN:",
+    "coin_balance": "YAL:",
     "eth_faucet": "Пополнить тестовыми ETH",
     "internal_wallet": {
       "address": "Встроенный кошелек: ",
@@ -89,7 +89,7 @@
       "export_private": "Скопировать приватный ключ",
       "eth_address": "Ваш ETH адрес:",
       "eth_balance": "ETH баланс: ",
-      "coin_balance": "COIN:"
+      "coin_balance": "YAL:"
     },
     "success": {
       "internal_wallet_copied": "Адрес внутреннего кошелька скопирован в буфер обмена",
@@ -157,9 +157,9 @@
   },
   "specify_address_and_amount": {
     "transfer_coin": {
-      "title": "Отправить COIN",
+      "title": "Отправить YAL",
       "address_placeholder": "Адрес получателя",
-      "amount_placeholder": "Сумма COIN",
+      "amount_placeholder": "Сумма YAL",
       "cancel": "Отмена",
       "ok": "Ок"
     }
@@ -167,7 +167,7 @@
   "admin": {
     "title": "Административная панель",
     "coin": {
-      "title": "Coin",
+      "title": "YAL",
       "general_data": "Общие данные",
       "address": "Адрес:",
       "total_supply": "Total Supply:",
@@ -177,14 +177,14 @@
       "success": {
         "fee_payout": {
           "title": "Вы успешно вывели комиссию",
-          "description": "Сумма выведенной комиссии составила <%=value%> COIN"
+          "description": "Сумма выведенной комиссии составила <%=value%> YAL"
         },
         "edit_fee": {
           "title": "Вы успешно изменили комиссию",
           "description": " "
         },
         "mint_coin": {
-          "title": "Вы успешно выпустили дополнительные COIN в бюджет города",
+          "title": "Вы успешно выпустили дополнительные YAL в бюджет города",
           "description": " "
         }
       },
@@ -198,7 +198,7 @@
           "description": "Пожалуйста, проверьте что у вас достаточно прав для этого действия"
         },
         "mint_coin": {
-          "title": "Произошла ошибка при выпуске COIN",
+          "title": "Произошла ошибка при выпуске YAL",
           "description": "Пожалуйста, проверьте что у вас достаточно прав для этого действия"
         }
       },
@@ -207,8 +207,8 @@
         "placeholder": "Комиссия в %"
       },
       "mint_coin": {
-        "title": "Выпустить новые COIN токены и пополнить бюджет",
-        "placeholder": "Количество COIN к выпуску"
+        "title": "Выпустить новые YAL токены и пополнить бюджет",
+        "placeholder": "Количество YAL к выпуску"
       }
     },
     "tariffs": {
