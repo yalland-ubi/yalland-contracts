@@ -15,14 +15,14 @@ chai.use(chaiAsPromised);
 chai.use(chaiBigNumber);
 chai.should();
 
-contract('City', ([deployer, alice, bob]) => {
+contract('City', ([deployer, alice, rateManager, joinManager, leaveManager]) => {
     const payByTariff = Web3.utils.toWei('10', 'ether');
     const mintForPeriods = 10;
     let coinToken;
     let city;
 
     beforeEach(async function () {
-        coinToken = await CoinToken.new({from: deployer});
+        coinToken = await CoinToken.new("Coin token", "COIN", {from: deployer});
         city = await City.new(10000, "City", "CT", {from: deployer});
 
         await coinToken.addRoleTo(city.address, "minter", {from: deployer});
@@ -33,10 +33,18 @@ contract('City', ([deployer, alice, bob]) => {
         it('should allow claimPayment for new participants', async function () {
             const payPeriod = 1;
 
-            const coinTariffResponse = await city.createTariff("Pay coins", payByTariff, payPeriod.toString(), mintForPeriods.toString(), "1", coinToken.address, {from: deployer});
+            await assertRevert(city.createTariff("Pay coins", payByTariff, payPeriod.toString(), mintForPeriods.toString(), "1", coinToken.address, {from: rateManager}));
+
+            await city.addRoleTo(rateManager, await city.RATE_MANAGER_ROLE(), {from: deployer});
+            
+            const coinTariffResponse = await city.createTariff("Pay coins", payByTariff, payPeriod.toString(), mintForPeriods.toString(), "1", coinToken.address, {from: rateManager});
             const coinTariffId = coinTariffResponse.logs[0].args.id;
 
-            await city.addParticipation(alice, coinTariffId);
+            await assertRevert(city.addParticipation(alice, coinTariffId, {from: rateManager}));
+            await assertRevert(city.addParticipation(alice, coinTariffId, {from: joinManager}));
+
+            await city.addRoleTo(joinManager, await city.MEMBER_JOIN_MANAGER_ROLE(), {from: deployer});
+            await city.addParticipation(alice, coinTariffId, {from: joinManager});
 
             let aliceInfo = await city.getParticipantInfo(alice);
             assert.equal(aliceInfo[3].toString(10), Web3.utils.toWei('100', 'ether').toString(10));
@@ -66,7 +74,17 @@ contract('City', ([deployer, alice, bob]) => {
             assert.equal(aliceInfo[2].toString(10), Web3.utils.toWei('40', 'ether').toString(10));
             assert.equal(aliceInfo[3].toString(10), Web3.utils.toWei('100', 'ether').toString(10));
 
-            await city.kickParticipation(alice);
+            await assertRevert(city.kickParticipation(alice, {from: joinManager}));
+            await assertRevert(city.kickParticipation(alice, {from: rateManager}));
+            await assertRevert(city.kickParticipation(alice, {from: leaveManager}));
+
+            await city.addRoleTo(leaveManager, await city.MEMBER_LEAVE_MANAGER_ROLE(), {from: deployer});
+            await city.kickParticipation(alice, {from: leaveManager});
+
+            await waitSeconds(payPeriod * 2);
+
+            await assertRevert(city.claimPayment(alice, 1));
+            
             contractBalance = await coinToken.balanceOf(city.address);
             assert.equal(contractBalance.toString(10), Web3.utils.toWei('0', 'ether').toString(10));
         });

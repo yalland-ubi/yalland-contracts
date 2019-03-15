@@ -38,15 +38,15 @@
                             <div style="width: 120px;">
                                 <member-payout :address="member.address" :icon-mode="true" v-on:claim-finish="getAllMembers()"></member-payout>
                             
-                                <md-menu md-direction="bottom-start">
+                                <md-menu md-direction="bottom-start" v-if="is_rate_manager || is_member_leave_manager">
                                     <md-button md-menu-trigger class="md-icon-button md-raised md-accent" style="margin-left: 15px;"><md-icon>menu</md-icon></md-button>
 
                                     <md-menu-content>
-                                        <md-menu-item @click="editMember(member)">
+                                        <md-menu-item @click="editMember(member)" v-if="is_rate_manager">
                                             <md-icon>edit</md-icon>
                                             <span v-locale="localeKey + '.tariff_edit'"></span>
                                         </md-menu-item>
-                                        <md-menu-item @click="kickMember(member)">
+                                        <md-menu-item @click="kickMember(member)" v-if="is_member_leave_manager">
                                             <md-icon>close</md-icon>
                                             <span v-locale="localeKey + '.kick'"></span>
                                         </md-menu-item>

@@ -332,12 +332,32 @@ export default {
                 this.$store.commit('user_eth_balance', ethBalance);
             });
 
-            this.$galtUser.hasCityManagerRole().then((has) => {
-                if(has == this.is_city_manager) {
+            this.$galtUser.hasRateManagerRole().then((has) => {
+                if(has == this.is_rate_manager) {
                     return;
                 }
-                console.log('is_city_manager', has);
-                this.$store.commit('is_city_manager', has);
+                this.$store.commit('is_rate_manager', has);
+            });
+
+            this.$galtUser.hasMemberJoinManagerRole().then((has) => {
+                if(has == this.is_member_join_manager) {
+                    return;
+                }
+                this.$store.commit('is_member_join_manager', has);
+            });
+
+            this.$galtUser.hasMemberLeaveManagerRole().then((has) => {
+                if(has == this.is_member_leave_manager) {
+                    return;
+                }
+                this.$store.commit('is_member_leave_manager', has);
+            });
+
+            this.$galtUser.hasFeeManagerRole().then((has) => {
+                if(has == this.is_fee_manager) {
+                    return;
+                }
+                this.$store.commit('is_fee_manager', has);
             });
         },
 
@@ -417,7 +437,19 @@ export default {
             return this.$store.state.user_coin_balance;
         },
         is_city_manager() {
-            return this.$store.state.is_city_manager;
+            return this.is_fee_manager || this.is_rate_manager || this.is_member_join_manager || this.is_member_leave_manager;
+        },
+        is_fee_manager() {
+            return this.$store.state.is_fee_manager;
+        },
+        is_rate_manager() {
+            return this.$store.state.is_rate_manager;
+        },
+        is_member_join_manager() {
+            return this.$store.state.is_member_join_manager;
+        },
+        is_member_leave_manager() {
+            return this.$store.state.is_member_leave_manager;
         },
         internal_wallet() {
             return this.$store.state.internal_wallet;

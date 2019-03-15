@@ -43,11 +43,20 @@ export default {
         user_wallet() {
             return this.$store.state.user_wallet;
         },
-        // is_galt_dex_fee_manager() {
-        //     return this.$store.state.is_galt_dex_fee_manager;
-        // },
-        // is_plot_manager_fee_manager() {
-        //     return this.$store.state.is_plot_manager_fee_manager;
-        // }
+        is_city_manager() {
+            return this.is_fee_manager || this.is_rate_manager || this.is_member_join_manager || this.is_member_leave_manager;
+        },
+        is_fee_manager() {
+            return this.$store.state.is_fee_manager;
+        },
+        is_rate_manager() {
+            return this.$store.state.is_rate_manager;
+        },
+        is_member_join_manager() {
+            return this.$store.state.is_member_join_manager;
+        },
+        is_member_leave_manager() {
+            return this.$store.state.is_member_leave_manager;
+        },
     },
 }

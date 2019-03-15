@@ -15,13 +15,13 @@
             
             <md-list-item>
                 <span class="md-list-item-text row-direction">
-                    <span v-locale="localeKey + '.total_supply'"></span> <span>{{totalSupply | beautyNumber}} COIN</span>
+                    <span v-locale="localeKey + '.total_supply'"></span> <span>{{totalSupply | beautyNumber}} YAL</span>
                 </span>
             </md-list-item>
             
             <md-list-item class="right-button-container">
                 <span class="md-list-item-text row-direction">
-                    <span v-locale="localeKey + '.city_balance'"></span> <span>{{cityBalance | beautyNumber}} COIN</span>
+                    <span v-locale="localeKey + '.city_balance'"></span> <span>{{cityBalance | beautyNumber}} YAL</span>
                 </span>
                 <!--<md-button class="md-icon-button md-list-action md-raised" @click="mintCoin()">-->
                     <!--<md-icon class="md-accent">trending_up</md-icon>-->
@@ -33,7 +33,7 @@
                     <span v-locale="localeKey + '.transfer_fee'"></span> 
                     <span>{{transferFee}}%</span>
                 </span>
-                <md-button class="md-icon-button md-list-action md-raised" @click="editFee()">
+                <md-button class="md-icon-button md-list-action md-raised" @click="editFee()" v-if="is_fee_manager">
                     <md-icon class="md-accent">edit</md-icon>
                 </md-button>
             </md-list-item>
@@ -41,9 +41,9 @@
             <md-list-item class="right-button-container">
                 <span class="md-list-item-text text-row">
                     <span v-locale="localeKey + '.fee_payout'"></span> 
-                    <span>{{feePayout | beautyNumber}} COIN</span>
+                    <span>{{feePayout | beautyNumber}} YAL</span>
                 </span>
-                <md-button class="md-icon-button md-list-action md-raised" v-if="feePayout" @click="withdrawFee()">
+                <md-button class="md-icon-button md-list-action md-raised" v-if="feePayout && is_fee_manager" @click="withdrawFee()">
                     <md-icon class="md-accent">cake</md-icon>
                 </md-button>
             </md-list-item>

@@ -14,29 +14,22 @@ module.exports = async function(deployer, network, accounts) {
 
   deployer.then(async () => {
     const coreTeam = accounts[0];
-    // const proxiesAdmin = accounts[1];
 
-    // Deploy contracts...
     console.log('Create contract instances...');
-    const coinToken = await CoinToken.new({ from: coreTeam });
+    const coinToken = await CoinToken.new("Yaland", "YAL", { from: coreTeam });
     const city = await City.new(10000, "Yaland", "YAL", { from: coreTeam });
 
     console.log('Set roles...');
-    await coinToken.addRoleTo(coreTeam, "minter", { from: coreTeam });
     await coinToken.addRoleTo(city.address, "minter", { from: coreTeam });
     await coinToken.addRoleTo(city.address, "burner", { from: coreTeam });
-    await coinToken.addRoleTo(coreTeam, "fee_manager", { from: coreTeam });
 
     console.log('Fill initial data...');
-    // Call initialize methods (constructor substitute for proxy-backed contract)
-    const coinTariffResponse = await city.createTariff("Pay coins", Web3.utils.toWei('10', 'ether'), (60 * 60 * 24).toString(), "10", "1", coinToken.address, { from: coreTeam });
-    const coinTariffId = coinTariffResponse.logs[0].args.id;
-    await city.createTariff("Pay ether", Web3.utils.toWei('1', 'ether'), (60 * 60 * 5).toString(), "0", "0", '0x0000000000000000000000000000000000000000', { from: coreTeam });
-    await city.changeParticipationTariff(coreTeam, coinTariffId, { from: coreTeam });
-    // await city.mintTokens(coinToken.address, Web3.utils.toWei('10000000', 'ether'), { from: coreTeam });
-    await coinToken.setTransferFee(Web3.utils.toWei((0.5).toString(), 'szabo'), {from: coreTeam});
+    await city.createTariff("Pay yal", Web3.utils.toWei('10', 'ether'), (60 * 60 * 24).toString(), "10", "1", coinToken.address, { from: coreTeam });
+    await city.createTariff("Pay gas", Web3.utils.toWei('1', 'ether'), (60 * 60 * 5).toString(), "0", "0", '0x0000000000000000000000000000000000000000', { from: coreTeam });
+    
+    await coinToken.setTransferFee(Web3.utils.toWei((0).toString(), 'szabo'), {from: coreTeam});
 
-    const sendWei = Web3.utils.toWei('1000', 'ether').toString(10);
+    const sendWei = Web3.utils.toWei('100000', 'ether').toString(10);
     await web3.eth.sendTransaction({ from: coreTeam, to: city.address, value: sendWei }).catch(() => {});
 
     console.log('Save addresses and abi to deployed folder...');

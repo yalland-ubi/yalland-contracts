@@ -22,7 +22,7 @@ export default class CityContract extends EthContract {
     tariffsCache = {};
 
     async createTariff(sendOptions, tariff) {
-        return await this.sendMethod(
+        return this.sendMethod(
             sendOptions,
             "createTariff",
             tariff.title,
@@ -34,7 +34,7 @@ export default class CityContract extends EthContract {
     }
 
     async editTariff(sendOptions, tariff) {
-        return await this.sendMethod(
+        return this.sendMethod(
             sendOptions,
             "editTariff",
             tariff.id,
@@ -47,7 +47,7 @@ export default class CityContract extends EthContract {
     }
     
     async addMember(sendOptions, memberAddress, tariffId) {
-        return await this.sendMethod(
+        return this.sendMethod(
             sendOptions,
             "addParticipation",
             memberAddress,
@@ -55,7 +55,7 @@ export default class CityContract extends EthContract {
     }
 
     async changeMemberTariff(sendOptions, memberAddress, tariffId) {
-        return await this.sendMethod(
+        return this.sendMethod(
             sendOptions,
             "changeParticipationTariff",
             memberAddress,
@@ -63,7 +63,7 @@ export default class CityContract extends EthContract {
     }
 
     async deactivateTariff(sendOptions, tariff) {
-        return await this.sendMethod(
+        return this.sendMethod(
             sendOptions,
             "setTariffActive",
             tariff.id,
@@ -71,7 +71,7 @@ export default class CityContract extends EthContract {
     }
 
     async activateTariff(sendOptions, tariff) {
-        return await this.sendMethod(
+        return this.sendMethod(
             sendOptions,
             "setTariffActive",
             tariff.id,
@@ -79,14 +79,14 @@ export default class CityContract extends EthContract {
     }
 
     async kickMember(sendOptions, member) {
-        return await this.sendMethod(
+        return this.sendMethod(
             sendOptions,
             "kickParticipation",
             member.address);
     }
 
     async claimPaymentFor(sendOptions, memberAddress, periodsNumber = 1) {
-        return await this.sendMethod(
+        return this.sendMethod(
             sendOptions,
             "claimPayment",
             memberAddress,
@@ -94,7 +94,7 @@ export default class CityContract extends EthContract {
     }
 
     async mintTokens(sendOptions, tokenAddress, tokensAmount) {
-        return await this.sendMethod(
+        return this.sendMethod(
             sendOptions,
             "mintTokens",
             tokenAddress,
@@ -104,21 +104,21 @@ export default class CityContract extends EthContract {
     async getActiveTariffs(options = {}){
         return this.massCallMethod("getActiveTariffs")
             .then(async (tariffsIds) => {
-                return await this.getTariffsByIds(tariffsIds, options);
+                return this.getTariffsByIds(tariffsIds, options);
             });
     }
     
     async getAllTariffs(options = {}){
         return this.massCallMethod("getAllTariffs")
             .then(async (tariffsIds) => {
-                return await this.getTariffsByIds(tariffsIds, options);
+                return this.getTariffsByIds(tariffsIds, options);
             });
     }
 
     async getTariffsByIds(tariffsIds, params: any = {}){
         const applications = await pIteration.map(tariffsIds, async (applicationId) => {
             // try {
-            return await this.getTariffById(applicationId, params);
+            return this.getTariffById(applicationId, params);
             // } catch (e) {
             // console.error(e);
             //     return {
@@ -156,27 +156,27 @@ export default class CityContract extends EthContract {
     }
     
     async getActiveMembersCount(){
-        return await this.massCallMethod("getActiveParticipantsCount");
+        return this.massCallMethod("getActiveParticipantsCount");
     }
 
     async getActiveMembers(options = {}){
         return this.massCallMethod("getActiveParticipants")
             .then(async (membersAddresses) => {
-                return await this.getMembersByAddresses(membersAddresses, options);
+                return this.getMembersByAddresses(membersAddresses, options);
             });
     }
 
     async getAllMembers(options = {}){
         return this.massCallMethod("getAllParticipants")
             .then(async (membersAddresses) => {
-                return await this.getMembersByAddresses(membersAddresses, options);
+                return this.getMembersByAddresses(membersAddresses, options);
             });
     }
 
     async getMembersByAddresses(membersAddresses, params: any = {}){
         const applications = await pIteration.map(membersAddresses, async (memberId) => {
             // try {
-            return await this.getMember(memberId, params);
+            return this.getMember(memberId, params);
             // } catch (e) {
             // console.error(e);
             //     return {
@@ -214,15 +214,15 @@ export default class CityContract extends EthContract {
     }
     
     async isMember(address) {
-        return await this.massCallMethod("participants", [address]);
+        return this.massCallMethod("participants", [address]);
     }
 
     async hasRole(userWallet, roleName) {
-        return await this.massCallMethod("hasRole", [userWallet, roleName]);
+        return this.massCallMethod("hasRole", [userWallet, roleName]);
     }
 
     async addRoleTo(sendOptions, address, role) {
-        return await this.sendMethod(
+        return this.sendMethod(
             sendOptions,
             "addRoleTo",
             address,
@@ -231,7 +231,7 @@ export default class CityContract extends EthContract {
     
     //
     // async exchangeGaltToEth(sendOptions, galtAmount) {
-    //     return await this.sendMethod(sendOptions, 'exchangeGaltToEth', GaltData.etherToWei(galtAmount));
+    //     return this.sendMethod(sendOptions, 'exchangeGaltToEth', GaltData.etherToWei(galtAmount));
     // }
     //
     // async hasRole(userWallet, role) {
@@ -239,14 +239,14 @@ export default class CityContract extends EthContract {
     // }
     //
     // async withdrawEthFee(sendOptions) {
-    //     return await this.sendMethod(sendOptions, 'withdrawEthFee');
+    //     return this.sendMethod(sendOptions, 'withdrawEthFee');
     // }
     //
     // async withdrawGaltFee(sendOptions) {
-    //     return await this.sendMethod(sendOptions, 'withdrawGaltFee');
+    //     return this.sendMethod(sendOptions, 'withdrawGaltFee');
     // }
     //
     // async setFee(sendOptions, currency, amount) {
-    //     return await this.sendMethod(sendOptions, "set" + GaltData.upperFirst(currency.toLowerCase()) + "Fee", GaltData.szaboToWei(amount));
+    //     return this.sendMethod(sendOptions, "set" + GaltData.upperFirst(currency.toLowerCase()) + "Fee", GaltData.szaboToWei(amount));
     // }
 }

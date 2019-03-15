@@ -24,7 +24,7 @@
                         <md-table-cell>{{tariff.paymentPeriod | beautyPeriod}}</md-table-cell>
                         <md-table-cell><span v-locale="'boolean.' + tariff.active"></span></md-table-cell>
                         <md-table-cell class="controls">
-                            <div style="width: 120px;">
+                            <div style="width: 120px;" v-if="is_rate_manager">
                                 <md-button class="md-icon-button" @click="editTariff(tariff)">
                                     <md-icon class="md-accent">edit</md-icon>
                                 </md-button>
@@ -40,7 +40,7 @@
                 </md-table>
             </md-list-item>
             
-            <md-list-item>
+            <md-list-item v-if="is_rate_manager">
                 <md-button @click="addTariff()">
                     <md-icon class="md-accent">add</md-icon>
                     <span v-locale="localeKey + '.add_tariff_button'"></span>

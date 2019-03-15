@@ -17,13 +17,14 @@ pragma experimental "v0.5.0";
 import "openzeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
 import "openzeppelin-solidity/contracts/ownership/rbac/RBAC.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/PausableToken.sol";
 
-contract CoinToken is MintableToken, BurnableToken, RBAC {
+contract CoinToken is MintableToken, PausableToken, BurnableToken, RBAC {
   // solium-disable-next-line uppercase
-  string public constant name = "Coin Token";
+  string public name;
 
   // solium-disable-next-line uppercase
-  string public constant symbol = "COIN";
+  string public symbol;
 
   // solium-disable-next-line uppercase
   uint8 public constant decimals = 18;
@@ -37,11 +38,17 @@ contract CoinToken is MintableToken, BurnableToken, RBAC {
   uint256 public constant feePrecision = 1 szabo;
   uint256 public transferFee = 0;
 
-  constructor() public MintableToken() {
-    // TODO: figure out how the owner is assigned
+  constructor(string _name, string _symbol) public MintableToken() {
+    name = _name;
+    symbol = _symbol;
+    
     totalSupply_ = INITIAL_SUPPLY;
     balances[msg.sender] = INITIAL_SUPPLY;
     emit Transfer(address(0), msg.sender, INITIAL_SUPPLY);
+
+    super.addRole(msg.sender, MINTER_ROLE);
+    super.addRole(msg.sender, BURNER_ROLE);
+    super.addRole(msg.sender, FEE_MANAGER_ROLE);
   }
   
   modifier hasMintPermission() {

@@ -53,11 +53,13 @@ library CityLibrary {
     }
 }
 
-contract City is RBAC {
+contract City is RBAC, Ownable {
     using ArraySet for ArraySet.AddressSet;
     using ArraySet for ArraySet.Bytes32Set;
 
-    string public constant CITY_MANAGER_ROLE = "city_manager";
+    string public constant RATE_MANAGER_ROLE = "rate_manager";
+    string public constant MEMBER_JOIN_MANAGER_ROLE = "member_join_manager";
+    string public constant MEMBER_LEAVE_MANAGER_ROLE = "member_leave_manager";
     
     string public name;
     string public symbol;
@@ -91,17 +93,29 @@ contract City is RBAC {
 
         confirmsToParticipation = 1;
 
-        super.addRole(msg.sender, CITY_MANAGER_ROLE);
+        super.addRole(msg.sender, RATE_MANAGER_ROLE);
+        super.addRole(msg.sender, MEMBER_JOIN_MANAGER_ROLE);
+        super.addRole(msg.sender, MEMBER_LEAVE_MANAGER_ROLE);
     }
 
     function() external payable { }
 
-    modifier onlyCityManager() {
-        require(hasRole(msg.sender, CITY_MANAGER_ROLE), "Only city manager");
+    modifier onlyRateManager() {
+        require(hasRole(msg.sender, RATE_MANAGER_ROLE), "Only rate manager");
+        _;
+    }
+
+    modifier onlyMemberJoinManager() {
+        require(hasRole(msg.sender, MEMBER_JOIN_MANAGER_ROLE), "Only member join manager");
+        _;
+    }
+
+    modifier onlyMemberLeaveManager() {
+        require(hasRole(msg.sender, MEMBER_LEAVE_MANAGER_ROLE), "Only member leave manager");
         _;
     }
     
-    function createTariff(string _title, uint256 _payment, uint256 _paymentPeriod, uint256 _mintForPeriods, CityLibrary.TariffCurrency _currency, address _currencyAddress) public onlyCityManager returns(bytes32) {
+    function createTariff(string _title, uint256 _payment, uint256 _paymentPeriod, uint256 _mintForPeriods, CityLibrary.TariffCurrency _currency, address _currencyAddress) public onlyRateManager returns(bytes32) {
         bytes32 _id = keccak256(
             abi.encodePacked(
                 msg.sender,
@@ -128,7 +142,7 @@ contract City is RBAC {
         return _id;
     }
     
-    function setTariffActive(bytes32 _id, bool _active) public onlyCityManager {
+    function setTariffActive(bytes32 _id, bool _active) public onlyRateManager {
         require(tariffs[_id].active != _active, "Same status");
         
         tariffs[_id].active = _active;
@@ -142,7 +156,7 @@ contract City is RBAC {
         emit TariffActiveChanged(_id, _active);
     }
     
-    function editTariff(bytes32 _id, string _title, uint256 _payment, uint256 _paymentPeriod, uint256 _mintForPeriods, CityLibrary.TariffCurrency _currency, address _currencyAddress) public onlyCityManager {
+    function editTariff(bytes32 _id, string _title, uint256 _payment, uint256 _paymentPeriod, uint256 _mintForPeriods, CityLibrary.TariffCurrency _currency, address _currencyAddress) public onlyRateManager {
         tariffs[_id].title = _title;
         tariffs[_id].payment = _payment;
         tariffs[_id].paymentPeriod = _paymentPeriod;
@@ -153,11 +167,11 @@ contract City is RBAC {
         emit TariffEdited(_id, _title, _payment, _paymentPeriod, uint8(_currency), _currencyAddress);
     }
 
-    function setMaxSupply(uint256 _maxSupply) public onlyCityManager {
+    function setMaxSupply(uint256 _maxSupply) public onlyOwner {
         maxSupply = _maxSupply;
     }
 
-    function setConfirmsToParticipation(uint256 _confirmsToParticipation) public onlyCityManager {
+    function setConfirmsToParticipation(uint256 _confirmsToParticipation) public onlyOwner {
         confirmsToParticipation = _confirmsToParticipation;
     }
 
@@ -197,7 +211,7 @@ contract City is RBAC {
         return payments[claimFor].lastTimestamp + tariff.paymentPeriod;
     }
     
-    function addParticipation(address _address, bytes32 _tariff) public onlyCityManager {
+    function addParticipation(address _address, bytes32 _tariff) public onlyMemberJoinManager {
         require(!participants[_address], "Already participant");
 
         addParticipationUnsafe(_address, _tariff);
@@ -221,7 +235,7 @@ contract City is RBAC {
         payments[_address].lastTimestamp = now - tariffs[_tariff].paymentPeriod;
     }
     
-    function changeParticipationTariff(address _address, bytes32 _tariff) public onlyCityManager {
+    function changeParticipationTariff(address _address, bytes32 _tariff) public onlyRateManager {
         payments[_address].tariff = _tariff;
         payments[_address].claimed = 0;
         
@@ -239,7 +253,7 @@ contract City is RBAC {
         emit ParticipationRequest(msg.sender);
     }
 
-    function confirmParticipation(address _requested) public onlyCityManager returns (uint256 count) {
+    function confirmParticipation(address _requested) public onlyMemberJoinManager returns (uint256 count) {
         require(activeParticipants.size() < maxSupply, "Not enough supply");
         require(!participants[_requested], "Already participant");
         require(participationRequests[_requested].sent, "Not sent");
@@ -266,7 +280,7 @@ contract City is RBAC {
         return participationRequests[_requested].confirmationsCount;
     }
 
-    function kickParticipation(address _participant) public onlyCityManager {
+    function kickParticipation(address _participant) public onlyMemberLeaveManager {
         require(participants[_participant], "Not participant");
 
         removeParticipationUnsafe(_participant);
@@ -296,11 +310,11 @@ contract City is RBAC {
         }
     }
 
-    function addRoleTo(address _operator, string _role) public onlyCityManager {
+    function addRoleTo(address _operator, string _role) public onlyOwner {
         super.addRole(_operator, _role);
     }
 
-    function removeRoleFrom(address _operator, string _role) public onlyCityManager {
+    function removeRoleFrom(address _operator, string _role) public onlyOwner {
         super.removeRole(_operator, _role);
     }
     
@@ -374,7 +388,7 @@ contract City is RBAC {
         );
     }
     
-    function mintTokens(address tokenAddress, uint256 mintAmount) public onlyCityManager {
-        MintableToken(tokenAddress).mint(address(this), mintAmount);
-    }
+//    function mintTokens(address tokenAddress, uint256 mintAmount) public onlyOwner {
+//        MintableToken(tokenAddress).mint(address(this), mintAmount);
+//    }
 }

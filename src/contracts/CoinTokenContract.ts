@@ -17,7 +17,7 @@ const EthContract = require('../libs/EthContract');
 
 export default class CoinTokenContract extends EthContract {
     async approve(sendOptions, approveToWallet, approveAmount) {
-        return await this.sendMethod(
+        return this.sendMethod(
             sendOptions,
             "approve",
             approveToWallet,
@@ -57,15 +57,27 @@ export default class CoinTokenContract extends EthContract {
     }
     
     async withdrawFee(sendOptions) {
-        return await this.sendMethod(
+        return this.sendMethod(
             sendOptions,
             "withdrawFee");
     }
 
     async setTransferFee(sendOptions, newFeeAmount) {
-        return await this.sendMethod(
+        return this.sendMethod(
             sendOptions,
             "setTransferFee",
             GaltData.szaboToWei(newFeeAmount));
+    }
+    
+    async hasRole(userWallet, roleName) {
+        return this.massCallMethod("hasRole", [userWallet, roleName]);
+    }
+
+    async addRoleTo(sendOptions, address, role) {
+        return this.sendMethod(
+            sendOptions,
+            "addRoleTo",
+            address,
+            role);
     }
 }

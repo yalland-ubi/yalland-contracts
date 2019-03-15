@@ -179,6 +179,21 @@ export default {
             return this.members.filter((member) => {
                 return _.includes(member.address.toLowerCase(), this.memberToFind.toLowerCase()) || _.includes(member.tariffTitle.toLowerCase(), this.memberToFind.toLowerCase());
             });
+        },
+        is_city_manager() {
+            return this.is_fee_manager || this.is_rate_manager || this.is_member_join_manager || this.is_member_leave_manager;
+        },
+        is_fee_manager() {
+            return this.$store.state.is_fee_manager;
+        },
+        is_rate_manager() {
+            return this.$store.state.is_rate_manager;
+        },
+        is_member_join_manager() {
+            return this.$store.state.is_member_join_manager;
+        },
+        is_member_leave_manager() {
+            return this.$store.state.is_member_leave_manager;
         }
     },
     data() {

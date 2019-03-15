@@ -122,57 +122,57 @@ export default {
             async balance(currency) {
                 await onWalletReady();
                 if(currency.toLowerCase() == 'eth') {
-                    return await this.ethBalance();
+                    return this.ethBalance();
                 } else if(currency.toLowerCase() == 'galt') {
-                    return await this.galtBalance();
+                    return this.galtBalance();
                 } else {
-                    return await this.erc20Balance(currency);
+                    return this.erc20Balance(currency);
                 }
             },
             async ethBalance() {
                 await onWalletReady();
-                return await GaltData.ethBalance(walletAddress);
+                return GaltData.ethBalance(walletAddress);
             },
             async sendEthFromUserWaller(recipient, ethAmount) {
-                return await GaltData.sendEthTo(sendOptions(), recipient, ethAmount);
+                return GaltData.sendEthTo(sendOptions(), recipient, ethAmount);
             },
             async sendEthFromInternalWaller(recipient, ethAmount) {
-                return await GaltData.sendEthTo(sendOptions(true), recipient, ethAmount);
+                return GaltData.sendEthTo(sendOptions(true), recipient, ethAmount);
             },
 
             // Erc20 Contract
             async erc20Balance(erc20Address) {
                 await onWalletReady();
-                return await GaltData.erc20Balance(erc20Address, walletAddress);
+                return GaltData.erc20Balance(erc20Address, walletAddress);
             },
             async approveErc20(erc20Address, address, galtAmount) {
-                return await GaltData.approveErc20(sendOptions(), erc20Address, address, galtAmount);
+                return GaltData.approveErc20(sendOptions(), erc20Address, address, galtAmount);
             },
             async getErc20Allowance(erc20Address, address) {
                 await onWalletReady();
-                return await GaltData.getErc20Allowance(erc20Address, walletAddress, address);
+                return GaltData.getErc20Allowance(erc20Address, walletAddress, address);
             },
 
             // Coin Contract
             async coinBalance() {
                 await onWalletReady();
-                return await $contracts.$coinToken.balanceOf(walletAddress);
+                return $contracts.$coinToken.balanceOf(walletAddress);
             },
             async transferCoin(recipient, galtAmount) {
-                return await GaltData.transferCoin(sendOptions(), recipient, galtAmount);
+                return GaltData.transferCoin(sendOptions(), recipient, galtAmount);
             },
             async approveCoin(address, galtAmount) {
-                return await $contracts.$coinToken.approve(sendOptions(), address, galtAmount);
+                return $contracts.$coinToken.approve(sendOptions(), address, galtAmount);
             },
             async withdrawCoinFee() {
-                return await $contracts.$coinToken.withdrawFee(sendOptions());
+                return $contracts.$coinToken.withdrawFee(sendOptions());
             },
             async setCoinTransferFee(newFee) {
-                return await $contracts.$coinToken.setTransferFee(sendOptions(), newFee);
+                return $contracts.$coinToken.setTransferFee(sendOptions(), newFee);
             },
             async getCoinAllowance(address) {
                 await onWalletReady();
-                return await $contracts.$coinToken.allowance(walletAddress, address);
+                return $contracts.$coinToken.allowance(walletAddress, address);
             },
             async waitForApproveCoin(addressForAprove, needGaltAmount){
                 return new Promise((resolve, reject) => {
@@ -188,7 +188,7 @@ export default {
             },
             
             async createTariff(tariff) {
-                return await $contracts.$city.createTariff(sendOptions(), {
+                return $contracts.$city.createTariff(sendOptions(), {
                     title: tariff.title,
                     payment: tariff.payment,
                     paymentPeriod: tariff.paymentPeriod,
@@ -198,7 +198,7 @@ export default {
             },
 
             async editTariff(tariff) {
-                return await $contracts.$city.editTariff(sendOptions(), {
+                return $contracts.$city.editTariff(sendOptions(), {
                     id: tariff.id,
                     title: tariff.title,
                     payment: tariff.payment,
@@ -209,36 +209,51 @@ export default {
             },
             
             async changeMemberTariff(memberAddress, tariffId) {
-                return await $contracts.$city.changeMemberTariff(sendOptions(), memberAddress, tariffId);
+                return $contracts.$city.changeMemberTariff(sendOptions(), memberAddress, tariffId);
             },
 
             async addMember(memberAddress, tariffId) {
-                return await $contracts.$city.addMember(sendOptions(), memberAddress, tariffId);
+                return $contracts.$city.addMember(sendOptions(), memberAddress, tariffId);
             },
 
             async deactivateTariff(tariff) {
-                return await $contracts.$city.deactivateTariff(sendOptions(), tariff);
+                return $contracts.$city.deactivateTariff(sendOptions(), tariff);
             },
 
             async activateTariff(tariff) {
-                return await $contracts.$city.activateTariff(sendOptions(), tariff);
+                return $contracts.$city.activateTariff(sendOptions(), tariff);
             },
             
             async kickMember(member) {
-                return await $contracts.$city.kickMember(sendOptions(), member);
+                return $contracts.$city.kickMember(sendOptions(), member);
             },
 
             async claimPaymentFor(memberAddress, periodsNumber = 1) {
-                return await $contracts.$city.claimPaymentFor(sendOptions(), memberAddress, periodsNumber);
+                return $contracts.$city.claimPaymentFor(sendOptions(), memberAddress, periodsNumber);
             },
             
             async mintCoinToCity(tokensAmount) {
-                return await $contracts.$city.mintTokens(sendOptions(), $contracts.$coinToken.address, tokensAmount);
+                return $contracts.$city.mintTokens(sendOptions(), $contracts.$coinToken.address, tokensAmount);
             },
             
-            async hasCityManagerRole() {
+            async hasRateManagerRole() {
                 await onWalletReady();
-                return await $contracts.$city.hasRole(walletAddress, "city_manager");
+                return $contracts.$city.hasRole(walletAddress, "rate_manager");
+            },
+
+            async hasMemberJoinManagerRole() {
+                await onWalletReady();
+                return $contracts.$city.hasRole(walletAddress, "member_join_manager");
+            },
+
+            async hasMemberLeaveManagerRole() {
+                await onWalletReady();
+                return $contracts.$city.hasRole(walletAddress, "member_leave_manager");
+            },
+
+            async hasFeeManagerRole() {
+                await onWalletReady();
+                return $contracts.$coinToken.hasRole(walletAddress, "fee_manager");
             },
 
             async generateNewInternalWallet(){

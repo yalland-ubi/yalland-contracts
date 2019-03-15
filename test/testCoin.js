@@ -21,7 +21,7 @@ contract('Coin', ([deployer, alice, bob]) => {
     let coinToken;
 
     beforeEach(async function () {
-        coinToken = await CoinToken.new({from: deployer});
+        coinToken = await CoinToken.new("Coin token", "COIN", {from: deployer});
 
         await coinToken.addRoleTo(deployer, "minter", {from: deployer});
         await coinToken.addRoleTo(deployer, "fee_manager", {from: deployer});

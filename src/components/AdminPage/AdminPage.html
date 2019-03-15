@@ -1,21 +1,21 @@
 <div id="admin-page" style="height: 100%;" xmlns:v-on="">
-    <md-app-content class="padding">
+    <md-app-content class="padding" v-if="is_city_manager">
         <div class="md-title" style="margin-bottom: 10px;" v-locale="'admin.title'"></div>
 
         <div class="md-layout">
-            <div class="md-layout-item md-size-40">
+            <div class="md-layout-item md-size-40 md-small-size-100">
                 <admin-coin></admin-coin>
             </div>
         </div>
         
         <div class="md-layout">
-            <div class="md-layout-item md-size-70">
+            <div class="md-layout-item md-size-70 md-small-size-100">
                 <admin-tariffs></admin-tariffs>
             </div>
         </div>
 
         <div class="md-layout">
-            <div class="md-layout-item md-size-50">
+            <div class="md-layout-item md-size-50 md-small-size-100">
                 <admin-members></admin-members>
             </div>
         </div>

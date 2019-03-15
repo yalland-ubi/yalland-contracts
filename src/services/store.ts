@@ -21,7 +21,10 @@ export default new Vuex.Store({
         locale: null,
         locale_loaded: false,
         user_wallet: null,
-        is_city_manager: false,
+        is_rate_manager: false,
+        is_member_join_manager: false,
+        is_member_leave_manager: false,
+        is_fee_manager: false,
         user_eth_balance: null,
         user_space_balance: null,
         user_coin_balance: null,
@@ -51,8 +54,17 @@ export default new Vuex.Store({
         user_coin_balance(state, user_coin_balance) {
             state.user_coin_balance = user_coin_balance;
         },
-        is_city_manager(state, is_city_manager) {
-            state.is_city_manager = is_city_manager;
+        is_rate_manager(state, is_rate_manager) {
+            state.is_rate_manager = is_rate_manager;
+        },
+        is_member_join_manager(state, is_member_join_manager) {
+            state.is_member_join_manager = is_member_join_manager;
+        },
+        is_member_leave_manager(state, is_member_leave_manager) {
+            state.is_member_leave_manager = is_member_leave_manager;
+        },
+        is_fee_manager(state, is_fee_manager) {
+            state.is_fee_manager = is_fee_manager;
         },
 
         internal_wallet(state, internal_wallet) {
