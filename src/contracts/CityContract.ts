@@ -137,7 +137,7 @@ export default class CityContract extends EthContract {
         this.tariffsCache[tariffId] = tariff;
         
         if(tariff.currency == "1") {
-            tariff.currencyName = tariff.currencyAddress.toLowerCase() == GaltData.contractsConfig.coinTokenAddress.toLowerCase() ? 'coin' : tariff.currencyAddress;
+            tariff.currencyName = tariff.currencyAddress.toLowerCase() == GaltData.contractsConfig.coinTokenAddress.toLowerCase() ? 'yal' : tariff.currencyAddress;
         } else {
             tariff.currencyName = 'eth';
         }

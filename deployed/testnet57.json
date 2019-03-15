@@ -1,5 +1,5 @@
 {
-  "coinTokenAddress": "0xc548fbc919299f7899af28757c99da927af6b042",
+  "coinTokenAddress": "0xe2e6a6bba9fbd6a87fe7f939ef0a64d6d149be98",
   "coinTokenAbi": [
     {
       "constant": true,
@@ -730,7 +730,7 @@
       "type": "function"
     }
   ],
-  "cityAddress": "0xa105f5a37cc6123df66909949fc53e394fd1e20e",
+  "cityAddress": "0x4657853291aa26a9d8cf3443de6455020b947242",
   "cityAbi": [
     {
       "constant": true,

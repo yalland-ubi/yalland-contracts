@@ -54,7 +54,7 @@ export default {
             this.currencies = _.map(this.$locale.get('currency'), (currencyTitle, currencyName) => {
                 return {
                     name: currencyTitle,
-                    address: currencyName == 'coin' ? this.$coinTokenContract.address : currencyName,
+                    address: currencyName == 'yal' ? this.$coinTokenContract.address : currencyName,
                     toString: function () {
                         return this.name ? this.name + "(" + this.address + ")" : this.address;
                     },
