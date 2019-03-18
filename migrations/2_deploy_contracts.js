@@ -16,16 +16,16 @@ module.exports = async function(deployer, network, accounts) {
     const coreTeam = accounts[0];
 
     console.log('Create contract instances...');
-    const coinToken = await CoinToken.new("Yaland", "YAL", { from: coreTeam });
-    const city = await City.new(10000, "Yaland", "YAL", { from: coreTeam });
+    const coinToken = await CoinToken.new("Yalland", "YAL", { from: coreTeam });
+    const city = await City.new(10000, "Yalland", "YAL", { from: coreTeam });
 
     console.log('Set roles...');
     await coinToken.addRoleTo(city.address, "minter", { from: coreTeam });
     await coinToken.addRoleTo(city.address, "burner", { from: coreTeam });
 
     console.log('Fill initial data...');
-    await city.createTariff("Pay yal", Web3.utils.toWei('10', 'ether'), (60 * 60 * 24).toString(), "10", "1", coinToken.address, { from: coreTeam });
-    await city.createTariff("Pay gas", Web3.utils.toWei('1', 'ether'), (60 * 60 * 5).toString(), "0", "0", '0x0000000000000000000000000000000000000000', { from: coreTeam });
+    await city.createTariff("Pay YAL", Web3.utils.toWei('10', 'ether'), (60 * 60 * 24).toString(), "10", "1", coinToken.address, { from: coreTeam });
+    await city.createTariff("Pay GAS", Web3.utils.toWei('1', 'ether'), (60 * 60 * 5).toString(), "0", "0", '0x0000000000000000000000000000000000000000', { from: coreTeam });
     
     await coinToken.setTransferFee(Web3.utils.toWei((0).toString(), 'szabo'), {from: coreTeam});
 
