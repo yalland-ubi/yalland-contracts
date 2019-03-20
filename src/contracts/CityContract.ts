@@ -78,18 +78,19 @@ export default class CityContract extends EthContract {
             true);
     }
 
-    async kickMember(sendOptions, member) {
+    async kickTariffMember(sendOptions, member, tariffId) {
         return this.sendMethod(
             sendOptions,
-            "kickParticipation",
-            member.address);
+            "kickTariffParticipation",
+            member.address, tariffId);
     }
 
-    async claimPaymentFor(sendOptions, memberAddress, periodsNumber = 1) {
+    async claimPaymentFor(sendOptions, memberAddress, tariffId, periodsNumber = 1) {
         return this.sendMethod(
             sendOptions,
             "claimPayment",
             memberAddress,
+            tariffId,
             periodsNumber);
     }
 
@@ -155,14 +156,25 @@ export default class CityContract extends EthContract {
         return this.tariffsCache[tariffId].title;
     }
     
-    async getActiveMembersCount(){
+    async getAllActiveMembersCount(){
         return this.massCallMethod("getActiveParticipantsCount");
     }
 
-    async getActiveMembers(options = {}){
+    async getAllActiveMembers(options = {}){
         return this.massCallMethod("getActiveParticipants")
             .then(async (membersAddresses) => {
                 return this.getMembersByAddresses(membersAddresses, options);
+            });
+    }
+
+    async getTariffActiveMembersCount(tariffId){
+        return this.massCallMethod("getTariffActiveParticipantsCount", [tariffId]);
+    }
+
+    async getTariffActiveMembers(tariffId, options = {}){
+        return this.massCallMethod("getTariffActiveParticipants", [tariffId])
+            .then(async (membersAddresses) => {
+                return this.getMembersTariffsByAddresses(membersAddresses, tariffId, options);
             });
     }
 
@@ -186,35 +198,63 @@ export default class CityContract extends EthContract {
         });
         return _.reverse(applications);
     }
+
     async getMember(memberAddress, params: any = {}) {
         if(!memberAddress) {
             return {};
         }
         const member = await this.massCallMethod(params.method || "getParticipantInfo", [memberAddress]);
         member.address = memberAddress;
-        member.claimed = GaltData.weiToEtherRound(member.claimed);
-        member.lastTimestamp = parseInt(member.lastTimestamp);
-        member.tariffTitle = "";
-        member.tariffObject = null;
-        
-        member.resolved = false;
-        
-        if(member.tariff == GaltData.nullBytes32) {
-            member.tariff = null;
-            member.resolved = true;
-        } else {
-            member.resolvePromise = this.getTariffTitle(member.tariff).then((title) => {
-                member.tariffTitle = title;
-                member.tariffObject = this.tariffsCache[member.tariff];
-                member.resolved = true;
-            });
-        }
         
         return member;
+    }
+    async getMembersTariffsByAddresses(membersAddresses, tariffId, params: any = {}){
+        const applications = await pIteration.map(membersAddresses, async (memberAddress) => {
+            // try {
+            return this.getMemberTariff(memberAddress, tariffId, params);
+            // } catch (e) {
+            // console.error(e);
+            //     return {
+            //         error: e
+            //     };
+            // }
+        });
+        return _.reverse(applications);
+    }
+    async getMemberTariff(memberAddress, tariffId, params: any = {}) {
+        if(!memberAddress) {
+            return {};
+        }
+        const memberTariff = await this.massCallMethod(params.method || "getParticipantTariffInfo", [memberAddress, tariffId]);
+        memberTariff.address = memberAddress;
+        memberTariff.claimed = GaltData.weiToEtherRound(memberTariff.claimed);
+        memberTariff.lastTimestamp = parseInt(memberTariff.lastTimestamp);
+        memberTariff.tariffTitle = "";
+        memberTariff.tariffObject = null;
+
+        memberTariff.resolved = false;
+
+        if(memberTariff.tariff == GaltData.nullBytes32) {
+            memberTariff.tariff = null;
+            memberTariff.resolved = true;
+        } else {
+            memberTariff.resolvePromise = this.getTariffTitle(tariffId).then((title) => {
+                memberTariff.tariffTitle = title;
+                memberTariff.tariffObject = this.tariffsCache[tariffId];
+                memberTariff.resolved = true;
+            });
+        }
+
+        return memberTariff;
     }
     
     async isMember(address) {
         return this.massCallMethod("participants", [address]);
+    }
+    
+    async isMemberHaveTariff(address, tariffId) {
+        const memberTariff = await this.massCallMethod("getParticipantTariffInfo", [address, tariffId]);
+        return memberTariff.active;
     }
 
     async hasRole(userWallet, roleName) {

@@ -214,8 +214,6 @@ contract City is RBAC, Ownable {
     }
     
     function addParticipation(address _address, bytes32 _tariff) public onlyMemberJoinManager {
-        require(!participants[_address], "Already participant");
-
         addParticipationUnsafe(_address, _tariff);
 
         emit ParticipationAdded(msg.sender, _address, _tariff);
@@ -223,8 +221,9 @@ contract City is RBAC, Ownable {
     
     function addParticipationUnsafe(address _address, bytes32 _tariffId) internal {
         CityLibrary.MemberTariff storage _memberTariff = memberTariffs[_address][_tariffId];
+        require(!_memberTariff.active, "Already have tariff");
         participants[_address] = true;
-        activeParticipants.add(_address);
+        activeParticipants.addSilent(_address);
         tariffs[_tariffId].activeParticipants.add(_address);
         allParticipants.push(_address);
         _memberTariff.active = true;
@@ -291,6 +290,11 @@ contract City is RBAC, Ownable {
         _memberTariff.active = false;
         activeMemberTariffs[_member].remove(_tariffId);
         tariffs[_tariffId].activeParticipants.remove(_member);
+        
+        if(activeMemberTariffs[_member].size() == 0) {
+            participants[_member] = false;
+            activeParticipants.remove(_member);
+        }
 
         emit ParticipationTariffRemoved(msg.sender, _member, _tariffId);
     }
@@ -328,6 +332,8 @@ contract City is RBAC, Ownable {
             uint256 burnAmount = _memberTariff.minted - _memberTariff.claimed;
             BurnableToken(_tariff.currencyAddress).burn(burnAmount);
             _tariff.totalBurned += burnAmount;
+            _memberTariff.minted = 0;
+            _memberTariff.claimed = 0;
         }
     }
 

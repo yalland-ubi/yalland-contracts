@@ -40,14 +40,14 @@ export default {
         async ok() {
             this.saving = true;
             
-            const isMember = await this.$cityContract.isMember(this.address);
-            if(isMember) {
+            const isMemberHaveTariff = await this.$cityContract.isMemberHaveTariff(this.address, this.tariff.id);
+            if(isMemberHaveTariff) {
                 this.saving = false;
                 
                 return this.$notify({
                     type: 'error',
-                    title: this.getLocale("error.already_member.title"),
-                    text: this.getLocale("error.already_member.description")
+                    title: this.getLocale("error.already_have_tariff.title"),
+                    text: this.getLocale("error.already_have_tariff.description")
                 });
             }
             

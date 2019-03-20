@@ -18,6 +18,8 @@ module.exports = async function (deployer, network, accounts) {
 
         const admins = {
             balashov: '0x8DDB4caD5037F9866955cc33e7CF8895126881D8',
+            balashov2: '0x377616694E6872251DDc7bDAC351631f837E401B',
+            nick: '0xB9a8F8B45Cb6D3E6822AB28911679b8F4B8C68d2', //TODO: remove on prod
             jonybang: '0xf0430bbb78C3c359c22d4913484081A563B86170'
         };
 
@@ -40,6 +42,8 @@ module.exports = async function (deployer, network, accounts) {
             await city.addRoleTo(adminAddress, await city.MEMBER_LEAVE_MANAGER_ROLE.call(), {from: coreTeam});
             await coin.addRoleTo(adminAddress, await coin.FEE_MANAGER_ROLE.call(), {from: coreTeam});
         });
+
+        await coin.removeRoleFrom(admins.balashov2, await coin.FEE_MANAGER_ROLE.call(), {from: coreTeam});
         
         await city.removeRoleFrom(coreTeam, await city.RATE_MANAGER_ROLE.call(), {from: coreTeam});
         await city.removeRoleFrom(coreTeam, await city.MEMBER_JOIN_MANAGER_ROLE.call(), {from: coreTeam});

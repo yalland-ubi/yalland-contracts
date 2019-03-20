@@ -45,7 +45,7 @@
         <template slot="md-autocomplete-item" slot-scope="{ item }">{{ item.name || '...' }}&nbsp;&nbsp;<small v-if="item.address">({{ item.address }})</small></template>
       </md-autocomplete>
 
-      <md-field v-if="editTariff.currency.address !== 'eth'">
+      <md-field v-if="editTariff.currency && editTariff.currency.address !== 'eth'">
         <label v-locale="localeKey + '.mint_for_periods'"></label>
         <md-input v-model="editTariff.mintForPeriods" required :disabled="saving"></md-input>
       </md-field>
