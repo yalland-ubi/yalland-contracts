@@ -18,7 +18,7 @@ export default {
     name: 'tariff-info',
     template: require('./TariffInfo.html'),
     components: {MemberPayout},
-    props: ['userWallet'],
+    props: ['userWallet', 'tariffId'],
     async mounted() {
         this.$store.watch(
             (state) => state.user_wallet,
@@ -31,17 +31,15 @@ export default {
     },
     methods: {
         async getTariffInfo() {
+            if(!this.tariffId) {
+                return;
+            }
             const member = await this.$cityContract.getMember(this.userWallet);
             if(!member.active) {
                 this.tariff = null;
                 return;
             }
-            if(!member.tariff) {
-                this.tariff = null;
-                this.nextPayment = null;
-                return;
-            }
-            this.tariff = await this.$cityContract.getTariffById(member.tariff);
+            this.tariff = await this.$cityContract.getTariffById(this.tariffId);
 
             const currentTimeStamp = Math.floor(Date.now() / 1000);
             const availableCount = Math.floor((currentTimeStamp - member.lastTimestamp) / this.tariff.paymentPeriod);
