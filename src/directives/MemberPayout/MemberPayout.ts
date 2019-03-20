@@ -51,6 +51,9 @@ export default {
                     text: this.getLocale("success.claim.description", this.paymentInfo)
                 });
                 this.getPaymentInfo();
+                setTimeout(() => {
+                    this.getPaymentInfo();
+                }, 5000);
                 this.$emit('claim-finish');
             }).catch(() => {
                 this.$notify({

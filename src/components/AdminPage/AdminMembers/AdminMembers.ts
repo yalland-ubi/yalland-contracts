@@ -15,6 +15,7 @@ import GaltData from "../../../services/galtData";
 import EditMemberTariffModal from "./modals/EditMemberTariffModal/EditMemberTariffModal";
 import AddMemberModal from "./modals/AddMemberModal/AddMemberModal";
 import MemberPayout from "../../../directives/MemberPayout/MemberPayout";
+import {EventBus, TARIFF_UPDATE} from "../../../services/events";
 
 const _ = require('lodash');
 const pIteration = require('p-iteration');
@@ -28,6 +29,10 @@ export default {
         this.curTariffId = localStorage.getItem('AdminMembers.curTariffId');
         await this.getTariffs();
         this.getTariffMembers();
+
+        EventBus.$on(TARIFF_UPDATE, () => {
+            this.getTariffs();
+        });
     },
     watch: {
         curTariffId() {
@@ -40,7 +45,7 @@ export default {
     },
     methods: {
         async getTariffs() {
-            this.tariffs = await this.$cityContract.getActiveTariffs();
+            this.tariffs = await this.$cityContract.getAllTariffs();
             if(!this.curTariffId && this.tariffs.length) {
                 this.curTariffId = this.tariffs[0].id;
             }

@@ -13,6 +13,7 @@
 
 import GaltData from "../../../services/galtData";
 import EditTariffModal from "./modals/EditTariffModal/EditTariffModal";
+import {EventBus, TARIFF_UPDATE} from "../../../services/events";
 
 export default {
     name: 'admin-validators-roles',
@@ -40,6 +41,7 @@ export default {
                 },
                 onClose: (resultValidator) => {
                     this.getTariffs();
+                    EventBus.$emit(TARIFF_UPDATE);
                 }
             });
         }, 
@@ -49,6 +51,7 @@ export default {
             }).then(async () => {
                 await this.$galtUser.activateTariff(tariff);
                 this.getTariffs();
+                EventBus.$emit(TARIFF_UPDATE);
                 
                 this.$notify({
                     type: 'success',
@@ -63,6 +66,7 @@ export default {
             }).then(async () => {
                 await this.$galtUser.deactivateTariff(tariff);
                 this.getTariffs();
+                EventBus.$emit(TARIFF_UPDATE);
                 
                 this.$notify({
                     type: 'success',
@@ -80,6 +84,7 @@ export default {
                 },
                 onClose: (resultValidator) => {
                     this.getTariffs();
+                    EventBus.$emit(TARIFF_UPDATE);
                 }
             });
         },
