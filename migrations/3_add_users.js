@@ -16,10 +16,10 @@ module.exports = async function (deployer, network, accounts) {
         const coreTeam = accounts[0];
         // const proxiesAdmin = accounts[1];
 
-        const admins = {
+        const managers = {
             balashov: '0x8DDB4caD5037F9866955cc33e7CF8895126881D8',
             balashov2: '0x377616694E6872251DDc7bDAC351631f837E401B',
-            nick: '0xB9a8F8B45Cb6D3E6822AB28911679b8F4B8C68d2', //TODO: remove on prod
+            // nick: '0xB9a8F8B45Cb6D3E6822AB28911679b8F4B8C68d2', //TODO: remove on prod
             jonybang: '0xf0430bbb78C3c359c22d4913484081A563B86170'
         };
 
@@ -36,14 +36,16 @@ module.exports = async function (deployer, network, accounts) {
 
         // const coinTariffId = (await city.getAllTariffs.call())[0];
 
-        await pIteration.forEach(Object.values(admins), async (adminAddress) => {
+        console.log("add managers");
+        await pIteration.forEach(Object.values(managers), async (adminAddress) => {
             await city.addRoleTo(adminAddress, await city.RATE_MANAGER_ROLE.call(), {from: coreTeam});
             await city.addRoleTo(adminAddress, await city.MEMBER_JOIN_MANAGER_ROLE.call(), {from: coreTeam});
             await city.addRoleTo(adminAddress, await city.MEMBER_LEAVE_MANAGER_ROLE.call(), {from: coreTeam});
             await coin.addRoleTo(adminAddress, await coin.FEE_MANAGER_ROLE.call(), {from: coreTeam});
         });
 
-        await coin.removeRoleFrom(admins.balashov2, await coin.FEE_MANAGER_ROLE.call(), {from: coreTeam});
+        console.log("revoke roles");
+        await coin.removeRoleFrom(managers.balashov2, await coin.FEE_MANAGER_ROLE.call(), {from: coreTeam});
         
         await city.removeRoleFrom(coreTeam, await city.RATE_MANAGER_ROLE.call(), {from: coreTeam});
         await city.removeRoleFrom(coreTeam, await city.MEMBER_JOIN_MANAGER_ROLE.call(), {from: coreTeam});
@@ -51,9 +53,10 @@ module.exports = async function (deployer, network, accounts) {
         await coin.removeRoleFrom(coreTeam, await coin.FEE_MANAGER_ROLE.call(), {from: coreTeam});
         await coin.removeRoleFrom(coreTeam, await coin.MINTER_ROLE.call(), {from: coreTeam});
         await coin.removeRoleFrom(coreTeam, await coin.BURNER_ROLE.call(), {from: coreTeam});
-        
-        await city.transferOwnership('0xf0430bbb78C3c359c22d4913484081A563B86170');
-        await coin.transferOwnership('0xf0430bbb78C3c359c22d4913484081A563B86170');
+
+        console.log("transfer ownership");
+        await city.transferOwnership(managers.jonybang);
+        await coin.transferOwnership(managers.jonybang);
       
         // for (let i = 0; i < 100; i++) {
         //     let randomWallet = ethers.Wallet.createRandom();

@@ -168,6 +168,7 @@ export default {
                 return $contracts.$coinToken.withdrawFee(sendOptions());
             },
             async setCoinTransferFee(newFee) {
+                // return console.log($contracts, sendOptions); //TODO: delete
                 return $contracts.$coinToken.setTransferFee(sendOptions(), newFee);
             },
             async getCoinAllowance(address) {
@@ -198,6 +199,7 @@ export default {
             },
 
             async editTariff(tariff) {
+                // return console.log($contracts, sendOptions);//TODO: delete
                 return $contracts.$city.editTariff(sendOptions(), {
                     id: tariff.id,
                     title: tariff.title,

@@ -268,6 +268,13 @@ export default class CityContract extends EthContract {
             address,
             role);
     }
+
+    async transferOwnership(sendOptions, address) {
+        return this.sendMethod(
+            sendOptions,
+            "transferOwnership",
+            address);
+    }
     
     //
     // async exchangeGaltToEth(sendOptions, galtAmount) {
