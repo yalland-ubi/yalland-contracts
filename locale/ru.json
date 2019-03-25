@@ -215,6 +215,7 @@
       "title": "Управление тарифами",
       "title_title": "Название",
       "payment_title": "Сумма выплаты",
+      "payment_sent_title": "Всего выплачено",
       "currency_title": "Валюта",
       "active_title": "Активен",
       "period_title": "Период выплаты",
