@@ -50,7 +50,7 @@
       }
     },
     "tariff_info": {
-      "title": "Информация о тарифе",
+      "title": "Тариф <%= title %>",
       "title_field": "Название:",
       "id": "ID тарифа:",
       "payment": "Оплата:",
@@ -215,6 +215,7 @@
       "title": "Управление тарифами",
       "title_title": "Название",
       "payment_title": "Сумма выплаты",
+      "payment_sent_title": "Всего выплачено",
       "currency_title": "Валюта",
       "active_title": "Активен",
       "period_title": "Период выплаты",
@@ -241,7 +242,7 @@
           "unit_days": "Дни"
         },
         "payment": "Оплата",
-        "mint_for_periods": "Выпуск токенов при вступлении",
+        "mint_for_periods": "Количество периодов оплаты на которые выпускаются токены при вступлении",
         "currency": "Валюта",
         "cancel": "Отмена",
         "ok": "Ок",
@@ -261,17 +262,18 @@
     },
     "members": {
       "title": "Жители",
+      "tariff": "Тариф",
       "member_control": "Количество: <%= count %>",
-      "claim_to_all": "Вывести оплату для всех",
+      "claim_to_all": "Перечислить оплату за тариф",
       "find_member_placeholder": "Поиск",
       "address_title": "Аккаунт",
       "tariff_title": "Тариф",
       "last_payment": "Выплата доступна",
       "total_amount": "Выплачено",
       "tariff_edit": "Изменить тариф",
-      "kick": "Убрать из города",
+      "kick": "Убрать из тарифа",
       "add_member_button": "Добавить жителя",
-      "deactivate_confirm": "Вы уверены что хотите убрать жителя из города?",
+      "deactivate_confirm": "Вы уверены что хотите убрать жителя из тарифа?",
       "not_found": "Не найдено",
       "show_more": "Показать больше (<%= value %>)",
       "show_less": "Скрыть",
@@ -317,8 +319,8 @@
             "title": "Ошибка при добавлении жителя, возможно житель уже добавлен",
             "description": " "
           },
-          "already_member": {
-            "title": "Этот адрес уже числится как житель в городе",
+          "already_have_tariff": {
+            "title": "Для этого адреса уже добавлен данный тариф",
             "description": " "
           }
         }

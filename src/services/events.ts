@@ -15,13 +15,7 @@ import Vue from 'vue';
 
 export const EventBus = new Vue();
 
-export const EXPLORER_DRAW_AREA = 'explorer-draw-area';
-export const EXPLORER_DRAW_AREAS_LIST = 'explorer-draw-areas-list';
-export const EXPLORER_DRAW_SPACE_TOKEN = 'explorer-draw-space-token';
-export const EXPLORER_DRAW_SPACE_TOKENS_LIST = 'explorer-draw-space-tokens-list';
-export const EXPLORER_MOUSE_CLICK = 'explorer-mouse-click';
-export const EXPLORER_HIGHLIGHT_GEOHASHES = 'explorer-highlight-geohashes';
-export const EXPLORER_HIGHLIGHT_CONTOUR = 'explorer-highlight-contour';
+export const TARIFF_UPDATE = 'tariff-update';
 
 export const WAIT_SCREEN_SHOW = 'wait-screen-show';
 export const WAIT_SCREEN_HIDE = 'wait-screen-hide';

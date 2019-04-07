@@ -15,6 +15,7 @@ import GaltData from "../../../services/galtData";
 import EditMemberTariffModal from "./modals/EditMemberTariffModal/EditMemberTariffModal";
 import AddMemberModal from "./modals/AddMemberModal/AddMemberModal";
 import MemberPayout from "../../../directives/MemberPayout/MemberPayout";
+import {EventBus, TARIFF_UPDATE} from "../../../services/events";
 
 const _ = require('lodash');
 const pIteration = require('p-iteration');
@@ -24,14 +25,42 @@ export default {
     template: require('./AdminMembers.html'),
     components: {MemberPayout},
     props: [],
-    mounted() {
-        this.getAllMembers();
+    async mounted() {
+        this.curTariffId = localStorage.getItem('AdminMembers.curTariffId');
+        await this.getTariffs();
+        this.getTariffMembers();
+
+        EventBus.$on(TARIFF_UPDATE, () => {
+            this.getTariffs();
+        });
     },
-    watch: {},
+    watch: {
+        curTariffId() {
+            if(!this.curTariffId) {
+                return;
+            }
+            localStorage.setItem('AdminMembers.curTariffId', this.curTariffId);
+            this.getTariffMembers();
+        }
+    },
     methods: {
-        async getAllMembers() {
-            this.membersCount = await this.$cityContract.getActiveMembersCount();
-            this.members = await this.$cityContract.getActiveMembers();
+        async getTariffs() {
+            this.tariffs = await this.$cityContract.getAllTariffs();
+            if(!this.curTariffId && this.tariffs.length) {
+                this.curTariffId = this.tariffs[0].id;
+            }
+            return this.tariffs;
+        },
+        async getTariffMembers() {
+            this.loaded = false;
+            if(!this.curTariffId) {
+                this.membersCount = 0;
+                this.members = [];
+                this.loaded = true;
+                return;
+            }
+            this.membersCount = await this.$cityContract.getTariffActiveMembersCount(this.curTariffId);
+            this.members = await this.$cityContract.getTariffActiveMembers(this.curTariffId);
             this.loaded = true;
         },
         async claimToAll() {
@@ -57,15 +86,18 @@ export default {
                 return;
             }
 
-            const operationId = this.$galtUser.claimPaymentForMultipleMembers(membersToClaim);
+            const operationId = this.$galtUser.claimPaymentForMultipleMembers(membersToClaim, this.curTariffId);
             
             this.$waitScreen.setOperationId(operationId);
 
+            this.loaded = false;
+            this.members = [];
             this.$web3Worker.callMethod('waitForOperationMined', operationId).then(async (operationState) => {
                 if(mode == 'internal_wallet') {
                     await this.$galtUser.releaseInternalWallet('City');
                 }
 
+                this.getTariffMembers();
                 this.$waitScreen.hide();
 
                 this.$notify({
@@ -139,7 +171,7 @@ export default {
                     if (!resultMember) {
                         return;
                     }
-                    this.getAllMembers();
+                    this.getTariffMembers();
                 }
             });
         },
@@ -148,9 +180,10 @@ export default {
                 title: this.$locale.get(this.localeKey + '.deactivate_confirm')
             }).then(() => {
 
-                this.$galtUser.kickMember(member)
+                this.loaded = false;
+                this.$galtUser.kickTariffMember(member, this.curTariffId)
                     .then(() => {
-                        this.getAllMembers();
+                        this.getTariffMembers();
 
                         this.$notify({
                             type: 'success',
@@ -201,6 +234,8 @@ export default {
             memberToFind: "",
             membersCount: null,
             loaded: false,
+            curTariffId: null,
+            tariffs: [],
             members: [],
             localeKey: 'admin.members',
             memberForChangeStatus: null,

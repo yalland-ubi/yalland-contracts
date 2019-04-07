@@ -108,7 +108,7 @@ export default {
     },
     computed: {
         saveDisabled(){
-            return this.saving || !this.editTariff.title || !this.editTariff.paymentPeriod || !this.editTariff.payment || !this.editTariff.mintForPeriods || !this.editTariff.currency;
+            return this.saving || !this.editTariff.title || !this.editTariff.paymentPeriod || !this.editTariff.payment || !this.editTariff.currency || (this.editTariff.currency.address !== 'eth' && !this.editTariff.mintForPeriods);
         }
     },
     watch: {},

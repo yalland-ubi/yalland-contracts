@@ -168,6 +168,7 @@ export default {
                 return $contracts.$coinToken.withdrawFee(sendOptions());
             },
             async setCoinTransferFee(newFee) {
+                // return console.log($contracts, sendOptions); //TODO: delete
                 return $contracts.$coinToken.setTransferFee(sendOptions(), newFee);
             },
             async getCoinAllowance(address) {
@@ -198,6 +199,7 @@ export default {
             },
 
             async editTariff(tariff) {
+                // return console.log($contracts, sendOptions);//TODO: delete
                 return $contracts.$city.editTariff(sendOptions(), {
                     id: tariff.id,
                     title: tariff.title,
@@ -224,8 +226,8 @@ export default {
                 return $contracts.$city.activateTariff(sendOptions(), tariff);
             },
             
-            async kickMember(member) {
-                return $contracts.$city.kickMember(sendOptions(), member);
+            async kickTariffMember(member, tariffId) {
+                return $contracts.$city.kickTariffMember(sendOptions(), member, tariffId);
             },
 
             async claimPaymentFor(memberAddress, periodsNumber = 1) {
@@ -292,7 +294,7 @@ export default {
                 this.setInternalWalletActive(false);
             },
             
-            claimPaymentForMultipleMembers(members){
+            claimPaymentForMultipleMembers(members, tariffId){
                 const operationId = GaltData.getNewOperationId();
                 
                 const currentTimestamp = Date.now() / 1000;
@@ -306,7 +308,7 @@ export default {
                         operationId, 
                         sendOptions(true), 
                         'claimPayment', 
-                        [member.address, claimForPeriods]
+                        [member.address, tariffId, claimForPeriods]
                     )
                 });
                 

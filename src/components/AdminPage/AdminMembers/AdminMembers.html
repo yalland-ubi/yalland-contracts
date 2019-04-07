@@ -8,10 +8,19 @@
             <md-subheader v-locale="[localeKey + '.member_control', {count: membersCount}]"></md-subheader>
             
             <md-list-item>
-                <md-button @click="claimToAll()" class="md-raised md-accent" :disabled="!members || !members.length">
+                <md-button @click="claimToAll()" class="md-raised md-accent" :disabled="!members || !members.length || !curTariffId">
                     <md-icon class="md-accent">cake</md-icon>
                     <span v-locale="localeKey + '.claim_to_all'"></span>
                 </md-button>
+            </md-list-item>
+
+            <md-list-item>
+                <md-field>
+                    <label v-locale="localeKey + '.tariff'"></label>
+                    <md-select v-model="curTariffId">
+                        <md-option v-for="tariff in tariffs" :value="tariff.id">{{tariff.title}}</md-option>
+                    </md-select>
+                </md-field>
             </md-list-item>
             
             <md-list-item>
@@ -36,16 +45,16 @@
                         <md-table-cell>{{member.claimed}}</md-table-cell>
                         <md-table-cell class="controls">
                             <div style="width: 120px;">
-                                <member-payout :address="member.address" :icon-mode="true" v-on:claim-finish="getAllMembers()"></member-payout>
+                                <member-payout :address="member.address" :tariff-id="curTariffId" :icon-mode="true" v-on:claim-finish="getAllMembers()"></member-payout>
                             
                                 <md-menu md-direction="bottom-start" v-if="is_rate_manager || is_member_leave_manager">
                                     <md-button md-menu-trigger class="md-icon-button md-raised md-accent" style="margin-left: 15px;"><md-icon>menu</md-icon></md-button>
 
                                     <md-menu-content>
-                                        <md-menu-item @click="editMember(member)" v-if="is_rate_manager">
-                                            <md-icon>edit</md-icon>
-                                            <span v-locale="localeKey + '.tariff_edit'"></span>
-                                        </md-menu-item>
+                                        <!--<md-menu-item @click="editMember(member)" v-if="is_rate_manager">-->
+                                            <!--<md-icon>edit</md-icon>-->
+                                            <!--<span v-locale="localeKey + '.tariff_edit'"></span>-->
+                                        <!--</md-menu-item>-->
                                         <md-menu-item @click="kickMember(member)" v-if="is_member_leave_manager">
                                             <md-icon>close</md-icon>
                                             <span v-locale="localeKey + '.kick'"></span>

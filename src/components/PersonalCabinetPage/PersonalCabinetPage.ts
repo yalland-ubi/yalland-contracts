@@ -18,8 +18,8 @@ export default {
     name: 'personal-cabinet-page',
     template: require('./PersonalCabinetPage.html'),
     components: {GeneralInfo, TariffInfo},
-    created() {
-
+    async created() {
+        this.getMemberInfo();
     },
     mounted() {
         
@@ -28,15 +28,24 @@ export default {
         this.intervals.forEach(intervalId => clearInterval(intervalId));
     },
     methods: {
-        
+        async getMemberInfo() {
+            if(!this.user_wallet) {
+                this.memberInfo = null;
+                return;
+            }
+            this.memberInfo = await this.$cityContract.getMember(this.user_wallet);
+        }
     },
     watch: {
-        
+        async user_wallet() {
+            this.getMemberInfo();
+        }
     },
     data() {
         return {
             localeKey: 'personal_cabinet',
-            intervals: []
+            intervals: [],
+            memberInfo: null
         };
     },
     computed: {

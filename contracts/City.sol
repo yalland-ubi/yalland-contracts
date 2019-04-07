@@ -21,14 +21,13 @@ import "openzeppelin-solidity/contracts/ownership/rbac/RBAC.sol";
 import "./utils/ArraySet.sol";
 
 library CityLibrary {
-    struct Payment {
-        bytes32 tariff;
+    struct MemberTariff {
+        bool active;
         uint256 lastTimestamp;
         uint256 minted;
         uint256 claimed;
     }
     struct ParticipationRequest {
-        bytes32 tariff;
         bool sent;
         bool confirmed;
         uint256 confirmationsCount;
@@ -72,14 +71,16 @@ contract City is RBAC, Ownable {
     event ParticipationRequest(address requested);
     event ParticipationConfirm(address requested, address confirmed, bool fully);
     event ParticipationAdded(address cityManager, address member, bytes32 tariff);
-    event ParticipationTariffChanged(address cityManager, address member, bytes32 tariff);
+    event ParticipationTariffRemoved(address cityManager, address member, bytes32 tariff);
 
     mapping (address => bool) public participants;
     ArraySet.AddressSet activeParticipants;
     address[] allParticipants;
 
-    mapping (address => CityLibrary.Payment) private payments;
-    mapping (address => CityLibrary.ParticipationRequest) private participationRequests;
+    mapping (address => ArraySet.Bytes32Set) activeMemberTariffs;
+    mapping (address => mapping(bytes32 => CityLibrary.MemberTariff)) private memberTariffs;
+    mapping (address => ArraySet.Bytes32Set) activeMemberRequests;
+    mapping (address => mapping(bytes32 => CityLibrary.ParticipationRequest)) private participationRequests;
     ArraySet.AddressSet activeRequests;
 
     mapping (bytes32 => CityLibrary.Tariff) private tariffs;
@@ -175,138 +176,164 @@ contract City is RBAC, Ownable {
         confirmsToParticipation = _confirmsToParticipation;
     }
 
-    function claimPayment(address claimFor, uint256 periodsNumber) public returns (uint256 nextDate) {
-        CityLibrary.Payment storage payment = payments[claimFor];
-        CityLibrary.Tariff storage tariff = tariffs[payment.tariff];
-        require(tariff.active, "Tariff not active");
-        require(tariff.payment != 0, "Tariff payment is null");
-        require(tariff.paymentPeriod != 0, "Tariff payment period is null");
+    function claimPayment(address _claimFor, bytes32 _tariffId, uint256 _periodsNumber) public returns (uint256 nextDate) {
+        CityLibrary.MemberTariff storage _memberTariff = memberTariffs[_claimFor][_tariffId];
+        CityLibrary.Tariff storage _tariff = tariffs[_tariffId];
+        require(_memberTariff.active, "Tariff payment is not active"); // REVERT
+        require(_tariff.active, "Tariff is not active");
+        require(_tariff.payment != 0, "Tariff payment is null");
+        require(_tariff.paymentPeriod != 0, "Tariff payment period is null");
 
-        require(participants[claimFor], "Not active");
-        require(payments[claimFor].lastTimestamp + (tariff.paymentPeriod * periodsNumber) <= now, "Too soon");
-        
-        if(payments[claimFor].lastTimestamp == 0) {
-            payments[claimFor].lastTimestamp = now;
+        require(participants[_claimFor], "Not active");
+        require(_memberTariff.lastTimestamp + (_tariff.paymentPeriod * _periodsNumber) <= now, "Too soon");
+
+        if(_memberTariff.lastTimestamp == 0) {
+            _memberTariff.lastTimestamp = now;
         } else {
-            payments[claimFor].lastTimestamp += tariff.paymentPeriod * periodsNumber;
+            _memberTariff.lastTimestamp += _tariff.paymentPeriod * _periodsNumber;
         }
-        
-        payments[claimFor].claimed += tariff.payment * periodsNumber;
 
-        if(tariff.currency == CityLibrary.TariffCurrency.ETH) {
-            claimFor.transfer(tariff.payment * periodsNumber);
+        _memberTariff.claimed += _tariff.payment * _periodsNumber;
+
+        if(_tariff.currency == CityLibrary.TariffCurrency.ETH) {
+            _claimFor.transfer(_tariff.payment * _periodsNumber);
         } else {
-            ERC20(tariff.currencyAddress).transfer(claimFor, tariff.payment * periodsNumber);
+            ERC20(_tariff.currencyAddress).transfer(_claimFor, _tariff.payment * _periodsNumber);
 
-            if(tariff.mintForPeriods > 0 && payments[claimFor].claimed >= payments[claimFor].minted) {
-                uint256 mintAmount = tariff.mintForPeriods * tariff.payment;
-                MintableToken(tariff.currencyAddress).mint(address(this), mintAmount);
-                payments[claimFor].minted += mintAmount;
-                tariff.totalMinted += mintAmount;
+            if(_tariff.mintForPeriods > 0 && _memberTariff.claimed >= _memberTariff.minted) {
+                uint256 mintAmount = _tariff.mintForPeriods * _tariff.payment;
+                MintableToken(_tariff.currencyAddress).mint(address(this), mintAmount);
+                _memberTariff.minted += mintAmount;
+                _tariff.totalMinted += mintAmount;
             }
         }
 
-        tariff.paymentSent += tariff.payment * periodsNumber;
+        _tariff.paymentSent += _tariff.payment * _periodsNumber;
 
-        return payments[claimFor].lastTimestamp + tariff.paymentPeriod;
+        return _memberTariff.lastTimestamp + _tariff.paymentPeriod;
     }
     
     function addParticipation(address _address, bytes32 _tariff) public onlyMemberJoinManager {
-        require(!participants[_address], "Already participant");
-
         addParticipationUnsafe(_address, _tariff);
 
         emit ParticipationAdded(msg.sender, _address, _tariff);
     }
     
-    function addParticipationUnsafe(address _address, bytes32 _tariff) internal {
+    function addParticipationUnsafe(address _address, bytes32 _tariffId) internal {
+        CityLibrary.MemberTariff storage _memberTariff = memberTariffs[_address][_tariffId];
+        require(!_memberTariff.active, "Already have tariff");
         participants[_address] = true;
-        activeParticipants.add(_address);
+        activeParticipants.addSilent(_address);
+        tariffs[_tariffId].activeParticipants.add(_address);
         allParticipants.push(_address);
+        _memberTariff.active = true;
         
-        if(tariffs[_tariff].currencyAddress != address(0) && tariffs[_tariff].mintForPeriods > 0) {
-            uint256 mintAmount = tariffs[_tariff].mintForPeriods * tariffs[_tariff].payment;
-            MintableToken(tariffs[_tariff].currencyAddress).mint(address(this), mintAmount);
-            payments[_address].minted += mintAmount;
-            tariffs[_tariff].totalMinted += mintAmount;
+        if(tariffs[_tariffId].currencyAddress != address(0) && tariffs[_tariffId].mintForPeriods > 0) {
+            uint256 mintAmount = tariffs[_tariffId].mintForPeriods * tariffs[_tariffId].payment;
+            MintableToken(tariffs[_tariffId].currencyAddress).mint(address(this), mintAmount);
+            _memberTariff.minted += mintAmount;
+            tariffs[_tariffId].totalMinted += mintAmount;
         }
-        
-        payments[_address].tariff = _tariff;
-        payments[_address].lastTimestamp = now - tariffs[_tariff].paymentPeriod;
-    }
-    
-    function changeParticipationTariff(address _address, bytes32 _tariff) public onlyRateManager {
-        payments[_address].tariff = _tariff;
-        payments[_address].claimed = 0;
-        
-        emit ParticipationTariffChanged(msg.sender, _address, _tariff);
+
+        activeMemberTariffs[_address].add(_tariffId);
+        _memberTariff.lastTimestamp = now - tariffs[_tariffId].paymentPeriod;
     }
 
-    function requestParticipation(bytes32 _tariff) public {
+    function requestParticipation(bytes32 _tariffId) public {
         require(activeParticipants.size() < maxSupply, "Not enough supply");
         require(!participants[msg.sender], "Already participant");
-        require(!participationRequests[msg.sender].sent, "Already sent");
+        require(!participationRequests[msg.sender][_tariffId].sent, "Already sent");
 
-        participationRequests[msg.sender] = CityLibrary.ParticipationRequest({ sent: true, confirmed: false, confirmationsCount: 0, tariff: _tariff });
-        activeRequests.add(msg.sender);
+        participationRequests[msg.sender][_tariffId] = CityLibrary.ParticipationRequest({ sent: true, confirmed: false, confirmationsCount: 0 });
+        activeMemberRequests[msg.sender].add(_tariffId);
+        activeRequests.remove(msg.sender);
         
         emit ParticipationRequest(msg.sender);
     }
 
-    function confirmParticipation(address _requested) public onlyMemberJoinManager returns (uint256 count) {
+    function confirmParticipation(address _requested, bytes32 _tariffId) public onlyMemberJoinManager returns (uint256 count) {
         require(activeParticipants.size() < maxSupply, "Not enough supply");
         require(!participants[_requested], "Already participant");
-        require(participationRequests[_requested].sent, "Not sent");
-        require(!participationRequests[_requested].confirmed, "Already confirmed");
 
-        require(participationRequests[_requested].confirmations[msg.sender] == false, "You cant confirm twice");
+        CityLibrary.ParticipationRequest storage _request = participationRequests[_requested][_tariffId];
+        require(_request.sent, "Not sent");
+        require(!_request.confirmed, "Already confirmed");
 
-        participationRequests[_requested].confirmations[msg.sender] = true;
-        participationRequests[_requested].confirmationsCount += 1;
+        require(_request.confirmations[msg.sender] == false, "You cant confirm twice");
 
-        if(participationRequests[_requested].confirmationsCount >= confirmsToParticipation){
-            participationRequests[_requested].confirmed = true;
+        _request.confirmations[msg.sender] = true;
+        _request.confirmationsCount += 1;
+
+        if(_request.confirmationsCount >= confirmsToParticipation){
+            _request.confirmed = true;
             activeRequests.remove(_requested);
-            addParticipationUnsafe(_requested, participationRequests[_requested].tariff);
+            activeMemberRequests[_requested].remove(_tariffId);
+            addParticipationUnsafe(_requested, _tariffId);
             emit ParticipationConfirm(_requested, msg.sender, true);
         } else {
             emit ParticipationConfirm(_requested, msg.sender, false);
         }
 
-        return participationRequests[_requested].confirmationsCount;
+        return _request.confirmationsCount;
     }
 
-    function confirmsOf(address _requested) public view returns (uint256) {
-        return participationRequests[_requested].confirmationsCount;
+    function confirmsOf(address _requested, bytes32 _tariffId) public view returns (uint256) {
+        return participationRequests[_requested][_tariffId].confirmationsCount;
     }
 
-    function kickParticipation(address _participant) public onlyMemberLeaveManager {
-        require(participants[_participant], "Not participant");
+    function removeTariffParticipationUnsafe(address _member, bytes32 _tariffId) internal {
+        CityLibrary.MemberTariff storage _memberTariff = memberTariffs[_member][_tariffId];
 
-        removeParticipationUnsafe(_participant);
-    }
+        burnRemainingFor(_member, _tariffId);
 
-    function leaveParticipation() public {
-        require(participants[msg.sender], "Not participant");
-
-        removeParticipationUnsafe(msg.sender);
-    }
-
-    function removeParticipationUnsafe(address _participant) internal {
-        participants[_participant] = false;
-        activeParticipants.remove(_participant);
+        _memberTariff.claimed = 0;
+        _memberTariff.active = false;
+        activeMemberTariffs[_member].remove(_tariffId);
+        tariffs[_tariffId].activeParticipants.remove(_member);
         
-        burnRemainingFor(_participant);
+        if(activeMemberTariffs[_member].size() == 0) {
+            participants[_member] = false;
+            activeParticipants.remove(_member);
+        }
+
+        emit ParticipationTariffRemoved(msg.sender, _member, _tariffId);
     }
 
-    function burnRemainingFor(address _participant) internal {
-        CityLibrary.Payment storage payment = payments[_participant];
-        CityLibrary.Tariff storage tariff = tariffs[payment.tariff];
+    function removeAllParticipationUnsafe(address _member) internal {
+        bytes32[] memory _memberTariffs = activeMemberTariffs[_member].elements();
+        for(uint256 i = 0; i < _memberTariffs.length; i++) {
+            removeTariffParticipationUnsafe(_member, _memberTariffs[i]);
+        }
+    }
 
-        if(payment.minted > payment.claimed && tariff.active) {
-            uint256 burnAmount = payment.minted - payment.claimed;
-            BurnableToken(tariff.currencyAddress).burn(burnAmount);
-            tariff.totalBurned += burnAmount;
+    function kickAllParticipation(address _member) public onlyMemberLeaveManager {
+        require(participants[_member], "Not participant");
+        removeAllParticipationUnsafe(_member);
+    }
+    function leaveAllParticipation() public {
+        require(participants[msg.sender], "Not participant");
+        removeAllParticipationUnsafe(msg.sender);
+    }
+
+    function kickTariffParticipation(address _member, bytes32 _tariffId) public onlyMemberLeaveManager {
+        require(participants[_member], "Not participant");
+        removeTariffParticipationUnsafe(_member, _tariffId);
+    }
+    function leaveAllParticipation(bytes32 _tariffId) public {
+        require(participants[msg.sender], "Not participant");
+        removeTariffParticipationUnsafe(msg.sender, _tariffId);
+    }
+
+    function burnRemainingFor(address _member, bytes32 _tariffId) internal {
+        CityLibrary.MemberTariff storage _memberTariff = memberTariffs[_member][_tariffId];
+        CityLibrary.Tariff storage _tariff = tariffs[_tariffId];
+
+        if(_memberTariff.minted > _memberTariff.claimed && _tariff.active) {
+            uint256 burnAmount = _memberTariff.minted - _memberTariff.claimed;
+            BurnableToken(_tariff.currencyAddress).burn(burnAmount);
+            _tariff.totalBurned += burnAmount;
+            _memberTariff.minted = 0;
+            _memberTariff.claimed = 0;
         }
     }
 
@@ -365,26 +392,43 @@ contract City is RBAC, Ownable {
     function getActiveParticipantsCount() public view returns(uint256) {
         return activeParticipants.size();
     }
+    
+    function getTariffActiveParticipants(bytes32 _tariffId) public view returns(address[]) {
+        return tariffs[_tariffId].activeParticipants.elements();
+    }
+
+    function getTariffActiveParticipantsCount(bytes32 _tariffId) public view returns(uint256) {
+        return tariffs[_tariffId].activeParticipants.size();
+    }
 
     function isParticipant(address _address) public view returns (bool) {
         return participants[_address];
     }
     
-    function getParticipantInfo(address _participant) public view returns
+    function getParticipantInfo(address _member) public view returns
     (
         bool active, 
-        bytes32 tariff, 
+        bytes32[] tariffs
+    ) {
+        return (
+            participants[_member],
+            activeMemberTariffs[_member].elements()
+        );
+    }
+
+    function getParticipantTariffInfo(address _member, bytes32 _tariff) public view returns
+    (
+        bool active,
         uint256 claimed,
         uint256 minted,
         uint256 lastTimestamp
     ) {
-        CityLibrary.Payment storage p = payments[_participant];
+        CityLibrary.MemberTariff storage _mt = memberTariffs[_member][_tariff];
         return (
-            participants[_participant],
-            p.tariff,
-            p.claimed,
-            p.minted,
-            p.lastTimestamp
+            _mt.active,
+            _mt.claimed,
+            _mt.minted,
+            _mt.lastTimestamp
         );
     }
     

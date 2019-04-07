@@ -80,4 +80,11 @@ export default class CoinTokenContract extends EthContract {
             address,
             role);
     }
+
+    async transferOwnership(sendOptions, address) {
+        return this.sendMethod(
+            sendOptions,
+            "transferOwnership",
+            address);
+    }
 }

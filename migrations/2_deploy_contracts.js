@@ -6,6 +6,9 @@ const web3 = new Web3(CoinToken.web3.currentProvider);
 
 const fs = require('fs');
 
+let lastCoinAddress = '0x8d4a6cd17d095ef09f460f181546fbec32e11e8b';
+let previousCityAddress = '0xf0541c6324375185c4409f09d0aa377fc1bdcbe9';
+
 module.exports = async function(deployer, network, accounts) {
   if (network === 'test' || network === 'local_test' || network === 'development') {
     console.log('Skipping deployment migration');
@@ -14,12 +17,25 @@ module.exports = async function(deployer, network, accounts) {
 
   deployer.then(async () => {
     const coreTeam = accounts[0];
+    console.log('coreTeam', coreTeam);
 
     console.log('Create contract instances...');
-    const coinToken = await CoinToken.new("Yalland", "YAL", { from: coreTeam });
+    let coinToken;
+    if(lastCoinAddress) {
+        coinToken = await CoinToken.at(lastCoinAddress);
+    } else {
+        coinToken = await CoinToken.new("Yalland", "YAL", { from: coreTeam });
+    }
     const city = await City.new(10000, "Yalland", "YAL", { from: coreTeam });
 
     console.log('Set roles...');
+    if (previousCityAddress) {
+        await coinToken.removeRoleFrom(previousCityAddress, "minter", { from: coreTeam });
+        await coinToken.removeRoleFrom(previousCityAddress, "burner", { from: coreTeam });
+    }
+
+    await coinToken.addRoleTo(coreTeam, "fee_manager", { from: coreTeam });
+    
     await coinToken.addRoleTo(city.address, "minter", { from: coreTeam });
     await coinToken.addRoleTo(city.address, "burner", { from: coreTeam });
 
@@ -29,6 +45,8 @@ module.exports = async function(deployer, network, accounts) {
     
     await coinToken.setTransferFee(Web3.utils.toWei((0).toString(), 'szabo'), {from: coreTeam});
 
+    console.log('Send 100000 ETH to city');
+      
     const sendWei = Web3.utils.toWei('100000', 'ether').toString(10);
     await web3.eth.sendTransaction({ from: coreTeam, to: city.address, value: sendWei }).catch(() => {});
 

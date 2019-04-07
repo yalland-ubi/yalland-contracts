@@ -14,7 +14,7 @@
 export default {
     name: 'member-payout',
     template: require('./MemberPayout.html'),
-    props: ['address', 'iconMode'],
+    props: ['address', 'tariffId', 'iconMode'],
     created() {
         this.getPaymentInfo();
     },
@@ -29,14 +29,14 @@ export default {
                 this.paymentInfo = null;
                 return;
             }
-            const member = await this.$cityContract.getMember(this.address);
-            const tariff = await this.$cityContract.getTariffById(member.tariff);
+            const tariff = await this.$cityContract.getTariffById(this.tariffId);
+            const memberTariff = await this.$cityContract.getMemberTariff(this.address, this.tariffId);
             
             const currentTimeStamp = Math.floor(Date.now() / 1000);
             this.paymentInfo = {
-                availableCount: Math.floor((currentTimeStamp - member.lastTimestamp) / tariff.paymentPeriod)
+                availableCount: Math.floor((currentTimeStamp - memberTariff.lastTimestamp) / tariff.paymentPeriod)
             };
-            this.paymentInfo.nextPayment = member.lastTimestamp + (this.paymentInfo.availableCount + 1) * tariff.paymentPeriod;
+            this.paymentInfo.nextPayment = memberTariff.lastTimestamp + (this.paymentInfo.availableCount + 1) * tariff.paymentPeriod;
             this.paymentInfo.amount = tariff.payment;
             this.paymentInfo.currency = tariff.currencyName;
             
@@ -44,13 +44,16 @@ export default {
         },
         
         claimPayment() {
-            this.$galtUser.claimPaymentFor(this.address, this.paymentInfo.availableCount).then(() => {
+            this.$galtUser.claimPaymentFor(this.address, this.tariffId, this.paymentInfo.availableCount).then(() => {
                 this.$notify({
                     type: 'success',
                     title: this.getLocale("success.claim.title", this.paymentInfo),
                     text: this.getLocale("success.claim.description", this.paymentInfo)
                 });
                 this.getPaymentInfo();
+                setTimeout(() => {
+                    this.getPaymentInfo();
+                }, 5000);
                 this.$emit('claim-finish');
             }).catch(() => {
                 this.$notify({

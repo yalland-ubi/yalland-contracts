@@ -1,5 +1,5 @@
 {
-  "coinTokenAddress": "0xe2e6a6bba9fbd6a87fe7f939ef0a64d6d149be98",
+  "coinTokenAddress": "0x8d4a6cd17d095ef09f460f181546fbec32e11e8b",
   "coinTokenAbi": [
     {
       "constant": true,
@@ -730,7 +730,7 @@
       "type": "function"
     }
   ],
-  "cityAddress": "0x4657853291aa26a9d8cf3443de6455020b947242",
+  "cityAddress": "0x463f8834c322d9e56e2409e562a635dfd5967092",
   "cityAbi": [
     {
       "constant": true,
@@ -1117,7 +1117,7 @@
           "type": "bytes32"
         }
       ],
-      "name": "ParticipationTariffChanged",
+      "name": "ParticipationTariffRemoved",
       "type": "event"
     },
     {
@@ -1310,11 +1310,15 @@
       "constant": false,
       "inputs": [
         {
-          "name": "claimFor",
+          "name": "_claimFor",
           "type": "address"
         },
         {
-          "name": "periodsNumber",
+          "name": "_tariffId",
+          "type": "bytes32"
+        },
+        {
+          "name": "_periodsNumber",
           "type": "uint256"
         }
       ],
@@ -1351,25 +1355,7 @@
       "constant": false,
       "inputs": [
         {
-          "name": "_address",
-          "type": "address"
-        },
-        {
-          "name": "_tariff",
-          "type": "bytes32"
-        }
-      ],
-      "name": "changeParticipationTariff",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_tariff",
+          "name": "_tariffId",
           "type": "bytes32"
         }
       ],
@@ -1385,6 +1371,10 @@
         {
           "name": "_requested",
           "type": "address"
+        },
+        {
+          "name": "_tariffId",
+          "type": "bytes32"
         }
       ],
       "name": "confirmParticipation",
@@ -1404,6 +1394,10 @@
         {
           "name": "_requested",
           "type": "address"
+        },
+        {
+          "name": "_tariffId",
+          "type": "bytes32"
         }
       ],
       "name": "confirmsOf",
@@ -1421,11 +1415,29 @@
       "constant": false,
       "inputs": [
         {
-          "name": "_participant",
+          "name": "_member",
           "type": "address"
         }
       ],
-      "name": "kickParticipation",
+      "name": "kickAllParticipation",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_member",
+          "type": "address"
+        },
+        {
+          "name": "_tariffId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "kickTariffParticipation",
       "outputs": [],
       "payable": false,
       "stateMutability": "nonpayable",
@@ -1434,7 +1446,21 @@
     {
       "constant": false,
       "inputs": [],
-      "name": "leaveParticipation",
+      "name": "leaveAllParticipation",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_tariffId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "leaveAllParticipation",
       "outputs": [],
       "payable": false,
       "stateMutability": "nonpayable",
@@ -1605,6 +1631,44 @@
       "constant": true,
       "inputs": [
         {
+          "name": "_tariffId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getTariffActiveParticipants",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_tariffId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getTariffActiveParticipantsCount",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
           "name": "_address",
           "type": "address"
         }
@@ -1624,7 +1688,7 @@
       "constant": true,
       "inputs": [
         {
-          "name": "_participant",
+          "name": "_member",
           "type": "address"
         }
       ],
@@ -1635,8 +1699,31 @@
           "type": "bool"
         },
         {
-          "name": "tariff",
+          "name": "tariffs",
+          "type": "bytes32[]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_member",
+          "type": "address"
+        },
+        {
+          "name": "_tariff",
           "type": "bytes32"
+        }
+      ],
+      "name": "getParticipantTariffInfo",
+      "outputs": [
+        {
+          "name": "active",
+          "type": "bool"
         },
         {
           "name": "claimed",
