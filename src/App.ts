@@ -197,10 +197,19 @@ export default {
             // this.checkInternalWalletForReleased();
         },
         
-        initWeb3() {
+        async initWeb3() {
             // Checking if Web3 has been injected by the browser (Mist/MetaMask)
-            if (typeof window['web3'] !== 'undefined') {
-                // Use Mist/MetaMask's provider
+          if (window['ethereum']) {
+            try {
+              // Request account access if needed
+              await window['ethereum'].enable();
+              this.$root.$web3 = new Web3(window['ethereum']);
+            } catch (error) {
+              console.error('init web3 error', error);
+            }
+          }
+          // Legacy dapp browsers...
+          else if (typeof window['web3'] !== 'undefined') {
                 this.$root.$web3 = new Web3(window['web3'].currentProvider);
             } else {
                 this.showMetamaskNotActive = true;
@@ -302,14 +311,14 @@ export default {
         },
 
         async initContracts(contractsConfig) {
-            GaltData.getContractsConfig().then((contractsConfig) => {
+            GaltData.getContractsConfig().then(async (contractsConfig) => {
                 if (!this.$root.$web3) {
                     if (document.readyState === "complete") {
-                        this.initWeb3();
+                        await this.initWeb3();
                         this.$contractsFactory.init(this, contractsConfig);
                     } else {
-                        window.addEventListener('load', () => {
-                            this.initWeb3();
+                        window.addEventListener('load', async () => {
+                            await this.initWeb3();
                             this.$contractsFactory.init(this, contractsConfig);
                         })
                     }
