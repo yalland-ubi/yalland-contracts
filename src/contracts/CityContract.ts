@@ -270,6 +270,14 @@ export default class CityContract extends EthContract {
             role);
     }
 
+    async removeRoleFrom(sendOptions, address, role) {
+        return this.sendMethod(
+          sendOptions,
+          "removeRoleFrom",
+          address,
+          role);
+    }
+
     async transferOwnership(sendOptions, address) {
         return this.sendMethod(
             sendOptions,
