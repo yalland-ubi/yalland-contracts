@@ -1,3 +1,12 @@
+<!--
+  ~ Copyright ©️ 2018 Galt•Project Society Construction and Terraforming Company
+  ~ (Founded by [Nikolai Popeka](https://github.com/npopeka)
+  ~
+  ~ Copyright ©️ 2018 Galt•Core Blockchain Company
+  ~ (Founded by [Nikolai Popeka](https://github.com/npopeka) by
+  ~ [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
+  -->
+
 <div v-if="modals.length">
   <div class="modal-backdrop" v-if="currModal && currModal.options.backdrop"></div>
   <component v-for="{id, component, props, options} of modals" :is="component" :key="id" ref="modal" v-bind="props" v-show="options.show" @click.native="e => handleBackdrop(e, id, options.backdrop)"></component>
