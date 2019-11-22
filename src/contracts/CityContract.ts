@@ -14,7 +14,7 @@ import * as pIteration from "p-iteration";
 const EthContract = require('../libs/EthContract');
 
 export default class CityContract extends EthContract {
-    
+
     tariffsCache = {};
 
     async createTariff(sendOptions, tariff) {
@@ -41,7 +41,7 @@ export default class CityContract extends EthContract {
             tariff.currency == 'eth' ? "0" : "1",
             tariff.currency == 'eth' ? GaltData.nullAddress : tariff.currency);
     }
-    
+
     async addMember(sendOptions, memberAddress, tariffId) {
         return this.sendMethod(
             sendOptions,
@@ -104,7 +104,7 @@ export default class CityContract extends EthContract {
                 return this.getTariffsByIds(tariffsIds, options);
             });
     }
-    
+
     async getAllTariffs(options = {}){
         return this.massCallMethod("getAllTariffs")
             .then(async (tariffsIds) => {
@@ -131,28 +131,28 @@ export default class CityContract extends EthContract {
         tariff.payment = GaltData.weiToEther(tariff.payment);
         tariff.paymentSent = GaltData.weiToEther(tariff.paymentSent);
         tariff.paymentPeriod = parseInt(tariff.paymentPeriod);
-        
+
         this.tariffsCache[tariffId] = tariff;
-        
+
         if(tariff.currency == "1") {
             tariff.currencyName = tariff.currencyAddress.toLowerCase() == GaltData.contractsConfig.coinTokenAddress.toLowerCase() ? 'yal' : tariff.currencyAddress;
         } else {
             tariff.currencyName = 'eth';
         }
-        
+
         tariff.toLowerCase = tariff.toString = function(){
             return tariff.title;
         };
         return tariff;
     }
-    
+
     async getTariffTitle(tariffId) {
         if(!this.tariffsCache[tariffId]) {
             await this.getTariffById(tariffId);
         }
         return this.tariffsCache[tariffId].title;
     }
-    
+
     async getAllActiveMembersCount(){
         return this.massCallMethod("getActiveParticipantsCount");
     }
@@ -168,9 +168,13 @@ export default class CityContract extends EthContract {
         return this.massCallMethod("getTariffActiveParticipantsCount", [tariffId]);
     }
 
-    async getTariffActiveMembers(tariffId, options = {}){
+    async getTariffActiveMembers(tariffId, options: any = {}){
         return this.massCallMethod("getTariffActiveParticipants", [tariffId])
             .then(async (membersAddresses) => {
+                if(options.limit) {
+                  options.offset = options.offset || 0;
+                  membersAddresses = membersAddresses.slice(options.offset, options.offset + options.limit);
+                }
                 return this.getMembersTariffsByAddresses(membersAddresses, tariffId, options);
             });
     }
@@ -202,10 +206,11 @@ export default class CityContract extends EthContract {
         }
         const member = await this.massCallMethod(params.method || "getParticipantInfo", [memberAddress]);
         member.address = memberAddress;
-        
+
         return member;
     }
     async getMembersTariffsByAddresses(membersAddresses, tariffId, params: any = {}){
+        console.log('membersAddresses.length', membersAddresses.length);
         const applications = await pIteration.map(membersAddresses, async (memberAddress) => {
             // try {
             return this.getMemberTariff(memberAddress, tariffId, params);
@@ -244,11 +249,11 @@ export default class CityContract extends EthContract {
 
         return memberTariff;
     }
-    
+
     async isMember(address) {
         return this.massCallMethod("participants", [address]);
     }
-    
+
     async isMemberHaveTariff(address, tariffId) {
         const memberTariff = await this.massCallMethod("getParticipantTariffInfo", [address, tariffId]);
         return memberTariff.active;
@@ -280,7 +285,7 @@ export default class CityContract extends EthContract {
             "transferOwnership",
             address);
     }
-    
+
     //
     // async exchangeGaltToEth(sendOptions, galtAmount) {
     //     return this.sendMethod(sendOptions, 'exchangeGaltToEth', GaltData.etherToWei(galtAmount));
