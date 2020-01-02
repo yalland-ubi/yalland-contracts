@@ -57,6 +57,11 @@
           <md-icon>business_center</md-icon>
           <span class="md-list-item-text" v-locale="'main_menu.admin'"></span>
         </md-list-item>
+
+        <md-list-item to="/export-txs/" v-if="is_city_manager">
+          <md-icon>play_for_work</md-icon>
+          <span class="md-list-item-text" v-locale="'main_menu.export_txs'"></span>
+        </md-list-item>
       </md-list>
     </md-app-drawer>
 

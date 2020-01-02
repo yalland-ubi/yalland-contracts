@@ -11,6 +11,7 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import AdminPage from "../components/AdminPage/AdminPage";
 import PersonalCabinetPage from "../components/PersonalCabinetPage/PersonalCabinetPage";
+import ExportTxs from "../components/ExportTxs/ExportTxs";
 
 Vue.use(Router);
 
@@ -26,6 +27,11 @@ export default new Router({
             path: '/admin',
             name: 'admin',
             component: AdminPage
+        },
+        {
+            path: '/export-txs',
+            name: 'export-txs',
+            component: ExportTxs
         },
         {
             path: '*', redirect: '/cabinet'

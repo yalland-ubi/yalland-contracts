@@ -1,0 +1,88 @@
+<!--
+  ~ Copyright ©️ 2018 Galt•Project Society Construction and Terraforming Company
+  ~ (Founded by [Nikolai Popeka](https://github.com/npopeka)
+  ~
+  ~ Copyright ©️ 2018 Galt•Core Blockchain Company
+  ~ (Founded by [Nikolai Popeka](https://github.com/npopeka) by
+  ~ [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
+  -->
+
+<div id="export-txs" style="height: 100%;" xmlns:v-on="">
+
+  <md-card>
+    <md-card-header>
+      <div class="md-title">Transactions export</div>
+    </md-card-header>
+
+    <md-card-content>
+
+      <div class="md-layout">
+        <div class="md-layout-item md-size-30">
+          <md-field>
+            <label>From block</label>
+            <md-input v-model="fromBlock"></md-input>
+          </md-field>
+          <div style="position: relative;">
+            <small style="position: absolute; bottom: 0;">{{fromBlockDate}}</small>
+          </div>
+
+          <md-button class="md-raised" @click="setBlock('from')">Set From block</md-button>
+        </div>
+        <div class="md-layout-item md-size-5"></div>
+        <div class="md-layout-item md-size-30">
+          <md-field>
+            <label>To block</label>
+            <md-input v-model="toBlock"></md-input>
+          </md-field>
+          <div style="position: relative;">
+            <small style="position: absolute; bottom: 0;">{{toBlockDate}}</small>
+          </div>
+
+          <md-button class="md-raised" @click="setBlock('to')">Set To block</md-button>
+        </div>
+        <div class="md-layout-item md-size-5"></div>
+        <div class="md-layout-item md-size-30">
+          <md-button class="md-raised" @click="runExport()" :disabled="runExportDisabled">Run export</md-button>
+        </div>
+      </div>
+
+      <a href @click.prevent.stop="enableFilters = !enableFilters">{{enableFilters ? 'Disable filters' : 'Enable filters'}}</a>
+
+      <div class="md-layout" v-if="enableFilters">
+        <div class="md-layout-item md-size-30">
+          <md-field>
+            <label>To address</label>
+            <md-input v-model="filters.to"></md-input>
+          </md-field>
+        </div>
+        <div class="md-layout-item md-size-5"></div>
+        <div class="md-layout-item md-size-30">
+          <md-field>
+            <label>Amount</label>
+            <md-input v-model="filters.value"></md-input>
+          </md-field>
+        </div>
+      </div>
+
+      <div class="md-layout">
+        <div class="md-layout-item md-size-100">
+          <h2>Last exports:</h2>
+          <md-table>
+            <md-table-row>
+              <md-table-head>Filename</md-table-head>
+              <md-table-head>Status</md-table-head>
+            </md-table-row>
+
+            <md-table-row v-for="(filename, index) in lastExports">
+              <md-table-cell>
+                <a v-if="exportAvailability[filename]" :href="helpersBackendUrl + filename" download target="_blank">{{filename}}</a>
+                <span v-else>{{filename}}</span>
+              </md-table-cell>
+              <md-table-cell>{{exportAvailability[filename] ? 'Ready' : 'Not ready'}}</md-table-cell>
+            </md-table-row>
+          </md-table>
+        </div>
+      </div>
+    </md-card-content>
+  </md-card>
+</div>
