@@ -7,6 +7,7 @@
   "main_menu": {
     "title": "Меню",
     "admin": "Администрирование",
+    "export_txs": "Экспорт транзанкций",
     "personal_cabinet": "Личный кабинет"
   },
   "transaction_in_process": "Идет отправка транзанкции, пожалуйста, проверьте MetaMask.",
