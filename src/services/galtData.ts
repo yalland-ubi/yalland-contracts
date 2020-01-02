@@ -139,6 +139,14 @@ export default class GaltData {
         });
     }
 
+    static async blockNumber() {
+        return this.$root.$serverWeb3.eth.getBlockNumber();
+    }
+
+    static async getBlockTimeStamp(blockNumber) {
+        return (await this.$root.$serverWeb3.eth.getBlock(blockNumber)).timestamp;
+    }
+
     static async ethBalance(userWallet) {
         const balanceInWei = await this.$root.$serverWeb3.eth.getBalance(userWallet);
         return GaltData.weiToEtherRound(balanceInWei);

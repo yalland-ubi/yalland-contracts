@@ -14,5 +14,6 @@ module.exports = {
     altRpcServers: process.env.ALT_RPC_SERVERS,
     contractsConfigUrl: process.env.CONTRACTS_CONFIG_URL,
     defaultLang: process.env.DEFAULT_LANG || 'en',
+    helpersBackendUrl: process.env.HELPERS_BACKEND_URL || 'http://localhost:3344/',
     enableWebSocket: false
 };
