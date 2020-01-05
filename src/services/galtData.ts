@@ -23,6 +23,7 @@ const EthContract = require('../libs/EthContract');
 const config = require("../../config");
 const galtUtils = require('@galtproject/utils');
 import * as moment from 'moment';
+const sigUtil = require('eth-sig-util');
 
 export default class GaltData {
     static contractsConfig: any;
@@ -477,6 +478,33 @@ export default class GaltData {
     static upperFirst(string) {
         return string.charAt(0).toUpperCase() + string.slice(1);
     }
+
+
+    static signMessage(message, address, fieldName) {
+        const messageParams = [ { type: 'string', name: fieldName, value: message} ];
+
+        console.log(address, 'messageParams', messageParams);
+        return new Promise((resolve, reject) => {
+            this.$root.$web3.currentProvider.sendAsync({
+                method: 'eth_signTypedData',
+                params: [messageParams, address],
+                from: address,
+            }, function (err, response) {
+                if (err) return console.error(err);
+                if (response.error) {
+                    return console.error(response.error.message)
+                }
+                // const recovered = Web3Manager.clientWeb3.eth.accounts.recover(EthData.stringToHex(message), response.result);
+                const recovered = sigUtil.recoverTypedSignatureLegacy({ data: messageParams, sig: response.result })
+                if (recovered.toLowerCase() === address.toLowerCase()) {
+                    resolve(response.result);
+                } else {
+                    reject();
+                }
+            })
+        })
+    }
+
 
     // ===========================================================
     // Erc20 Contract
