@@ -36,22 +36,38 @@ export default {
 		async setBlock(name) {
 			this[name + 'Block'] = await GaltData.blockNumber();
 		},
-		runExport() {
+		async runExport() {
+			if(!this.$backend.isAuthorized()) {
+				try {
+					const authMessage = await this.$backend.generateAuthMessage(this.user_wallet);
+					const fieldName = 'key';
+
+					const signature = await GaltData.signMessage(authMessage.message, this.user_wallet, fieldName);
+
+					await this.$backend.loginAuthMessage(authMessage.id, this.user_wallet, signature, { fieldName });
+				} catch (e) {
+					console.error(e);
+					this.$notify({
+						type: 'error',
+						title: 'Not authorized'
+					})
+				}
+			}
 			const postData = {
 				fromBlock: this.fromBlock,
 				toBlock: this.toBlock,
 				filters: null
 			};
 
-			if(this.enableFilters) {
+			if (this.enableFilters) {
 				postData.filters = {
 					to: this.filters.to,
 					value: this.filters.value ? GaltData.etherToWei(this.filters.value) : null
 				}
 			}
-			axios.post(config.helpersBackendUrl + 'v1/init-export-txs/', postData)
-				.then((response) => {
-					this.addExport(response.data.result);
+			this.$backend.initExportTxs(postData)
+				.then((data) => {
+					this.addExport(data.result);
 				});
 		},
 		addExport(exportName) {

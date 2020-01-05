@@ -27,6 +27,7 @@ import sentryPlugin from './services/sentry.plugin';
 import rpcScreenPlugin from './services/rpcScreen.plugin';
 import localePlugin from './services/locale.plugin';
 import contractsFactoryPlugin from './services/contractsFactory.plugin';
+import backendPlugin from './services/backend.plugin';
 
 import Locale from "./services/locale";
 import GaltData from './services/galtData';
@@ -53,6 +54,7 @@ Vue.use(galtUserPlugin);
 Vue.use(sentryPlugin);
 Vue.use(localePlugin);
 Vue.use(contractsFactoryPlugin);
+Vue.use(backendPlugin);
 
 Vue.component('modal', Modal);
 Vue.component('tabs', Tabs);
@@ -127,6 +129,7 @@ export default {
         GaltData.init(this);
         
         this.$galtUser.init(this.$internalWallet, this.$contracts, this.$store);
+        this.$backend.init();
         
         this.$galtUser.releaseInternalWallet();
         
