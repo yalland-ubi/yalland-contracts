@@ -93,7 +93,7 @@ contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Deta
     }
 
     return _value.sub(_fee);
- }
+  }
 
   // GETTERS
   
