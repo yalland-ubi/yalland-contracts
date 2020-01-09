@@ -35,6 +35,7 @@ contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Deta
   )
     public
     ERC20Detailed(_name, _symbol, _decimals)
+    Permissionable()
   {
     _addRoleTo(msg.sender, MINTER_ROLE);
     _addRoleTo(msg.sender, BURNER_ROLE);
@@ -70,14 +71,16 @@ contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Deta
   // USER INTERFACE
 
   function transfer(address _to, uint256 _value) public returns (bool) {
-    uint256 _newValue = takeFee(msg.sender, _value);
-    return ERC20.transfer(_to, _newValue);
+    uint256 newValue = takeFee(msg.sender, _value);
+    return ERC20.transfer(_to, newValue);
   }
 
   function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-    uint256 _newValue = takeFee(_from, _value);
-    // FIX: allowance is decreasing for _newValue, not _value
-    return ERC20.transferFrom(_from, _to, _newValue);
+    uint256 newValue = takeFee(_from, _value);
+
+    _transfer(_from, _to, newValue);
+    _approve(_from, _msgSender(), allowance(_from, _msgSender()).sub(_value, "ERC20: transfer amount exceeds allowance"));
+    return true;
   }
 
   // INTERNAL

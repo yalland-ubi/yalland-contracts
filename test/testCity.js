@@ -24,7 +24,7 @@ chai.use(chaiAsPromised);
 chai.use(chaiBigNumber);
 chai.should();
 
-contract('City', ([deployer, alice, rateManager, joinManager, leaveManager]) => {
+contract.skip('City', ([deployer, alice, rateManager, joinManager, leaveManager]) => {
     const payByTariff = Web3.utils.toWei('10', 'ether');
     const mintForPeriods = 10;
     let coinToken;
