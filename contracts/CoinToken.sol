@@ -7,24 +7,17 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-pragma solidity 0.4.24;
-pragma experimental "v0.5.0";
+pragma solidity ^0.5.13;
 
-import "openzeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
-import "openzeppelin-solidity/contracts/ownership/rbac/RBAC.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/PausableToken.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Pausable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
+import "@galtproject/libs/contracts/traits/Permissionable.sol";
+import "./interfaces/ICoinToken.sol";
 
-contract CoinToken is MintableToken, PausableToken, BurnableToken, RBAC {
-  // solium-disable-next-line uppercase
-  string public name;
 
-  // solium-disable-next-line uppercase
-  string public symbol;
-
-  // solium-disable-next-line uppercase
-  uint8 public constant decimals = 18;
-
+contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Detailed, Permissionable {
   uint256 public constant INITIAL_SUPPLY = 0;
 
   string public constant MINTER_ROLE = "minter";
@@ -32,62 +25,74 @@ contract CoinToken is MintableToken, PausableToken, BurnableToken, RBAC {
   string public constant FEE_MANAGER_ROLE = "fee_manager";
 
   uint256 public constant feePrecision = 1 szabo;
+  // in percents
   uint256 public transferFee = 0;
 
-  constructor(string _name, string _symbol) public MintableToken() {
-    name = _name;
-    symbol = _symbol;
-    
-    totalSupply_ = INITIAL_SUPPLY;
-    balances[msg.sender] = INITIAL_SUPPLY;
-    emit Transfer(address(0), msg.sender, INITIAL_SUPPLY);
-
-    super.addRole(msg.sender, MINTER_ROLE);
-    super.addRole(msg.sender, BURNER_ROLE);
-    super.addRole(msg.sender, FEE_MANAGER_ROLE);
+  constructor(
+    string memory _name,
+    string memory _symbol,
+    uint8 _decimals
+  )
+    public
+    ERC20Detailed(_name, _symbol, _decimals)
+  {
+    _addRoleTo(msg.sender, MINTER_ROLE);
+    _addRoleTo(msg.sender, BURNER_ROLE);
+    _addRoleTo(msg.sender, FEE_MANAGER_ROLE);
   }
   
   modifier hasMintPermission() {
-    require(hasRole(msg.sender, MINTER_ROLE), "Only minter");
+    require(hasRole(msg.sender, MINTER_ROLE), "Only minter allowed");
     _;
   }
   
   modifier hasBurnPermission() {
-    require(hasRole(msg.sender, BURNER_ROLE), "Only burner");
+    require(hasRole(msg.sender, BURNER_ROLE), "Only burner allowed");
     _;
   }
 
   modifier hasFeeManagerPermission() {
-    require(hasRole(msg.sender, FEE_MANAGER_ROLE), "Only fee manager");
+    require(hasRole(msg.sender, FEE_MANAGER_ROLE), "Only fee manager allowed");
     _;
   }
 
-  function addRoleTo(address _operator, string _role) public onlyOwner {
-    super.addRole(_operator, _role);
+  // MANAGER INTERFACE
+
+  function mint(address account, uint256 amount) public hasMintPermission returns (bool) {
+    _mint(account, amount);
+    return true;
   }
 
-  function removeRoleFrom(address _operator, string _role) public onlyOwner {
-    super.removeRole(_operator, _role);
+  function burn(address account, uint256 amount) public hasBurnPermission {
+    _burn(account, amount);
   }
+
+  // USER INTERFACE
 
   function transfer(address _to, uint256 _value) public returns (bool) {
     uint256 _newValue = takeFee(msg.sender, _value);
-    return super.transfer(_to, _newValue);
+    return ERC20.transfer(_to, _newValue);
   }
 
   function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
     uint256 _newValue = takeFee(_from, _value);
-    return super.transferFrom(_from, _to, _newValue);
+    // FIX: allowance is decreasing for _newValue, not _value
+    return ERC20.transferFrom(_from, _to, _newValue);
   }
-  
+
+  // INTERNAL
+
   function takeFee(address from, uint256 _value) private returns(uint256) {
     uint256 _fee = getFeeForAmount(_value);
 
-    balances[address(this)] = balances[address(this)].add(_fee);
-    balances[from] = balances[from].sub(_fee);
-    
+    if (_fee > 0) {
+      _transfer(from, address(this), _fee);
+    }
+
     return _value.sub(_fee);
   }
+
+  // GETTERS
   
   function getFeeForAmount(uint256 amount) public view returns(uint256) {
     if (transferFee > 0) {
@@ -96,19 +101,19 @@ contract CoinToken is MintableToken, PausableToken, BurnableToken, RBAC {
       return 0;
     }
   }
-  
+
+  // OWNER INTERFACES
+
   function setTransferFee(uint256 _transferFee) public hasFeeManagerPermission {
     transferFee = _transferFee;
   }
 
   function withdrawFee() public hasFeeManagerPermission {
-    require(balances[address(this)] > 0, "Nothing to withdraw");
-    
-    uint256 _payout = balances[address(this)];
-    
-    balances[msg.sender] = balances[msg.sender].add(_payout);
-    balances[address(this)] = 0;
+    address _this = address(this);
+    uint256 _payout = balanceOf(_this);
 
-    emit Transfer(address(this), msg.sender, _payout);
+    require(_payout > 0, "Nothing to withdraw");
+
+    _transfer(_this, msg.sender, _payout);
   }
 }
