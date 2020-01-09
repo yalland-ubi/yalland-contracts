@@ -71,12 +71,12 @@ contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Deta
   // USER INTERFACE
 
   function transfer(address _to, uint256 _value) public returns (bool) {
-    (uint256 newValue,) = takeFee(msg.sender, _value);
+    uint256 newValue = takeFee(msg.sender, _value);
     return ERC20.transfer(_to, newValue);
   }
 
   function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-    (uint256 newValue, uint256 fee) = takeFee(_from, _value);
+    uint256 newValue = takeFee(_from, _value);
 
     _transfer(_from, _to, newValue);
     _approve(_from, _msgSender(), allowance(_from, _msgSender()).sub(_value, "ERC20: transfer amount exceeds allowance"));
@@ -85,14 +85,14 @@ contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Deta
 
   // INTERNAL
 
-  function takeFee(address from, uint256 _value) private returns(uint256 result, uint256 fee) {
+  function takeFee(address from, uint256 _value) private returns(uint256) {
     uint256 _fee = getFeeForAmount(_value);
 
     if (_fee > 0) {
       _transfer(from, address(this), _fee);
     }
 
-    return (_value.sub(_fee), fee);
+    return _value.sub(_fee);
  }
 
   // GETTERS
