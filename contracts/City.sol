@@ -11,6 +11,7 @@ pragma solidity ^0.5.13;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Mintable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
 import "@openzeppelin/contracts/ownership/Ownable.sol";
 
 import "@galtproject/libs/contracts/collections/ArraySet.sol";
@@ -340,8 +341,7 @@ contract City is Permissionable, Ownable {
 
         if(_memberTariff.minted > _memberTariff.claimed && _tariff.active) {
             uint256 burnAmount = _memberTariff.minted - _memberTariff.claimed;
-            // TODO: figure out how to burn
-//            BurnableToken(_tariff.currencyAddress).burn(burnAmount);
+            ERC20Burnable(_tariff.currencyAddress).burn(burnAmount);
             _tariff.totalBurned += burnAmount;
             _memberTariff.minted = 0;
             _memberTariff.claimed = 0;
