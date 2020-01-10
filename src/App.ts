@@ -172,6 +172,12 @@ export default {
         this.$web3Worker.onEvent('txError', (tx) => {
             this.$sentry.exception(tx.error);
         });
+
+        (global as any).$dev = {
+            addCityRole: (address, role) => {
+                return this.$galtUser.addCityRole(address, role);
+            }
+        }
     },
 
     mounted() {
