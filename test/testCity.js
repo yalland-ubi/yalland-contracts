@@ -9,29 +9,16 @@
 
 const CoinToken = artifacts.require('./CoinToken.sol');
 const City = artifacts.require('./City.sol');
-const Web3 = require('web3');
-const chai = require('chai');
-const chaiAsPromised = require('chai-as-promised');
-const chaiBigNumber = require('chai-bignumber')(Web3.utils.BN);
 
-const web3 = new Web3(City.web3.currentProvider);
 
-// TODO: move to helpers
-Web3.utils.BN.prototype.equal = Web3.utils.BN.prototype.eq;
-Web3.utils.BN.prototype.equals = Web3.utils.BN.prototype.eq;
-
-chai.use(chaiAsPromised);
-chai.use(chaiBigNumber);
-chai.should();
-
-contract.skip('City', ([deployer, alice, rateManager, joinManager, leaveManager]) => {
-    const payByTariff = Web3.utils.toWei('10', 'ether');
+contract('City', ([deployer, alice, rateManager, joinManager, leaveManager]) => {
+    const payByTariff = web3.utils.toWei('10', 'ether');
     const mintForPeriods = 10;
     let coinToken;
     let city;
 
     beforeEach(async function () {
-        coinToken = await CoinToken.new("Coin token", "COIN", {from: deployer});
+        coinToken = await CoinToken.new("Coin token", "COIN", 18, {from: deployer});
         city = await City.new(10000, "City", "CT", {from: deployer});
 
         await coinToken.addRoleTo(city.address, "minter", {from: deployer});
@@ -63,14 +50,14 @@ contract.skip('City', ([deployer, alice, rateManager, joinManager, leaveManager]
 
             let aliceInfo = await city.getParticipantTariffInfo(alice, coinTariffId);
             assert.equal(aliceInfo[0], true);
-            assert.equal(aliceInfo[2].toString(10), Web3.utils.toWei('100', 'ether').toString(10));
+            assert.equal(aliceInfo[2].toString(10), web3.utils.toWei('100', 'ether').toString(10));
 
             await city.claimPayment(alice, coinTariffId, 1);
             let aliceBalance = await coinToken.balanceOf(alice);
             assert.equal(aliceBalance.toString(10), payByTariff.toString(10));
 
             let contractBalance = await coinToken.balanceOf(city.address);
-            assert.equal(contractBalance.toString(10), Web3.utils.toWei('90', 'ether').toString(10));
+            assert.equal(contractBalance.toString(10), web3.utils.toWei('90', 'ether').toString(10));
 
             await waitSeconds(payPeriod);
 
@@ -81,14 +68,14 @@ contract.skip('City', ([deployer, alice, rateManager, joinManager, leaveManager]
             await city.claimPayment(alice, coinTariffId, 2);
 
             aliceBalance = await coinToken.balanceOf(alice);
-            assert.equal(aliceBalance.toString(10), Web3.utils.toWei('40', 'ether').toString(10));
+            assert.equal(aliceBalance.toString(10), web3.utils.toWei('40', 'ether').toString(10));
 
             contractBalance = await coinToken.balanceOf(city.address);
-            assert.equal(contractBalance.toString(10), Web3.utils.toWei('60', 'ether').toString(10));
+            assert.equal(contractBalance.toString(10), web3.utils.toWei('60', 'ether').toString(10));
 
             aliceInfo = await city.getParticipantTariffInfo(alice, coinTariffId);
-            assert.equal(aliceInfo[1].toString(10), Web3.utils.toWei('40', 'ether').toString(10));
-            assert.equal(aliceInfo[2].toString(10), Web3.utils.toWei('100', 'ether').toString(10));
+            assert.equal(aliceInfo[1].toString(10), web3.utils.toWei('40', 'ether').toString(10));
+            assert.equal(aliceInfo[2].toString(10), web3.utils.toWei('100', 'ether').toString(10));
 
             await assertRevert(city.kickAllParticipation(alice, {from: joinManager}));
             await assertRevert(city.kickAllParticipation(alice, {from: rateManager}));
@@ -105,7 +92,7 @@ contract.skip('City', ([deployer, alice, rateManager, joinManager, leaveManager]
             await assertRevert(city.claimPayment(alice, coinTariffId, 1));
             
             contractBalance = await coinToken.balanceOf(city.address);
-            assert.equal(contractBalance.toString(10), Web3.utils.toWei('0', 'ether').toString(10));
+            assert.equal(contractBalance.toString(10), web3.utils.toWei('0', 'ether').toString(10));
             
             await city.addParticipation(alice, coinTariffId, {from: joinManager});
             assert.equal(await city.participants(alice), true);
