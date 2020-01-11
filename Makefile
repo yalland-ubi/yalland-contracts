@@ -30,4 +30,8 @@ ganache:
 check-size:
 	node scripts/checkContractSize.js
 
+fork:
+	yarn run ganache-fork
+
+
 ctest: compile test
