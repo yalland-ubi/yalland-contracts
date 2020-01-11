@@ -54,12 +54,15 @@ module.exports = async function (truffle, network, accounts) {
         await newToken.addRoleTo(multisig, "fee_manager", { from: deployer });
         await newToken.addRoleTo(multisig, "pauser", { from: deployer });
 
-        console.log("Revoking permissions...");
-        await addressUpgrader.removeRoleFrom(deployer, "role_manager", { from: deployer });
+        console.log('Setting up AddressUpgrader roles...');
+        await addressUpgrader.addRoleTo(multisig, "superuser", { from: deployer });
 
-        await newToken.removeRoleFrom(deployer, "role_manager", { from: deployer });
+        console.log("Revoking permissions...");
         await newToken.removeRoleFrom(deployer, "fee_manager", { from: deployer });
         await newToken.removeRoleFrom(deployer, "pauser", { from: deployer });
+        await newToken.removeRoleFrom(deployer, "role_manager", { from: deployer });
+
+        await addressUpgrader.removeRoleFrom(deployer, "role_manager", { from: deployer });
         // DO manual steps
 
         // AFTER manual steps
