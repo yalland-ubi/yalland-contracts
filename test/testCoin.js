@@ -13,10 +13,10 @@ const City = artifacts.require('./City.sol');
 const web3 = City.web3;
 CoinToken.numberFormat = 'String';
 
-const { ether, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
+const { ether, assertRevert, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
 
 
-contract('Coin', ([deployer, alice, bob, charlie]) => {
+contract('Coin', ([deployer, pauser, alice, bob, charlie]) => {
     const baseAliceBalance = 10000000;
     const feePercent = 0.02;
     let coinToken;
@@ -26,6 +26,23 @@ contract('Coin', ([deployer, alice, bob, charlie]) => {
 
         await coinToken.mint(alice, ether(baseAliceBalance), {from: deployer});
         await coinToken.setTransferFee(web3.utils.toWei(feePercent.toString(), 'szabo'), {from: deployer});
+    });
+
+    describe('Pausable', () => {
+        it('should deny transferring when paused', async function() {
+            await coinToken.addRoleTo(pauser, await coinToken.PAUSER_ROLE(), { from: deployer });
+            await coinToken.removeRoleFrom(deployer, await coinToken.PAUSER_ROLE(), { from: deployer });
+            await assertRevert(coinToken.pause({ from: deployer }), 'Only pauser allowed');
+
+            // approve before paused
+            await coinToken.approve(bob, ether(10), { from: alice });
+            await coinToken.pause({ from: pauser });
+            await assertRevert(coinToken.transfer(bob, ether(1), { from: alice }), 'paused');
+            await assertRevert(coinToken.transferFrom(alice, charlie, ether(1), { from: bob }), 'paused');
+            await coinToken.unpause({ from: pauser });
+            await coinToken.transfer(bob, ether(1), { from: alice });
+            await coinToken.transferFrom(alice, charlie, ether(1), { from: bob });
+        });
     });
 
     describe('#transferFrom()', () => {
