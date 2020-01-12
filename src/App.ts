@@ -249,7 +249,7 @@ export default {
 
             setInterval(() => {
                 this.$root.$web3.eth.getAccounts((error, accounts) => {
-                    if (accounts[0] === this.user_wallet)
+                    if (this.user_wallet && accounts[0] && accounts[0].toLowerCase() === this.user_wallet.toLowerCase())
                         return;
                     this.setUserWallet(accounts[0]);
                 });
