@@ -10,6 +10,7 @@
 const CoinToken = artifacts.require('./CoinToken');
 const City = artifacts.require('./City');
 const AddressUpgrader = artifacts.require('./AddressUpgrader');
+const Minter = artifacts.require('./Minter');
 
 const fs = require('fs');
 
@@ -31,6 +32,7 @@ module.exports = async function(deployer, network, accounts) {
     // const newToken = await CoinToken.deploy("Yalland", "YAL", 18, { from: coreTeam });
     const coinToken = await deployer.deploy(CoinToken, "YTest1", "YT1", 18, { from: coreTeam });
     const city = await City.at(previousCityAddress);
+    const minter = await deployer.deploy(Minter, coinToken.address, { from: coreTeam });
     const addressUpgrader = await deployer.deploy(AddressUpgrader, previousCityAddress, coinToken.address);
 
     console.log('Save addresses and abi to deployed folder...');
@@ -53,7 +55,9 @@ module.exports = async function(deployer, network, accounts) {
             coinTokenAddress: coinToken.address,
             coinTokenAbi: coinToken.abi,
             cityAddress: city.address,
-            cityAbi: city.abi
+            cityAbi: city.abi,
+            minterAddress: minter.address,
+            minterAbi: minter.abi
           },
           null,
           2

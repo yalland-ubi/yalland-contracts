@@ -50,24 +50,29 @@ module.exports = async function (truffle, network, accounts) {
         await newToken.addRoleTo(addressUpgrader.address, "minter", { from: deployer });
         await newToken.addRoleTo(addressUpgrader.address, "burner", { from: deployer });
         await newToken.addRoleTo(city.address, "minter", { from: deployer });
+        await newToken.addRoleTo(data.minterAddress, "minter", { from: deployer });
 
         await newToken.addRoleTo(multisig, "fee_manager", { from: deployer });
         await newToken.addRoleTo(multisig, "pauser", { from: deployer });
 
         console.log('Setting up AddressUpgrader roles...');
         await addressUpgrader.addRoleTo(multisig, "superuser", { from: deployer });
+        await addressUpgrader.addRoleTo(deployer, "superuser", { from: deployer });
 
         console.log("Revoking permissions...");
         await newToken.removeRoleFrom(deployer, "fee_manager", { from: deployer });
         await newToken.removeRoleFrom(deployer, "pauser", { from: deployer });
-        await newToken.removeRoleFrom(deployer, "role_manager", { from: deployer });
 
-        await addressUpgrader.removeRoleFrom(deployer, "role_manager", { from: deployer });
         // DO manual steps
 
         // AFTER manual steps
         // await newToken.removeRoleFrom(deployer, "minter", { from: deployer });
         // await newToken.removeRoleFrom(deployer, "burner", { from: deployer });
+        // await newToken.removeRoleFrom(data.minterAddress, "minter", { from: deployer });
+        // await addressUpgrader.addRoleTo(deployer, "superuser", { from: deployer });
+
+        // await addressUpgrader.removeRoleFrom(deployer, "role_manager", { from: deployer });
+        // await newToken.removeRoleFrom(deployer, "role_manager", { from: deployer });
 
         // await pIteration.forEach(Object.values(members), async (memberAddress) => {
         //     await city.addParticipation(memberAddress, coinTariffId, {from: coreTeam});

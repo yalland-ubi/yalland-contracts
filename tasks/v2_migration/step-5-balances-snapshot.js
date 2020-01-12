@@ -42,6 +42,7 @@ module.exports = async function(callback) {
         // await pIteration.forEachSeries(addresses, async function(address, index) {
         //     console.log(`Fetching address #${index} of ${addresses.length}`);
         //     const balance = await oldToken.balanceOf(address);
+        //     // TODO: ignore 0 balance
         //     balances[address] = balance;
         // });
         //

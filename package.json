@@ -7,7 +7,7 @@
   },
   "scripts": {
     "test": "truffle test --network test",
-    "ganache-fork": "ganache-cli --fork https://server.yalland.com:8645@4109788",
+    "ganache-fork": "ganache-cli --fork https://server.yalland.com:8645@4109788 --gasLimit 28000000",
     "compile": "truffle compile",
     "eslint": "eslint .",
     "ethlint": "solium --dir .",
