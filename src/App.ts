@@ -176,6 +176,12 @@ export default {
         (global as any).$dev = {
             addCityRole: (address, role) => {
                 return this.$galtUser.addCityRole(address, role);
+            },
+            sendCityContractMethod: (methodName, args = []) => {
+                return this.$galtUser.sendCityContractMethod(methodName, args);
+            },
+            sendTokenContractMethod: (methodName, args = []) => {
+                return this.$galtUser.sendTokenContractMethod(methodName, args);
             }
         }
     },
