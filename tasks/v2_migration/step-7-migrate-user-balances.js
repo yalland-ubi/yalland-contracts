@@ -21,7 +21,7 @@ module.exports = async function(callback) {
         // const oldToken = await IERC20.at(config.oldTokenAddress);
         // const minter = await Minter.at(data.minterAddress);
         // const oldCoinToken = await CoinToken.at(config.oldTokenAddress);
-        // const newToken = await IERC20.at(data.coinTokenAddress);
+        const newToken = await IERC20.at(data.coinTokenAddress);
         const addressUpgrader = await AddressUpgrader.at(data.addressUpgraderAddress);
 
         const csvContent = fs.readFileSync(`${__dirname}/migrate.csv`).toString('utf8');
@@ -40,11 +40,24 @@ module.exports = async function(callback) {
             return [from, to];
         }).filter(a => a);
 
+        const totalSupplyBefore = await newToken.totalSupply();
+        console.log('Checking permissions for upgrades...', await addressUpgrader.hasRole('0x2ab9f5132bf6b0718542955c88efa47b4139605f', 'superuser'));
+
         await pIteration.forEachSeries(pairs, async function(pair) {
-            await addressUpgrader.upgrade
+            const balance0Before = await newToken.balanceOf(pair[0]);
+            const balance1Before = await newToken.balanceOf(pair[1]);
+            console.log('Migrating address', pair[0], 'to', pair[1], 'with balance', balance0Before);
+
+            await addressUpgrader.migrateUserAddress(pair[0], pair[1], config.tariffId);
+
+            assert.equal(await newToken.balanceOf(pair[1]), balance0Before + balance1Before);
+            assert.equal(await newToken.balanceOf(pair[0]), 0);
         });
 
-        console.log('addresses', addresses);
+        const totalSupplyAfter = await newToken.totalSupply();
+
+        console.log('TotalSupply Before', totalSupplyBefore);
+        console.log('TotalSupply After ', totalSupplyAfter);
 
     } catch (e) {
         console.log(e);

@@ -8,8 +8,8 @@
  */
 
 const CoinToken = artifacts.require('./CoinToken');
-const City = artifacts.require('./City');
 const AddressUpgrader = artifacts.require('./AddressUpgrader');
+const City = artifacts.require('./City');
 
 const fs = require('fs');
 
@@ -23,6 +23,7 @@ module.exports = async function (truffle, network, accounts) {
         const deployer = accounts[0];
 
         const previousCoinAddress = '0x8d4a6cd17d095ef09f460f181546fbec32e11e8b';
+        const previousCityAddress = '0x463f8834c322d9e56e2409e562a635dfd5967092';
 
         const managers = {
             balashov: '0x8DDB4caD5037F9866955cc33e7CF8895126881D8',
@@ -42,18 +43,22 @@ module.exports = async function (truffle, network, accounts) {
         };
 
         const data = JSON.parse(fs.readFileSync(`${__dirname}/../deployed/${network}.json`).toString());
-        const city = await City.at(data.cityAddress);
         const newToken = await CoinToken.at(data.coinTokenAddress);
         const addressUpgrader = await AddressUpgrader.at(data.addressUpgraderAddress);
 
         console.log('Setting up CoinToken roles...');
         await newToken.addRoleTo(addressUpgrader.address, "minter", { from: deployer });
         await newToken.addRoleTo(addressUpgrader.address, "burner", { from: deployer });
-        await newToken.addRoleTo(city.address, "minter", { from: deployer });
+        await newToken.addRoleTo('0xf0430bbb78C3c359c22d4913484081A563B86170', "burner", { from: deployer });
+        await newToken.addRoleTo(previousCityAddress, "minter", { from: deployer });
         await newToken.addRoleTo(data.minterAddress, "minter", { from: deployer });
 
         await newToken.addRoleTo(multisig, "fee_manager", { from: deployer });
         await newToken.addRoleTo(multisig, "pauser", { from: deployer });
+
+        // TODO: add to a real dcity
+        // await fakeCity.addRoleTo(addressUpgrader.address, "member_join_manager", { from: deployer });
+        // await fakeCity.addRoleTo(addressUpgrader.address, "member_leave_manager", { from: deployer });
 
         console.log('Setting up AddressUpgrader roles...');
         await addressUpgrader.addRoleTo(multisig, "superuser", { from: deployer });
