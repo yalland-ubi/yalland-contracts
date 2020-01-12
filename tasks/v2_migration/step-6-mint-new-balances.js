@@ -15,23 +15,23 @@ module.exports = async function(callback) {
     try {
         const data = JSON.parse(fs.readFileSync(`${__dirname}/../../deployed/testnet57.json`).toString());
 
-        // console.log('Old token address is', config.oldTokenAddress);
+        console.log('Old token address is', config.oldTokenAddress);
         console.log('New token address is', data.coinTokenAddress);
 
-        // const oldToken = await IERC20.at(config.oldTokenAddress);
+        const oldToken = await IERC20.at(config.oldTokenAddress);
         const minter = await Minter.at(data.minterAddress);
 
         const newToken = await IERC20.at(data.coinTokenAddress);
 
-        // assert.ok(oldToken.address !== newToken.address);
+        assert.ok(oldToken.address !== newToken.address);
 
         const balances = JSON.parse(fs.readFileSync('./tmp/old-token-balances.json'));
         const myTotal = Object.values(balances).reduce((accumulator, address) => {
             return BigInt(address) + accumulator;
-        }, BigInt(Object.values(balances)[0]));
+        }, BigInt(0));
 
         console.log('Target   total', myTotal);
-        // console.log('Contract total', await oldToken.totalSupply());
+        console.log('Contract total', await oldToken.totalSupply());
 
         const addressChunks = _.chunk(Object.keys(balances), 500);
 
@@ -42,7 +42,7 @@ module.exports = async function(callback) {
         });
 
         console.log('New token total supply', await newToken.totalSupply());
-        // console.log('Old token total supply', await oldToken.totalSupply());
+        console.log('Old token total supply', await oldToken.totalSupply());
 
     } catch (e) {
         console.log(e);

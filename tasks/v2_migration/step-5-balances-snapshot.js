@@ -18,43 +18,44 @@ module.exports = async function(callback) {
         console.log('Dumping holder addresses...');
 
         // STAGE 1
-        // const members = {};
-        // const res = await oldToken.getPastEvents('Transfer', { fromBlock: 0, toBlock: 'latest'});
-        // console.log('Transfer event count', res.length);
-        // console.log(res[0].args.to);
-        //
-        // for (let i = 0; i < res.length; i++) {
-        //     members[res[i].args.from] = true;
-        //     members[res[i].args.to] = true;
-        // }
-        //
-        // const addresses = Object.keys(members);
-        // console.log('Total address found', addresses.length);
-        //
-        // fs.writeFileSync('./tmp/old-token-addresses.json', JSON.stringify(addresses, null, 2));
+        const members = {};
+        const res = await oldToken.getPastEvents('Transfer', { fromBlock: 0, toBlock: 'latest'});
+        console.log('Transfer event count', res.length);
+        console.log(res[0].args.to);
+
+        for (let i = 0; i < res.length; i++) {
+            members[res[i].args.from] = true;
+            members[res[i].args.to] = true;
+        }
+
+        let addresses = Object.keys(members);
+        console.log('Total address found', addresses.length);
+
+        fs.writeFileSync('./tmp/old-token-addresses.json', JSON.stringify(addresses, null, 2));
 
         // STAGE 2
-        // const addresses = JSON.parse(fs.readFileSync('./tmp/old-token-addresses.json'));
-        // console.log('count', addresses.length);
-        //
-        // const balances = {};
-        // console.log('Fetching address balancess...');
-        // await pIteration.forEachSeries(addresses, async function(address, index) {
-        //     console.log(`Fetching address #${index} of ${addresses.length}`);
-        //     const balance = await oldToken.balanceOf(address);
-        //     // TODO: ignore 0 balance
-        //     balances[address] = balance;
-        // });
-        //
-        // console.log('Saving dump...');
-        // fs.writeFileSync('./tmp/old-token-balances.json', JSON.stringify(balances, null, 2));
-        // console.log('Done. Dump saved to {project_root}/tmp/old-token-balances.json');
+        addresses = JSON.parse(fs.readFileSync('./tmp/old-token-addresses.json'));
+        console.log('count', addresses.length);
+
+        let balances = {};
+        console.log('Fetching address balancess...');
+        await pIteration.forEachSeries(addresses, async function(address, index) {
+            console.log(`Fetching address #${index} of ${addresses.length}`);
+            const balance = await oldToken.balanceOf(address);
+            if (balance > 0) {
+                balances[address] = balance;
+            }
+        });
+
+        console.log('Saving dump...');
+        fs.writeFileSync('./tmp/old-token-balances.json', JSON.stringify(balances, null, 2));
+        console.log('Done. Dump saved to {project_root}/tmp/old-token-balances.json');
 
         // STAGE 3
-        const balances = JSON.parse(fs.readFileSync('./tmp/old-token-balances.json'));
+        balances = JSON.parse(fs.readFileSync('./tmp/old-token-balances.json'));
         const myTotal = Object.values(balances).reduce((accumulator, address) => {
             return BigInt(address) + accumulator;
-        }, BigInt(Object.values(balances)[0]));
+        }, BigInt(0));
 
         console.log('Accumulated total', myTotal);
         console.log('Contract total   ', await oldToken.totalSupply());

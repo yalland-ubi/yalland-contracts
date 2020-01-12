@@ -4,6 +4,7 @@ module.exports = {
         'address': '0x4d2fA30ee6B5369AC0fEa982aB21eb03fBefE013'
     },
     tariffId: '0x58b8674e6776eb4ba8debd64ed4713b6d42b5e2bdfe3022362ea09480536abaf',
+    newTariffId: '0x6716667a5c2e0f67c0a334ee5f024dfa2cd3e2f95b2c13313ba62a7134bc68ae',
     cityAddress: '0x463f8834c322d9e56e2409e562a635dfd5967092',
     oldTokenAddress: '0x8d4a6cd17d095ef09f460f181546fbec32e11e8b'
 };
