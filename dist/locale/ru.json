@@ -76,7 +76,8 @@
   "currency": {
     "eth": "GAS",
     "yal": "YAL",
-    "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359": "DAI"
+    "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359": "DAI",
+    "0_x_8_d_4_a_6_c_d_17_d_095_e_f_09_f_460_f_181546_f_be_c_32_e_11_e_8_b": "Old YAL"
   },
   "claim_payment_button": "Получить оплату",
   "user_menu": {
@@ -214,6 +215,8 @@
     },
     "tariffs": {
       "title": "Управление тарифами",
+      "hide_inactive_true": "Показать неактивные",
+      "hide_inactive_false": "Скрыть неактивные",
       "title_title": "Название",
       "payment_title": "Сумма выплаты",
       "payment_sent_title": "Всего выплачено",
