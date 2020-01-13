@@ -108,7 +108,8 @@ export default {
     data() {
         return {
             localeKey: 'admin.tariffs',
-            tariffs: []
+            tariffs: [],
+            hideInactive: true
         }
     }
 }
