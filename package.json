@@ -7,6 +7,7 @@
   },
   "scripts": {
     "test": "truffle test --network test",
+    "ganache-fork": "ganache-cli --fork http://127.0.0.1:8245@4127311 --gasLimit 28000000",
     "compile": "truffle compile",
     "eslint": "eslint .",
     "ethlint": "solium --dir .",
@@ -28,10 +29,11 @@
   "homepage": "https://github.com/galtspace/dcity#readme",
   "dependencies": {
     "@galtproject/libs": "git+ssh://git@github.com/galtproject/galtproject-common.git#7639cda",
-    "@galtproject/utils": "^0.9.1",
     "@galtproject/solidity-test-chest": "https://github.com/galtproject/solidity-test-chest",
+    "@galtproject/utils": "^0.9.1",
     "@openzeppelin/contracts": "2.4.0",
     "@sentry/browser": "^4.0.0-rc.1",
+    "@truffle/hdwallet-provider": "^1.0.28",
     "async": "^2.5.0",
     "axios": "^0.16.2",
     "chai-as-promised": "^7.1.1",
@@ -76,6 +78,7 @@
     "dotenv": "^6.0.0",
     "extract-loader": "^3.0.0",
     "file-loader": "^2.0.0",
+    "ganache-cli": "^6.8.1",
     "html-loader": "^0.5.1",
     "html-webpack-plugin": "^3.2.0",
     "http-server": "^0.10.0",

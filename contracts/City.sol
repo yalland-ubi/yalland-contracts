@@ -18,39 +18,8 @@ import "@galtproject/libs/contracts/collections/ArraySet.sol";
 import "@galtproject/libs/contracts/traits/Permissionable.sol";
 
 import "./interfaces/ICoinToken.sol";
+import "./CityLibrary.sol";
 
-
-library CityLibrary {
-    struct MemberTariff {
-        bool active;
-        uint256 lastTimestamp;
-        uint256 minted;
-        uint256 claimed;
-    }
-    struct ParticipationRequest {
-        bool sent;
-        bool confirmed;
-        uint256 confirmationsCount;
-        mapping (address => bool) confirmations;
-    }
-    struct Tariff {
-        string title;
-        bool active;
-        uint256 payment;
-        uint256 paymentPeriod;
-        uint256 paymentSent;
-        uint256 totalMinted;
-        uint256 totalBurned;
-        uint256 mintForPeriods;
-        TariffCurrency currency;
-        address currencyAddress;
-        ArraySet.AddressSet activeParticipants;
-    }
-    enum TariffCurrency {
-        ETH,
-        ERC20
-    }
-}
 
 contract City is Permissionable, Ownable {
     using ArraySet for ArraySet.AddressSet;

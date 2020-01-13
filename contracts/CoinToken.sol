@@ -22,6 +22,7 @@ contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Deta
 
   string public constant MINTER_ROLE = "minter";
   string public constant BURNER_ROLE = "burner";
+  string public constant PAUSER_ROLE = "pauser";
   string public constant FEE_MANAGER_ROLE = "fee_manager";
 
   uint256 public constant feePrecision = 1 szabo;
@@ -39,21 +40,30 @@ contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Deta
   {
     _addRoleTo(msg.sender, MINTER_ROLE);
     _addRoleTo(msg.sender, BURNER_ROLE);
+    _addRoleTo(msg.sender, PAUSER_ROLE);
     _addRoleTo(msg.sender, FEE_MANAGER_ROLE);
+    // ROLE_MANAGER is assigned to the msg.sender in Permissionable()
   }
   
   modifier hasMintPermission() {
-    require(hasRole(msg.sender, MINTER_ROLE), "Only minter allowed");
+    require(hasRole(_msgSender(), MINTER_ROLE), "Only minter allowed");
     _;
   }
   
   modifier hasBurnPermission() {
-    require(hasRole(msg.sender, BURNER_ROLE), "Only burner allowed");
+    require(hasRole(_msgSender(), BURNER_ROLE), "Only burner allowed");
     _;
   }
 
   modifier hasFeeManagerPermission() {
-    require(hasRole(msg.sender, FEE_MANAGER_ROLE), "Only fee manager allowed");
+    require(hasRole(_msgSender(), FEE_MANAGER_ROLE), "Only fee manager allowed");
+    _;
+  }
+
+  // Uses Permissionable PAUSER_ROLE instead of PauserRole from OZ since
+  // the last one has no explicit removeRole method.
+  modifier onlyPauser() {
+    require(hasRole(_msgSender(), PAUSER_ROLE), "Only pauser allowed");
     _;
   }
 
@@ -71,11 +81,11 @@ contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Deta
   // USER INTERFACE
 
   function transfer(address _to, uint256 _value) public returns (bool) {
-    uint256 newValue = takeFee(msg.sender, _value);
-    return ERC20.transfer(_to, newValue);
+    uint256 newValue = takeFee(_msgSender(), _value);
+    return super.transfer(_to, newValue);
   }
 
-  function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+  function transferFrom(address _from, address _to, uint256 _value) public whenNotPaused returns (bool) {
     uint256 newValue = takeFee(_from, _value);
 
     _transfer(_from, _to, newValue);
@@ -117,6 +127,6 @@ contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Deta
 
     require(_payout > 0, "Nothing to withdraw");
 
-    _transfer(_this, msg.sender, _payout);
+    _transfer(_this, _msgSender(), _payout);
   }
 }
