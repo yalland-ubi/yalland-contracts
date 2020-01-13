@@ -172,6 +172,18 @@ export default {
         this.$web3Worker.onEvent('txError', (tx) => {
             this.$sentry.exception(tx.error);
         });
+
+        (global as any).$dev = {
+            addCityRole: (address, role) => {
+                return this.$galtUser.addCityRole(address, role);
+            },
+            sendCityContractMethod: (methodName, args = []) => {
+                return this.$galtUser.sendCityContractMethod(methodName, args);
+            },
+            sendTokenContractMethod: (methodName, args = []) => {
+                return this.$galtUser.sendTokenContractMethod(methodName, args);
+            }
+        }
     },
 
     mounted() {
@@ -237,7 +249,7 @@ export default {
 
             setInterval(() => {
                 this.$root.$web3.eth.getAccounts((error, accounts) => {
-                    if (accounts[0] === this.user_wallet)
+                    if (this.user_wallet && accounts[0] && accounts[0].toLowerCase() === this.user_wallet.toLowerCase())
                         return;
                     this.setUserWallet(accounts[0]);
                 });

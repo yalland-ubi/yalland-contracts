@@ -210,6 +210,18 @@ export default {
                 return $contracts.$city.changeMemberTariff(sendOptions(), memberAddress, tariffId);
             },
 
+            async addCityRole(address, role) {
+                return $contracts.$city.addRoleTo(sendOptions(), address, role);
+            },
+
+            async sendCityContractMethod(methodName, args) {
+                return $contracts.$city.sendMethodWithArgs(sendOptions(), methodName, args);
+            },
+
+            async sendTokenContractMethod(methodName, args) {
+                return $contracts.$coinToken.sendMethodWithArgs(sendOptions(), methodName, args);
+            },
+
             async addMember(memberAddress, tariffId) {
                 return $contracts.$city.addMember(sendOptions(), memberAddress, tariffId);
             },
