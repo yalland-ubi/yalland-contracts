@@ -7,48 +7,21 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-pragma solidity 0.4.24;
-pragma experimental "v0.5.0";
+pragma solidity ^0.5.13;
 
-import "openzeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "openzeppelin-solidity/contracts/ownership/rbac/RBAC.sol";
-import "./utils/ArraySet.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Mintable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
+import "@openzeppelin/contracts/ownership/Ownable.sol";
 
-library CityLibrary {
-    struct MemberTariff {
-        bool active;
-        uint256 lastTimestamp;
-        uint256 minted;
-        uint256 claimed;
-    }
-    struct ParticipationRequest {
-        bool sent;
-        bool confirmed;
-        uint256 confirmationsCount;
-        mapping (address => bool) confirmations;
-    }
-    struct Tariff {
-        string title;
-        bool active;
-        uint256 payment;
-        uint256 paymentPeriod;
-        uint256 paymentSent;
-        uint256 totalMinted;
-        uint256 totalBurned;
-        uint256 mintForPeriods;
-        TariffCurrency currency;
-        address currencyAddress;
-        ArraySet.AddressSet activeParticipants;
-    }
-    enum TariffCurrency {
-        ETH,
-        ERC20
-    }
-}
+import "@galtproject/libs/contracts/collections/ArraySet.sol";
+import "@galtproject/libs/contracts/traits/Permissionable.sol";
 
-contract City is RBAC, Ownable {
+import "./interfaces/ICoinToken.sol";
+import "./CityLibrary.sol";
+
+
+contract City is Permissionable, Ownable {
     using ArraySet for ArraySet.AddressSet;
     using ArraySet for ArraySet.Bytes32Set;
 
@@ -83,16 +56,16 @@ contract City is RBAC, Ownable {
     ArraySet.Bytes32Set activeTariffs;
     bytes32[] allTariffs;
 
-    constructor(uint256 _maxSupply, string _name, string _symbol) public {
+    constructor(uint256 _maxSupply, string memory _name, string memory _symbol) public {
         maxSupply = _maxSupply;
         name = _name;
         symbol = _symbol;
 
         confirmsToParticipation = 1;
 
-        super.addRole(msg.sender, RATE_MANAGER_ROLE);
-        super.addRole(msg.sender, MEMBER_JOIN_MANAGER_ROLE);
-        super.addRole(msg.sender, MEMBER_LEAVE_MANAGER_ROLE);
+        _addRoleTo(msg.sender, RATE_MANAGER_ROLE);
+        _addRoleTo(msg.sender, MEMBER_JOIN_MANAGER_ROLE);
+        _addRoleTo(msg.sender, MEMBER_LEAVE_MANAGER_ROLE);
     }
 
     function() external payable { }
@@ -112,7 +85,18 @@ contract City is RBAC, Ownable {
         _;
     }
     
-    function createTariff(string _title, uint256 _payment, uint256 _paymentPeriod, uint256 _mintForPeriods, CityLibrary.TariffCurrency _currency, address _currencyAddress) public onlyRateManager returns(bytes32) {
+    function createTariff(
+        string memory _title,
+        uint256 _payment,
+        uint256 _paymentPeriod,
+        uint256 _mintForPeriods,
+        CityLibrary.TariffCurrency _currency,
+        address _currencyAddress
+    )
+        public
+        onlyRateManager
+        returns(bytes32)
+    {
         bytes32 _id = keccak256(
             abi.encodePacked(
                 msg.sender,
@@ -153,7 +137,7 @@ contract City is RBAC, Ownable {
         emit TariffActiveChanged(_id, _active);
     }
     
-    function editTariff(bytes32 _id, string _title, uint256 _payment, uint256 _paymentPeriod, uint256 _mintForPeriods, CityLibrary.TariffCurrency _currency, address _currencyAddress) public onlyRateManager {
+    function editTariff(bytes32 _id, string memory _title, uint256 _payment, uint256 _paymentPeriod, uint256 _mintForPeriods, CityLibrary.TariffCurrency _currency, address _currencyAddress) public onlyRateManager {
         tariffs[_id].title = _title;
         tariffs[_id].payment = _payment;
         tariffs[_id].paymentPeriod = _paymentPeriod;
@@ -172,7 +156,7 @@ contract City is RBAC, Ownable {
         confirmsToParticipation = _confirmsToParticipation;
     }
 
-    function claimPayment(address _claimFor, bytes32 _tariffId, uint256 _periodsNumber) public returns (uint256 nextDate) {
+    function claimPayment(address payable _claimFor, bytes32 _tariffId, uint256 _periodsNumber) public returns (uint256 nextDate) {
         CityLibrary.MemberTariff storage _memberTariff = memberTariffs[_claimFor][_tariffId];
         CityLibrary.Tariff storage _tariff = tariffs[_tariffId];
         require(_memberTariff.active, "Tariff payment is not active"); // REVERT
@@ -198,7 +182,7 @@ contract City is RBAC, Ownable {
 
             if(_tariff.mintForPeriods > 0 && _memberTariff.claimed >= _memberTariff.minted) {
                 uint256 mintAmount = _tariff.mintForPeriods * _tariff.payment;
-                MintableToken(_tariff.currencyAddress).mint(address(this), mintAmount);
+                ICoinToken(_tariff.currencyAddress).mint(address(this), mintAmount);
                 _memberTariff.minted += mintAmount;
                 _tariff.totalMinted += mintAmount;
             }
@@ -226,7 +210,7 @@ contract City is RBAC, Ownable {
         
         if(tariffs[_tariffId].currencyAddress != address(0) && tariffs[_tariffId].mintForPeriods > 0) {
             uint256 mintAmount = tariffs[_tariffId].mintForPeriods * tariffs[_tariffId].payment;
-            MintableToken(tariffs[_tariffId].currencyAddress).mint(address(this), mintAmount);
+            ICoinToken(tariffs[_tariffId].currencyAddress).mint(address(this), mintAmount);
             _memberTariff.minted += mintAmount;
             tariffs[_tariffId].totalMinted += mintAmount;
         }
@@ -326,31 +310,25 @@ contract City is RBAC, Ownable {
 
         if(_memberTariff.minted > _memberTariff.claimed && _tariff.active) {
             uint256 burnAmount = _memberTariff.minted - _memberTariff.claimed;
-            BurnableToken(_tariff.currencyAddress).burn(burnAmount);
+            ERC20Burnable(_tariff.currencyAddress).burn(burnAmount);
             _tariff.totalBurned += burnAmount;
             _memberTariff.minted = 0;
             _memberTariff.claimed = 0;
         }
     }
 
-    function addRoleTo(address _operator, string _role) public onlyOwner {
-        super.addRole(_operator, _role);
-    }
+    // GETTERS
 
-    function removeRoleFrom(address _operator, string _role) public onlyOwner {
-        super.removeRole(_operator, _role);
-    }
-    
-    function getAllTariffs() public view returns(bytes32[]) {
+    function getAllTariffs() public view returns(bytes32[] memory) {
         return allTariffs;
     }
 
-    function getActiveTariffs() public view returns(bytes32[]) {
+    function getActiveTariffs() public view returns(bytes32[] memory) {
         return activeTariffs.elements();
     }
     
     function getTariff(bytes32 _id) public view returns(
-        string title,
+        string memory title,
         bool active,
         uint256 payment,
         uint256 paymentPeriod,
@@ -377,11 +355,11 @@ contract City is RBAC, Ownable {
         );
     }
     
-    function getAllParticipants() public view returns(address[]) {
+    function getAllParticipants() public view returns(address[] memory) {
         return allParticipants;
     }
 
-    function getActiveParticipants() public view returns(address[]) {
+    function getActiveParticipants() public view returns(address[] memory) {
         return activeParticipants.elements();
     }
 
@@ -389,7 +367,7 @@ contract City is RBAC, Ownable {
         return activeParticipants.size();
     }
     
-    function getTariffActiveParticipants(bytes32 _tariffId) public view returns(address[]) {
+    function getTariffActiveParticipants(bytes32 _tariffId) public view returns(address[] memory) {
         return tariffs[_tariffId].activeParticipants.elements();
     }
 
@@ -404,7 +382,7 @@ contract City is RBAC, Ownable {
     function getParticipantInfo(address _member) public view returns
     (
         bool active, 
-        bytes32[] tariffs
+        bytes32[] memory tariffs
     ) {
         return (
             participants[_member],

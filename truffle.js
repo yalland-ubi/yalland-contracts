@@ -48,5 +48,17 @@ module.exports = {
             skipDryRun: true,
             network_id: '*'
         }
+    },
+    compilers: {
+        solc: {
+            version: 'native',
+            settings: {
+                optimizer: {
+                    enabled: true,
+                    runs: 200
+                }
+            },
+            evmVersion: 'petersburg'
+        }
     }
 };
