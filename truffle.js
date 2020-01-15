@@ -33,7 +33,10 @@ module.exports = {
         testnet57: {
             host: "127.0.0.1",
             port: 8545,
-            network_id: "*" // Match any network id
+            network_id: "*", // Match any network id
+            provider: function() {
+                return new HDWalletProvider(mnemonic, 'https://mainnet.infura.io/<infura-key>')
+            },
         },
         test: {
             // https://github.com/trufflesuite/ganache-core#usage
@@ -51,7 +54,7 @@ module.exports = {
     },
     compilers: {
         solc: {
-            version: 'native',
+            version: '0.5.13',
             settings: {
                 optimizer: {
                     enabled: true,

@@ -8,6 +8,8 @@
  */
 
 import GaltData from "../../../services/galtData";
+import SpecifyAmountModal from "../../../modals/SpecifyAmountModal/SpecifyAmountModal";
+import MigrateBalancesModal from "../../../modals/MigrateBalancesModal/MigrateBalancesModal";
 
 export default {
     name: 'admin-galt',
@@ -93,6 +95,12 @@ export default {
                 
             });
         },
+        migrateBalances() {
+            this.$root.$asyncModal.open({
+                id: 'migrate-balances-modal',
+                component: MigrateBalancesModal
+            });
+        },
         getLocale(key, options?) {
             return this.$locale.get(this.localeKey + "." + key, options);
         }
@@ -112,6 +120,9 @@ export default {
         },
         is_member_leave_manager() {
             return this.$store.state.is_member_leave_manager;
+        },
+        is_migrate_manager() {
+            return this.$store.state.is_migrate_manager;
         }
     },
     data() {

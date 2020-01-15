@@ -56,6 +56,12 @@
                     <md-icon class="md-accent">cake</md-icon>
                 </md-button>
             </md-list-item>
+
+            <md-list-item class="right-button-container">
+                <md-button class="md-accent md-raised" v-if="is_migrate_manager" @click="withdrawFee()">
+                    Migrate addresses
+                </md-button>
+            </md-list-item>
         </md-list>
     </md-card-content>
 </md-card>
