@@ -19,11 +19,11 @@ AddressUpgrader.numberFormat = 'String';
 const {ether, evmIncreaseTime, assertRevert} = require('@galtproject/solidity-test-chest')(web3);
 
 
-contract('AddressUpgrader', ([deployer, alice, bob, superuser, alice2, rateManager, joinManager]) => {
+contract('AddressUpgrader', ([deployer, alice, bob, bob2, charlie, superuser, alice2, rateManager, joinManager]) => {
     const payByTariff = web3.utils.toWei('10', 'ether');
     const mintForPeriods = 10;
     const baseAliceBalance = 10000000;
-    const feePercent = 0.02;
+    const feePercent = 0.00;
     let city;
     let coinToken;
     let addressUpgrader;
@@ -66,60 +66,78 @@ contract('AddressUpgrader', ([deployer, alice, bob, superuser, alice2, rateManag
         await evmIncreaseTime(21);
         await city.claimPayment(alice, coinTariffId, 3);
         await city.claimPayment(alice, ethTariffId, 3);
+        await city.claimPayment(bob, coinTariffId, 3);
+        await city.claimPayment(bob, ethTariffId, 3);
     });
 
     describe('user migration', () => {
-        it('allow a user migrating his address', async function () {
+        it('insufficient funds migration from user', async function () {
+            await coinToken.transfer(charlie, ether(21), { from: bob });
+            assert.equal(await coinToken.balanceOf(bob), ether(9));
+
             // migrate too early
-            await assertRevert(addressUpgrader.migrateMyAddress(alice2, coinTariffId, {from: alice}), 'Can migrate only at non-claimed yet period');
-            await assertRevert(addressUpgrader.migrateMyAddress(alice2, ethTariffId, {from: alice}), 'Can migrate only at non-claimed yet period');
+            await assertRevert(addressUpgrader.migrateMyAddress(bob2, coinTariffId, {from: bob}), 'Insufficient funds to migrate on this period');
 
             await evmIncreaseTime(10);
+
+            await city.claimPayment(bob, coinTariffId, 1);
 
             // migrate
-            await addressUpgrader.migrateMyAddress(alice2, coinTariffId, {from: alice});
-            await addressUpgrader.migrateMyAddress(alice2, ethTariffId, {from: alice});
+            await addressUpgrader.migrateMyAddress(bob2, coinTariffId, {from: bob});
+            await addressUpgrader.migrateMyAddress(bob2, ethTariffId, {from: bob});
 
             // already migrated
-            await assertRevert(addressUpgrader.migrateMyAddress(alice2, coinTariffId, {from: alice}), 'Not participant');
-            await assertRevert(addressUpgrader.migrateMyAddress(alice2, ethTariffId, {from: alice}), 'Not participant');
+            // transfer some funds to check the error message
+            await coinToken.transfer(bob, ether(100), { from: alice });
+            await assertRevert(addressUpgrader.migrateMyAddress(bob2, coinTariffId, {from: bob}), 'Not participant');
+            await assertRevert(addressUpgrader.migrateMyAddress(bob2, ethTariffId, {from: bob}), 'Not participant');
 
             await evmIncreaseTime(10);
 
-            await assertRevert(city.claimPayment(alice, coinTariffId, 1), "Tariff payment is not active");
-            await assertRevert(city.claimPayment(alice, ethTariffId, 1), "Tariff payment is not active");
-            await city.claimPayment(alice2, coinTariffId, 2);
-            await city.claimPayment(alice2, ethTariffId, 2);
-            await assertRevert(city.claimPayment(alice2, coinTariffId, 1), "Too soon");
-            await assertRevert(city.claimPayment(alice2, ethTariffId, 1), "Too soon");
+            await assertRevert(city.claimPayment(bob, coinTariffId, 1), "Tariff payment is not active");
+            await assertRevert(city.claimPayment(bob, ethTariffId, 1), "Tariff payment is not active");
+            await city.claimPayment(bob2, coinTariffId, 2);
+            await city.claimPayment(bob2, ethTariffId, 2);
+            await assertRevert(city.claimPayment(bob2, coinTariffId, 1), "Too soon");
+            await assertRevert(city.claimPayment(bob2, ethTariffId, 1), "Too soon");
+        });
+
+        it('allow a user migrating with sufficient funds', async function () {
+            // migrate
+            await addressUpgrader.migrateMyAddress(bob2, coinTariffId, {from: bob});
+            await addressUpgrader.migrateMyAddress(bob2, ethTariffId, {from: bob});
+
+            // already migrated
+            await assertRevert(addressUpgrader.migrateMyAddress(bob2, coinTariffId, {from: bob}), 'Not participant');
+            await assertRevert(addressUpgrader.migrateMyAddress(bob2, ethTariffId, {from: bob}), 'Not participant');
+
+            await evmIncreaseTime(10);
+
+            await assertRevert(city.claimPayment(bob, coinTariffId, 1), "Tariff payment is not active");
+            await assertRevert(city.claimPayment(bob, ethTariffId, 1), "Tariff payment is not active");
+            await city.claimPayment(bob2, coinTariffId, 2);
+            await city.claimPayment(bob2, ethTariffId, 2);
+            await assertRevert(city.claimPayment(bob2, coinTariffId, 1), "Too soon");
+            await assertRevert(city.claimPayment(bob2, ethTariffId, 1), "Too soon");
         });
 
         it('allow manager migrating a user', async function () {
-            // unauthorized superuser
-            await assertRevert(addressUpgrader.migrateUserAddress(alice, alice2, coinTariffId, {from: alice}), 'Only superuser allowed');
-
-            // migrate too early
-            await assertRevert(addressUpgrader.migrateUserAddress(alice, alice2, coinTariffId, {from: superuser}), 'Can migrate only at non-claimed yet period');
-            await assertRevert(addressUpgrader.migrateUserAddress(alice, alice2, ethTariffId, {from: superuser}), 'Can migrate only at non-claimed yet period');
-
-            await evmIncreaseTime(10);
-
             // migrate
-            await addressUpgrader.migrateUserAddress(alice, alice2, coinTariffId, {from: superuser});
-            await addressUpgrader.migrateUserAddress(alice, alice2, ethTariffId, {from: superuser});
+            await addressUpgrader.migrateUserAddress(bob, bob2, coinTariffId, {from: superuser});
+            await addressUpgrader.migrateUserAddress(bob, bob2, ethTariffId, {from: superuser});
 
             // already migrated
-            await assertRevert(addressUpgrader.migrateUserAddress(alice, alice2, coinTariffId, {from: superuser}), 'Not participant');
-            await assertRevert(addressUpgrader.migrateUserAddress(alice, alice2, ethTariffId, {from: superuser}), 'Not participant');
+            await assertRevert(addressUpgrader.migrateUserAddress(bob, bob2, coinTariffId, {from: superuser}), 'Not participant');
+            await assertRevert(addressUpgrader.migrateUserAddress(bob, bob2, ethTariffId, {from: superuser}), 'Not participant');
 
             await evmIncreaseTime(10);
 
-            await assertRevert(city.claimPayment(alice, coinTariffId, 1), "Tariff payment is not active");
-            await assertRevert(city.claimPayment(alice, ethTariffId, 1), "Tariff payment is not active");
-            await city.claimPayment(alice2, coinTariffId, 2);
-            await city.claimPayment(alice2, ethTariffId, 2);
-            await assertRevert(city.claimPayment(alice2, coinTariffId, 1), "Too soon");
-            await assertRevert(city.claimPayment(alice2, ethTariffId, 1), "Too soon");
+            await assertRevert(city.claimPayment(bob, coinTariffId, 1), "Tariff payment is not active");
+            await assertRevert(city.claimPayment(bob, ethTariffId, 1), "Tariff payment is not active");
+            await city.claimPayment(bob2, coinTariffId, 2);
+            await city.claimPayment(bob2, ethTariffId, 2);
+            await assertRevert(city.claimPayment(bob2, coinTariffId, 1), "Too soon");
+            await assertRevert(city.claimPayment(bob2, ethTariffId, 1), "Too soon");
         });
     });
 });
