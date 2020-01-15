@@ -35,12 +35,19 @@
       </div>
     </div>
 
+    <div class="warn" v-if="notEnoughBalance.length">
+      Недостаточно баланса, будут проигнорированы:
+      <div v-for="item in notEnoughBalance">
+        <div v-if="item.old">Old: {{item.old}}</div>
+      </div>
+    </div>
+
     <md-progress-bar class="md-accent" md-mode="indeterminate" v-if="checkingGas || sending"></md-progress-bar>
   </div>
 
   <template slot="footer">
     <md-button @click="close" class="md-raised">Закрыть</md-button>
-    <md-button @click="migrateBalances" class="md-raised md-accent" :disabled="!addressesToMigrate.length || state !== 'input' || sending">Мигрировать YAL балансы({{addressesToMigrate.length}})</md-button>
+    <md-button @click="migrateBalances" class="md-raised md-accent" :disabled="!addressesToMigrate.length || state !== 'input' || sending || checkingBalance">Мигрировать YAL балансы({{addressesToMigrate.length}})</md-button>
     <md-button @click="addToGasTariff" class="md-raised md-accent" :disabled="!addressesToMigrate.length || state !== 'migrated' || checkingGas || sending">Добавить в GAS тариф</md-button>
   </template>
 </modal-item>

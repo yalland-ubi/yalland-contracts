@@ -67,6 +67,7 @@ export default {
 		csvContent() {
 			this.addressesToMigrate = [];
 			this.incorrectAddresses = [];
+			this.notEnoughBalance = [];
 			if (!this.csvContent) {
 				return;
 			}
@@ -91,16 +92,31 @@ export default {
 					this.addressesToMigrate.push({'old': address1, 'new': address2, inGasTariff: false})
 				}
 			});
+
+			this.checkingBalance = true;
+			pIteration.forEach(this.addressesToMigrate, item => {
+				return this.$root.$coinTokenContract.balanceOf(item.old).then(balance => {
+					item.haveEnoughYal = balance >= 250;
+					if(!item.haveEnoughYal) {
+						this.notEnoughBalance.push(item);
+					}
+				})
+			}).then(() => {
+				this.checkingBalance = false;
+				this.addressesToMigrate = this.addressesToMigrate.filter(item => item.haveEnoughYal);
+			})
 		}
 	},
 	data: function () {
 		return {
 			state: 'input',
 			sending: false,
+			checkingBalance: false,
 			checkingGas: false,
 			csvContent: '',
 			addressesToMigrate: [],
 			incorrectAddresses: [],
+			notEnoughBalance: [],
 			warning: ''
 		}
 	}

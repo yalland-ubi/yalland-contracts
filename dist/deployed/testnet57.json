@@ -1,6 +1,337 @@
 {
   "yalTariffId": "0x6716667a5c2e0f67c0a334ee5f024dfa2cd3e2f95b2c13313ba62a7134bc68ae",
-  "coinTokenAddress": "0x72cbf5751365f47a7a1374d3b6065269ef82127e",
+  "gasTariffId": "0xf056a9584769bf5a4358571580b19500cadbb43fe3a412041ca69c72ca68bc5f",
+  "addressUpgraderAddress": "0x117c8e49ed6A92e0d93A43d2E5ef9B464EaC15df",
+  "addressUpgraderAbi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address payable",
+          "name": "_dcity",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_erc20Token",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "tariff",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "superuser",
+          "type": "address"
+        }
+      ],
+      "name": "ChangeAddress",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "tariff",
+          "type": "bytes32"
+        }
+      ],
+      "name": "MigrateMyAddress",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "role",
+          "type": "string"
+        }
+      ],
+      "name": "RoleAdded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "role",
+          "type": "string"
+        }
+      ],
+      "name": "RoleRemoved",
+      "type": "event"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "ROLE_ROLE_MANAGER",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "SUPERUSER_ROLE",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_account",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "_role",
+          "type": "string"
+        }
+      ],
+      "name": "addRoleTo",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "dcity",
+      "outputs": [
+        {
+          "internalType": "contract City",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "erc20Token",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_account",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "_role",
+          "type": "string"
+        }
+      ],
+      "name": "hasRole",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_account",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "_role",
+          "type": "string"
+        }
+      ],
+      "name": "removeRoleFrom",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_account",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "_role",
+          "type": "string"
+        }
+      ],
+      "name": "requireRole",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_to",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_tariff",
+          "type": "bytes32"
+        }
+      ],
+      "name": "migrateMyAddress",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_from",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_to",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_tariff",
+          "type": "bytes32"
+        }
+      ],
+      "name": "migrateUserAddress",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "_from",
+          "type": "address[]"
+        },
+        {
+          "internalType": "address[]",
+          "name": "_to",
+          "type": "address[]"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_tariff",
+          "type": "bytes32"
+        }
+      ],
+      "name": "migrateMultipleUserAddresses",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "coinTokenAddress": "0x72cBf5751365F47A7A1374d3B6065269EF82127e",
   "coinTokenAbi": [
     {
       "inputs": [
@@ -860,6 +1191,163 @@
       "stateMutability": "nonpayable",
       "type": "function",
       "signature": "0xe941fa78"
+    }
+  ],
+  "minterAddress": "0x07d3DA58E96149bCf2f0998BB66918029E6Dbf9B",
+  "minterAbi": [
+    {
+      "inputs": [
+        {
+          "internalType": "contract ICoinToken",
+          "name": "_coinToken",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "constructor",
+      "signature": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event",
+      "signature": "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "active",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x02fb0c5e"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "coinToken",
+      "outputs": [
+        {
+          "internalType": "contract ICoinToken",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x58797cb6"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "isOwner",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x8f32d59b"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x8da5cb5b"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0x715018a6"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0xf2fde38b"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "_to",
+          "type": "address[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "_amount",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "mintBatch",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0x7c88e3d9"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "deactivate",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0x51b42b00"
     }
   ],
   "cityAddress": "0x463f8834c322d9e56e2409e562a635dfd5967092",
@@ -1873,6 +2361,247 @@
       "payable": false,
       "stateMutability": "view",
       "type": "function"
+    }
+  ],
+  "tariffAdderAddress": "0xD72B2b9587a4863eddCd7b86EFdeD1dFC74a9b7D",
+  "tariffAdderAbi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address payable",
+          "name": "_dcity",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "constructor",
+      "signature": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "member",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "tariff",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        }
+      ],
+      "name": "AddToTariff",
+      "type": "event",
+      "signature": "0x5b354b0d52af35a3dca4e651aae59c267fbc436569338e7082b30d90e306b714"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "role",
+          "type": "string"
+        }
+      ],
+      "name": "RoleAdded",
+      "type": "event",
+      "signature": "0xbfec83d64eaa953f2708271a023ab9ee82057f8f3578d548c1a4ba0b5b700489"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "role",
+          "type": "string"
+        }
+      ],
+      "name": "RoleRemoved",
+      "type": "event",
+      "signature": "0xd211483f91fc6eff862467f8de606587a30c8fc9981056f051b897a418df803a"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "ROLE_ROLE_MANAGER",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xa670cb2d"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "SUPERUSER_ROLE",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x216fa4ed"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_account",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "_role",
+          "type": "string"
+        }
+      ],
+      "name": "addRoleTo",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0x726661c3"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "dcity",
+      "outputs": [
+        {
+          "internalType": "contract City",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x664a23e6"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_account",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "_role",
+          "type": "string"
+        }
+      ],
+      "name": "hasRole",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x217fe6c6"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_account",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "_role",
+          "type": "string"
+        }
+      ],
+      "name": "removeRoleFrom",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0x0d31e2ea"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_account",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "_role",
+          "type": "string"
+        }
+      ],
+      "name": "requireRole",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xf3c6eb0a"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address payable[]",
+          "name": "_addresses",
+          "type": "address[]"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_tariff",
+          "type": "bytes32"
+        }
+      ],
+      "name": "migrateMultipleUserAddresses",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0xad75160a"
     }
   ]
 }
