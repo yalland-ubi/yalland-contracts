@@ -57,9 +57,9 @@
                 </md-button>
             </md-list-item>
 
-            <md-list-item class="right-button-container">
-                <md-button class="md-accent md-raised" v-if="is_migrate_manager" @click="withdrawFee()">
-                    Migrate addresses
+            <md-list-item v-if="is_migrate_manager">
+                <md-button class="md-accent md-raised" @click="migrateBalances()">
+                    Миграция балансов
                 </md-button>
             </md-list-item>
         </md-list>

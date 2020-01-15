@@ -33,6 +33,8 @@ export default {
 			]).then(() => {
 				this.state = 'migrated';
 				this.sending = false;
+			}).catch(() => {
+				this.sending = false;
 			});
 
 			this.checkingGas = true;
@@ -46,13 +48,15 @@ export default {
 		},
 		addToGasTariff() {
 			this.sending = true;
-			this.$galtUser.sendUpgraderContractMethod('migrateMultipleUserAddresses', [
+			this.$galtUser.sendTariffAdderContractMethod('migrateMultipleUserAddresses', [
 				this.addressesToMigrate.filter(item => !item.inGasTariff).map(item => item.new),
 				GaltData.contractsConfig.gasTariffId
 			]).then(() => {
 				this.sending = false;
 				this.state = 'gasAdded';
 				this.close();
+			}).catch(() => {
+				this.sending = false;
 			})
 		},
 		close() {

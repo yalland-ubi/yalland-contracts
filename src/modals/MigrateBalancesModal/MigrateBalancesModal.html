@@ -9,24 +9,26 @@
 
 <modal-item>
   <template slot="header">
-    <md-button class="md-icon-button close" @click="cancel">
+    <md-button class="md-icon-button close" @click="close">
       <md-icon>clear</md-icon>
     </md-button>
     <h4>
-      <div class="modal-title">Migrate balances</div>
+      <div class="modal-title">Миграция балансов</div>
     </h4>
   </template>
 
   <div class="modal-body" slot="body">
     <div class="form-group">
-      <md-field>
-        <label>CSV content</label>
-        <md-textarea v-model="csvContent" :md-disabled="state !== 'input' || sending"></md-textarea>
+
+      <label>CSV содержимое</label>
+
+      <md-field class="md-has-textarea">
+        <md-textarea v-model="csvContent" :md-disabled="state !== 'input' || sending" style="color:white;    font-size: 12px;"></md-textarea>
       </md-field>
     </div>
 
     <div class="warn" v-if="incorrectAddresses.length">
-      Incorrect addresses, they will be ignored:
+      Некорректные адреса, будут проигнорированы:
       <div v-for="item in incorrectAddresses">
         <div v-if="item.old">Old: {{item.old}}</div>
         <div v-if="item.new">New: {{item.new}}</div>
@@ -37,8 +39,8 @@
   </div>
 
   <template slot="footer">
-    <md-button @click="close" class="md-raised"><span v-locale="'specify_address.' + locale + '.cancel'"></span></md-button>
-    <md-button @click="migrateBalances" class="md-raised md-accent" :disabled="!addressesToMigrate.length || state !== 'input' || sending">Migrate YAL balances({{addressesToMigrate.length}})</md-button>
-    <md-button @click="addToGasTariff" class="md-raised md-accent" :disabled="!addressesToMigrate.length || state !== 'migrated' || checkingGas || sending">Add to GAS tariff</md-button>
+    <md-button @click="close" class="md-raised">Закрыть</md-button>
+    <md-button @click="migrateBalances" class="md-raised md-accent" :disabled="!addressesToMigrate.length || state !== 'input' || sending">Мигрировать YAL балансы({{addressesToMigrate.length}})</md-button>
+    <md-button @click="addToGasTariff" class="md-raised md-accent" :disabled="!addressesToMigrate.length || state !== 'migrated' || checkingGas || sending">Добавить в GAS тариф</md-button>
   </template>
 </modal-item>
