@@ -27,7 +27,7 @@
                 <md-field>
                     <label v-locale="localeKey + '.tariff'"></label>
                     <md-select v-model="curTariffId">
-                        <md-option v-for="tariff in tariffs" :value="tariff.id">{{tariff.title}}</md-option>
+                        <md-option v-for="tariff in tariffs" :value="tariff.id" v-if="tariff.active">{{tariff.title}}</md-option>
                     </md-select>
                 </md-field>
             </md-list-item>
@@ -48,7 +48,7 @@
                         <md-table-head></md-table-head>
                     </md-table-row>
 
-                    <md-table-row v-for="(member, index) in filteredMembers" v-if="index < showCount || showAll">
+                    <md-table-row v-for="(member, index) in filteredMembers" v-if="index < showCount || showAll && member.active">
                         <md-table-cell><hex-cut :hex="member.address"></hex-cut></md-table-cell>
                         <md-table-cell>{{member.tariffTitle}}</md-table-cell>
                         <md-table-cell>{{member.claimed}}</md-table-cell>
