@@ -36,7 +36,7 @@
     </div>
 
     <div class="warn" v-if="notEnoughBalance.length">
-      Недостаточно баланса, будут проигнорированы:
+      Нулевые балансы, будут проигнорированы:
       <div v-for="item in notEnoughBalance">
         <div v-if="item.old">Old: {{item.old}}</div>
       </div>
