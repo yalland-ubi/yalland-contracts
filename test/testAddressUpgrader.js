@@ -75,12 +75,7 @@ contract('AddressUpgrader', ([deployer, alice, bob, bob2, charlie, superuser, al
             await coinToken.transfer(charlie, ether(21), { from: bob });
             assert.equal(await coinToken.balanceOf(bob), ether(9));
 
-            // migrate too early
-            await assertRevert(addressUpgrader.migrateMyAddress(bob2, coinTariffId, {from: bob}), 'Insufficient funds to migrate on this period');
-
             await evmIncreaseTime(10);
-
-            await city.claimPayment(bob, coinTariffId, 1);
 
             // migrate
             await addressUpgrader.migrateMyAddress(bob2, coinTariffId, {from: bob});
@@ -101,7 +96,7 @@ contract('AddressUpgrader', ([deployer, alice, bob, bob2, charlie, superuser, al
             await city.claimPayment(bob2, coinTariffId, 2);
             await city.claimPayment(bob2, ethTariffId, 2);
             await assertRevert(city.claimPayment(bob2, coinTariffId, 1), "Too soon");
-            await assertRevert(city.claimPayment(bob2, ethTariffId, 1), "Too soon");
+            await assertRevert(city.claimPayment(bob2, ethTariffId, 2), "Too soon");
         });
 
         it('allow a user migrating with sufficient funds', async function () {
@@ -118,7 +113,7 @@ contract('AddressUpgrader', ([deployer, alice, bob, bob2, charlie, superuser, al
 
             await assertRevert(city.claimPayment(bob, coinTariffId, 1), "Tariff payment is not active");
             await assertRevert(city.claimPayment(bob, ethTariffId, 1), "Tariff payment is not active");
-            await city.claimPayment(bob2, coinTariffId, 2);
+            await city.claimPayment(bob2, coinTariffId, 1);
             await city.claimPayment(bob2, ethTariffId, 2);
             await assertRevert(city.claimPayment(bob2, coinTariffId, 1), "Too soon");
             await assertRevert(city.claimPayment(bob2, ethTariffId, 1), "Too soon");
@@ -138,7 +133,7 @@ contract('AddressUpgrader', ([deployer, alice, bob, bob2, charlie, superuser, al
 
             await assertRevert(city.claimPayment(bob, coinTariffId, 1), "Tariff payment is not active");
             await assertRevert(city.claimPayment(bob, ethTariffId, 1), "Tariff payment is not active");
-            await city.claimPayment(bob2, coinTariffId, 2);
+            await city.claimPayment(bob2, coinTariffId, 1);
             await city.claimPayment(bob2, ethTariffId, 2);
             await assertRevert(city.claimPayment(bob2, coinTariffId, 1), "Too soon");
             await assertRevert(city.claimPayment(bob2, ethTariffId, 1), "Too soon");
@@ -155,9 +150,9 @@ contract('AddressUpgrader', ([deployer, alice, bob, bob2, charlie, superuser, al
             await assertRevert(city.claimPayment(alice, ethTariffId, 1), "Tariff payment is not active");
             await assertRevert(city.claimPayment(bob, coinTariffId, 1), "Tariff payment is not active");
             await assertRevert(city.claimPayment(bob, ethTariffId, 1), "Tariff payment is not active");
-            await city.claimPayment(alice2, coinTariffId, 2);
+            await city.claimPayment(alice2, coinTariffId, 1);
             await city.claimPayment(alice2, ethTariffId, 2);
-            await city.claimPayment(bob2, coinTariffId, 2);
+            await city.claimPayment(bob2, coinTariffId, 1);
             await city.claimPayment(bob2, ethTariffId, 2);
             await assertRevert(city.claimPayment(alice2, coinTariffId, 1), "Too soon");
             await assertRevert(city.claimPayment(alice2, ethTariffId, 1), "Too soon");

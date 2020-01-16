@@ -37,17 +37,24 @@ contract AddressUpgrader is Permissionable {
 
   // @dev User migrates to a new address
   // @param _to address to migrate to
-  function migrateMyAddress(address _to, bytes32 _tariff) external {
+  function migrateMyAddress(address payable _to, bytes32 _tariff) external {
     _migrate(msg.sender, _to, _tariff);
     emit MigrateMyAddress(msg.sender, _to, _tariff);
   }
 
-  function migrateUserAddress(address _from, address _to, bytes32 _tariff) external onlySuperuser {
+  function migrateUserAddress(address _from, address payable _to, bytes32 _tariff) external onlySuperuser {
     _migrate(_from, _to, _tariff);
     emit ChangeAddress(_from, _to, _tariff, msg.sender);
   }
 
-  function migrateMultipleUserAddresses(address[] calldata _from, address[] calldata _to, bytes32 _tariff) external onlySuperuser {
+  function migrateMultipleUserAddresses(
+    address[] calldata _from,
+    address payable[]  calldata _to,
+    bytes32 _tariff
+  )
+    external
+    onlySuperuser
+  {
     require(_from.length == _to.length, "To/From lengths mismatch");
 
     uint256 len = _from.length;
@@ -60,7 +67,7 @@ contract AddressUpgrader is Permissionable {
 
   // INTERNAL
 
-  function _migrate(address _from, address _to, bytes32 _tariff) internal {
+  function _migrate(address _from, address payable _to, bytes32 _tariff) internal {
     require(_to != address(0), "_to can't be 0x0 address");
 
     (bool userHasTheTariff,,,uint256 lastClaimedTimestamp) = dcity.getParticipantTariffInfo(_from, _tariff);
@@ -77,21 +84,16 @@ contract AddressUpgrader is Permissionable {
       uint256 balance = IERC20(erc20Token).balanceOf(_from);
       require(balance > 0, "Cant migrate 0 balance");
 
-      // If already claimed
-      if (userHasTheTariff == true && canClaimSome == false) {
-        require(IERC20(erc20Token).balanceOf(_from) >= payment, "Insufficient funds to migrate on this period");
-      }
-
       // burn
       ICoinToken(erc20Token).burn(_from, balance);
 
       //mint
-      uint256 toMint = balance;
-      if (userHasTheTariff == true && canClaimSome == false) {
-        toMint = toMint.sub(payment);
-      }
+      ICoinToken(erc20Token).mint(_to, balance);
 
-      ICoinToken(erc20Token).mint(_to, balance.sub(payment));
+      if (userHasTheTariff == true && canClaimSome == false) {
+        dcity.claimPayment(_to, _tariff, 1);
+        ICoinToken(erc20Token).burn(_to, payment);
+      }
     }
   }
 }
