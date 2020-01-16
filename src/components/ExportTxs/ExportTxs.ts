@@ -49,7 +49,8 @@ export default {
 					console.error(e);
 					this.$notify({
 						type: 'error',
-						title: 'Not authorized'
+						title: 'Not authorized',
+						text: e.message
 					})
 				}
 			}
