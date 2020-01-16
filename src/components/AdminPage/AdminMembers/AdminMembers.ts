@@ -113,9 +113,10 @@ export default {
       if (_.find(this.members, (member) => member.address.toLowerCase() === this.memberToFind.toLowerCase())) {
         return;
       }
-      this.$cityContract.getMember(this.memberToFind)
+      this.$cityContract.getMemberTariff(this.memberToFind, this.curTariffId)
         .then((member) => {
-          if (!member.active) {
+          console.log('fetchMemberToFind', this.memberToFind, member)
+          if (!member || !member.active) {
             this.memberNotFound = true;
             return;
           }

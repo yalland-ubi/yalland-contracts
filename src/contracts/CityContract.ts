@@ -209,6 +209,7 @@ export default class CityContract extends EthContract {
 
         return member;
     }
+
     async getMembersTariffsByAddresses(membersAddresses, tariffId, params: any = {}){
         console.log('membersAddresses.length', membersAddresses.length);
         const applications = await pIteration.map(membersAddresses, async (memberAddress) => {
