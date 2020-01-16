@@ -77,8 +77,6 @@ contract('AddressUpgrader', ([deployer, alice, bob, bob2, charlie, superuser, al
 
             await evmIncreaseTime(10);
 
-            await city.claimPayment(bob, coinTariffId, 1);
-
             // migrate
             await addressUpgrader.migrateMyAddress(bob2, coinTariffId, {from: bob});
             await addressUpgrader.migrateMyAddress(bob2, ethTariffId, {from: bob});
@@ -95,7 +93,7 @@ contract('AddressUpgrader', ([deployer, alice, bob, bob2, charlie, superuser, al
 
             await assertRevert(city.claimPayment(bob, coinTariffId, 1), "Tariff payment is not active");
             await assertRevert(city.claimPayment(bob, ethTariffId, 1), "Tariff payment is not active");
-            await city.claimPayment(bob2, coinTariffId, 1);
+            await city.claimPayment(bob2, coinTariffId, 2);
             await city.claimPayment(bob2, ethTariffId, 2);
             await assertRevert(city.claimPayment(bob2, coinTariffId, 1), "Too soon");
             await assertRevert(city.claimPayment(bob2, ethTariffId, 2), "Too soon");
