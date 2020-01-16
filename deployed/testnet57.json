@@ -1,7 +1,7 @@
 {
   "yalTariffId": "0x6716667a5c2e0f67c0a334ee5f024dfa2cd3e2f95b2c13313ba62a7134bc68ae",
   "gasTariffId": "0xf056a9584769bf5a4358571580b19500cadbb43fe3a412041ca69c72ca68bc5f",
-  "addressUpgraderAddress": "0x117c8e49ed6A92e0d93A43d2E5ef9B464EaC15df",
+  "addressUpgraderAddress": "0x0d51362a725F62DF043F393CCC2b1f99440FFfA1",
   "addressUpgraderAbi": [
     {
       "inputs": [
@@ -18,7 +18,8 @@
       ],
       "payable": false,
       "stateMutability": "nonpayable",
-      "type": "constructor"
+      "type": "constructor",
+      "signature": "constructor"
     },
     {
       "anonymous": false,
@@ -49,7 +50,8 @@
         }
       ],
       "name": "ChangeAddress",
-      "type": "event"
+      "type": "event",
+      "signature": "0x2803d78f8f00a82246339f20e8b1ed2ecf942790d4ebbe26721b1dbac89f3344"
     },
     {
       "anonymous": false,
@@ -74,7 +76,8 @@
         }
       ],
       "name": "MigrateMyAddress",
-      "type": "event"
+      "type": "event",
+      "signature": "0x943acdbf7133cb3f241e7cdeed28056c03c6dbd7143f6fb99f3858be0bd81c05"
     },
     {
       "anonymous": false,
@@ -93,7 +96,8 @@
         }
       ],
       "name": "RoleAdded",
-      "type": "event"
+      "type": "event",
+      "signature": "0xbfec83d64eaa953f2708271a023ab9ee82057f8f3578d548c1a4ba0b5b700489"
     },
     {
       "anonymous": false,
@@ -112,7 +116,8 @@
         }
       ],
       "name": "RoleRemoved",
-      "type": "event"
+      "type": "event",
+      "signature": "0xd211483f91fc6eff862467f8de606587a30c8fc9981056f051b897a418df803a"
     },
     {
       "constant": true,
@@ -127,7 +132,8 @@
       ],
       "payable": false,
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "signature": "0xa670cb2d"
     },
     {
       "constant": true,
@@ -142,7 +148,8 @@
       ],
       "payable": false,
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "signature": "0x216fa4ed"
     },
     {
       "constant": false,
@@ -162,7 +169,8 @@
       "outputs": [],
       "payable": false,
       "stateMutability": "nonpayable",
-      "type": "function"
+      "type": "function",
+      "signature": "0x726661c3"
     },
     {
       "constant": true,
@@ -177,7 +185,8 @@
       ],
       "payable": false,
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "signature": "0x664a23e6"
     },
     {
       "constant": true,
@@ -192,7 +201,8 @@
       ],
       "payable": false,
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "signature": "0x8a13eea7"
     },
     {
       "constant": true,
@@ -218,7 +228,8 @@
       ],
       "payable": false,
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "signature": "0x217fe6c6"
     },
     {
       "constant": false,
@@ -238,7 +249,8 @@
       "outputs": [],
       "payable": false,
       "stateMutability": "nonpayable",
-      "type": "function"
+      "type": "function",
+      "signature": "0x0d31e2ea"
     },
     {
       "constant": true,
@@ -258,13 +270,14 @@
       "outputs": [],
       "payable": false,
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "signature": "0xf3c6eb0a"
     },
     {
       "constant": false,
       "inputs": [
         {
-          "internalType": "address",
+          "internalType": "address payable",
           "name": "_to",
           "type": "address"
         },
@@ -278,7 +291,8 @@
       "outputs": [],
       "payable": false,
       "stateMutability": "nonpayable",
-      "type": "function"
+      "type": "function",
+      "signature": "0x4e88e62d"
     },
     {
       "constant": false,
@@ -289,7 +303,7 @@
           "type": "address"
         },
         {
-          "internalType": "address",
+          "internalType": "address payable",
           "name": "_to",
           "type": "address"
         },
@@ -303,7 +317,8 @@
       "outputs": [],
       "payable": false,
       "stateMutability": "nonpayable",
-      "type": "function"
+      "type": "function",
+      "signature": "0xd14fc65e"
     },
     {
       "constant": false,
@@ -314,7 +329,7 @@
           "type": "address[]"
         },
         {
-          "internalType": "address[]",
+          "internalType": "address payable[]",
           "name": "_to",
           "type": "address[]"
         },
@@ -328,7 +343,8 @@
       "outputs": [],
       "payable": false,
       "stateMutability": "nonpayable",
-      "type": "function"
+      "type": "function",
+      "signature": "0x4e335b47"
     }
   ],
   "coinTokenAddress": "0x72cbf5751365f47a7a1374d3b6065269ef82127e",
