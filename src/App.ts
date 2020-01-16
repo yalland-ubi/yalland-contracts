@@ -180,8 +180,14 @@ export default {
             sendCityContractMethod: (methodName, args = []) => {
                 return this.$galtUser.sendCityContractMethod(methodName, args);
             },
+            sendUpgraderContractMethod: (methodName, args = []) => {
+                return this.$galtUser.sendUpgraderContractMethod(methodName, args);
+            },
             sendTokenContractMethod: (methodName, args = []) => {
                 return this.$galtUser.sendTokenContractMethod(methodName, args);
+            },
+            sendTariffAdderContractMethod: (methodName, args = []) => {
+                return this.$galtUser.sendTariffAdderContractMethod(methodName, args);
             }
         }
     },
@@ -383,6 +389,20 @@ export default {
                 }
                 this.$store.commit('is_fee_manager', has);
             });
+            this.$galtUser.hasRoleManagerRole().then((has) => {
+                console.log('hasRoleManagerRole', has);
+                if(has == this.is_role_manager) {
+                    return;
+                }
+                this.$store.commit('is_role_manager', has);
+            });
+            this.$galtUser.hasMigrateManagerRole().then((has) => {
+                console.log('hasMigrateManagerRole', has);
+                if(has == this.is_migrate_manager) {
+                    return;
+                }
+                this.$store.commit('is_migrate_manager', has);
+            });
         },
 
         getInternalWalletData() {
@@ -465,6 +485,9 @@ export default {
         },
         is_fee_manager() {
             return this.$store.state.is_fee_manager;
+        },
+        is_role_manager() {
+            return this.$store.state.is_role_manager;
         },
         is_rate_manager() {
             return this.$store.state.is_rate_manager;

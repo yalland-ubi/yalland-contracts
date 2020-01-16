@@ -17,7 +17,9 @@ export default {
     install (Vue, options: any = {}) {
         const contracts = {
             'coinToken': CoinTokenContract,
-            'city': CityContract
+            'city': CityContract,
+            'addressUpgrader': CityContract,
+            'tariffAdder': CityContract
         };
 
         Vue.prototype.$contracts = {};

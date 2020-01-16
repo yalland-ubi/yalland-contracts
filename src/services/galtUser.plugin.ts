@@ -218,6 +218,14 @@ export default {
                 return $contracts.$city.sendMethodWithArgs(sendOptions(), methodName, args);
             },
 
+            async sendUpgraderContractMethod(methodName, args) {
+                return $contracts.$addressUpgrader.sendMethodWithArgs(sendOptions(), methodName, args);
+            },
+
+            async sendTariffAdderContractMethod(methodName, args) {
+                return $contracts.$tariffAdder.sendMethodWithArgs(sendOptions(), methodName, args);
+            },
+
             async sendTokenContractMethod(methodName, args) {
                 return $contracts.$coinToken.sendMethodWithArgs(sendOptions(), methodName, args);
             },
@@ -264,6 +272,16 @@ export default {
             async hasFeeManagerRole() {
                 await onWalletReady();
                 return $contracts.$coinToken.hasRole(walletAddress, "fee_manager");
+            },
+
+            async hasRoleManagerRole() {
+                await onWalletReady();
+                return $contracts.$coinToken.hasRole(walletAddress, "role_manager");
+            },
+
+            async hasMigrateManagerRole() {
+                await onWalletReady();
+                return $contracts.$addressUpgrader.hasRole(walletAddress, "superuser");
             },
 
             async generateNewInternalWallet(){

@@ -21,6 +21,8 @@ export default new Vuex.Store({
         is_member_join_manager: false,
         is_member_leave_manager: false,
         is_fee_manager: false,
+        is_role_manager: false,
+        is_migrate_manager: false,
         user_eth_balance: null,
         user_space_balance: null,
         user_coin_balance: null,
@@ -52,6 +54,9 @@ export default new Vuex.Store({
         },
         is_rate_manager(state, is_rate_manager) {
             state.is_rate_manager = is_rate_manager;
+        },
+        is_migrate_manager(state, is_migrate_manager) {
+            state.is_migrate_manager = is_migrate_manager;
         },
         is_member_join_manager(state, is_member_join_manager) {
             state.is_member_join_manager = is_member_join_manager;
