@@ -29,7 +29,7 @@
   "homepage": "https://github.com/galtspace/dcity#readme",
   "dependencies": {
     "@galtproject/libs": "git+ssh://git@github.com/galtproject/galtproject-common.git#7639cda",
-    "@galtproject/solidity-test-chest": "https://github.com/galtproject/solidity-test-chest#605d332",
+    "@galtproject/solidity-test-chest": "https://github.com/galtproject/solidity-test-chest#77e3459",
     "@galtproject/utils": "^0.9.1",
     "@openzeppelin/contracts": "2.5.0",
     "@sentry/browser": "^4.0.0-rc.1",
