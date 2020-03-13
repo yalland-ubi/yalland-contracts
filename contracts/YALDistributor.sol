@@ -16,8 +16,6 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./interfaces/ICoinToken.sol";
 
 
-// TODO: make pausable
-// TODO: make ownable
 contract YALDistribution is Ownable, Pausable {
   using SafeMath for uint256;
 
