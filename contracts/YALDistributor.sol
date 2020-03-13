@@ -27,6 +27,21 @@ contract YALDistributor is Ownable, Pausable {
   event SetVerifier(address verifier);
   event SetVerifierRewardShare(uint256 rewardShare);
   event SetPeriodVolume(uint256 oldPeriodVolume, uint256 newPeriodVolume);
+  event AddMember(bytes32 memberId, address memberAddress);
+  event ActiveMemberCountChanged(uint256 activeMemberCount);
+
+  struct Period {
+    uint256 rewardPerMember;
+    uint256 verifierPeriodReward;
+  }
+
+  struct Member {
+    bool active;
+    uint256 createdAt;
+    address addr;
+    // periodId => claimed
+    mapping(uint256 => bool) claimedPeriods;
+  }
 
   uint256 public genesisTimestamp;
   uint256 public periodLength;
@@ -39,20 +54,17 @@ contract YALDistributor is Ownable, Pausable {
   // 100% == 100 ether
   uint256 public verifierRewardShare;
 
-  mapping(bytes32 => Member) public members;
+  // credentialsHash => memberDetails
+  mapping(bytes32 => Member) public member;
   mapping(address => bytes32) public memberAddress2Id;
+
   // periodId => rewardPerMember
   mapping(uint256 => uint256) public periodRewardPerMember;
   // periodId => amount
   mapping(uint256 => uint256) public verifierPeriodReward;
 
-  struct Member {
-    bool active;
-    uint256 createdAt;
-    address addr;
-    // periodId => claimed
-    mapping(uint256 => bool) claimedPeriods;
-  }
+  // periodId => periodDetails
+  mapping(uint256 => Period) public periods;
 
   modifier onlyVerifier() {
     require(msg.sender == verifier, "Only verifier allowed");
@@ -64,7 +76,7 @@ contract YALDistributor is Ownable, Pausable {
   modifier handlePeriodTransitionIfRequired() {
     uint256 currentPeriodId = getCurrentPeriodId();
 
-    if (periodRewardPerMember[currentPeriodId] == 0) {
+    if (periodRewardPerMember[currentPeriodId] == 0 && activeMemberCount > 0) {
       verifierPeriodReward[currentPeriodId] = periodVolume * verifierRewardShare;
 
       // imbalance will be left at the contract
@@ -95,7 +107,7 @@ contract YALDistributor is Ownable, Pausable {
 
     token = ICoinToken(_token);
     periodLength = _periodLength;
-    genesisTimestamp = genesisTimestamp;
+    genesisTimestamp = _genesisTimestamp;
   }
 
   // OWNER INTERFACE
@@ -137,57 +149,84 @@ contract YALDistributor is Ownable, Pausable {
 
   // VERIFIER INTERFACE
 
+  /*
+   * @dev Adds multple members
+   * @params _memberIds unique credential keccack256() hashes
+   * @params _memberAddresses corresponding to _memberIds addresses
+   */
   function addMembers(
     bytes32[] calldata _memberIds,
-    address[] calldata _addrs
+    address[] calldata _memberAddresses
   )
     external
     handlePeriodTransitionIfRequired
     onlyVerifier
   {
-    for (uint256 i = 0; i < _memberIds.length; i++) {
-      _addMember(_memberIds[i], _addrs[i]);
+    uint256 len = _memberIds.length;
+
+    require(len > 0, "Missing input members");
+    require(len == _memberAddresses.length, "ID and address arrays length should match");
+
+    for (uint256 i = 0; i < len; i++) {
+      _addMember(_memberIds[i], _memberAddresses[i]);
     }
+
+    uint256 newActiveMemberCount = activeMemberCount + len;
+    activeMemberCount = newActiveMemberCount;
+
+    emit ActiveMemberCountChanged(newActiveMemberCount);
   }
 
+  /*
+   * @dev Adds a single member
+   * @params _memberId a unique credential keccack256()
+   * @params _memberAddress corresponding to _memberIds address
+   */
   function addMember(
     bytes32 _memberId,
-    address _member
+    address _memberAddress
   )
     external
     handlePeriodTransitionIfRequired
     onlyVerifier
   {
-    _addMember(_memberId, _member);
+    _addMember(_memberId, _memberAddress);
+
+    uint256 newActiveMemberCount = activeMemberCount + 1;
+    activeMemberCount = newActiveMemberCount;
+
+    emit ActiveMemberCountChanged(newActiveMemberCount);
   }
 
-  function _addMember(bytes32 _memberId, address _member) internal {
-    require(memberAddress2Id[_member] == byte(0), "The address already registered");
+  function _addMember(bytes32 _memberId, address _memberAddress) internal {
+    require(memberAddress2Id[_memberAddress] == byte(0), "The address already registered");
 
-    Member storage member = members[_memberId];
+    memberAddress2Id[_memberAddress] = _memberId;
 
-    member.addr = _member;
+    Member storage member = member[_memberId];
+
+    member.addr = _memberAddress;
     member.active = true;
     member.createdAt = now;
 
-    activeMemberCount++;
+    emit AddMember(_memberId, _memberAddress);
   }
 
   function activateMember(bytes32 _memberId) external handlePeriodTransitionIfRequired onlyVerifier {
-    Member storage member = members[_memberId];
+    Member storage member = member[_memberId];
     require(member.active == false);
     require(member.createdAt != 0);
     activeMemberCount++;
   }
 
   function deactivateMember(bytes32 _memberId) external handlePeriodTransitionIfRequired onlyVerifier {
-    Member storage member = members[_memberId];
+    Member storage member = member[_memberId];
     require(member.active == true);
     activeMemberCount--;
   }
 
   function changeMemberAddress(bytes32 _memberId, address _to) external onlyVerifier {
-    Member storage member = members[_memberId];
+    Member storage member = member[_memberId];
     member.addr = _to;
   }
 
@@ -204,7 +243,7 @@ contract YALDistributor is Ownable, Pausable {
     external
     handlePeriodTransitionIfRequired
   {
-    Member storage member = members[_memberId];
+    Member storage member = member[_memberId];
 
     require(member.addr == msg.sender, "Address doesn't match");
     require(member.active == true, "Not active member");
@@ -218,14 +257,10 @@ contract YALDistributor is Ownable, Pausable {
   }
 
   function changeMyAddress(bytes32 _memberId, address _to) external {
-    Member storage member = members[_memberId];
+    Member storage member = member[_memberId];
     require(member.addr == msg.sender);
     member.addr = _to;
   }
-
-  // PERMISSIONLESS INTERFACE
-//  function handlePeriodTransitionIfRequired() external handlePeriodTransitionIfRequired {
-//  }
 
   // VIEW METHODS
 
