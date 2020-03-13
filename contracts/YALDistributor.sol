@@ -16,14 +16,22 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./interfaces/ICoinToken.sol";
 
 
-contract YALDistribution is Ownable, Pausable {
+/**
+ * @title YALDistributor contract
+ * @author Galt Project
+ * @notice Mints YAL tokens on request according pre-configured formula
+ **/
+contract YALDistributor is Ownable, Pausable {
   using SafeMath for uint256;
+
+  event SetVerifier(address verifier);
+  event SetVerifierRewardShare(uint256 rewardShare);
+  event SetPeriodVolume(uint256 oldPeriodVolume, uint256 newPeriodVolume);
 
   uint256 public genesisTimestamp;
   uint256 public periodLength;
   uint256 public periodVolume;
 
-  uint256 public idCounter;
   ICoinToken public token;
   uint256 public activeMemberCount;
 
@@ -69,29 +77,62 @@ contract YALDistribution is Ownable, Pausable {
   }
 
   constructor(
-    ICoinToken _token,
+    // can be changed later:
+    uint256 _periodVolume,
+    address _verifier,
+    uint256 _verifierRewardShare,
+
+    // can't be changed later:
+    address _token,
     uint256 _periodLength,
-    uint256 _genesisTimestamp,
-    uint256 _periodVolume
+    uint256 _genesisTimestamp
   )
     public
   {
-    // ..assign
+    periodVolume = _periodVolume;
+    verifier = _verifier;
+    verifierRewardShare = _verifierRewardShare;
+
+    token = ICoinToken(_token);
+    periodLength = _periodLength;
+    genesisTimestamp = genesisTimestamp;
   }
 
   // OWNER INTERFACE
 
+  /*
+   * @dev Changes a verifier address to a new one.
+   * @params _verifier a new verifier address, address(0) if a verifier role is disabled
+   */
   function setVerifier(address _verifier) external onlyOwner {
     verifier = _verifier;
+
+    emit SetVerifier(_verifier);
   }
 
-  function setVerifierRewardShare(uint256 _share) external onlyOwner {
-    require(_share < 100 ether);
-    verifierRewardShare = _share;
+  /*
+   * @dev Changes a verifier reward share to a new one.
+   * @params _verifierRewardShare a new verifier reward share, 0 if there should be no reward for
+   * a verifier; 100% == 100 ether
+   */
+  function setVerifierRewardShare(uint256 _verifierRewardShare) external onlyOwner {
+    require(_verifierRewardShare < 100 ether, "Can't be >= 100%");
+
+    verifierRewardShare = _verifierRewardShare;
+
+    emit SetVerifierRewardShare(_verifierRewardShare);
   }
 
-  function setPeriodVolume(uint256 _newVolume) external onlyOwner {
-    periodVolume = _newVolume;
+  /*
+   * @dev Changes a periodVolume to a new value.
+   * @params _periodVolume a new periodVolume value, 0 if the distribution shuold be disabled
+   */
+  function setPeriodVolume(uint256 _periodVolume) external onlyOwner {
+    uint256 oldPeriodVolume = periodVolume;
+
+    periodVolume = _periodVolume;
+
+    emit SetPeriodVolume(oldPeriodVolume, _periodVolume);
   }
 
   // VERIFIER INTERFACE
@@ -185,12 +226,6 @@ contract YALDistribution is Ownable, Pausable {
   // PERMISSIONLESS INTERFACE
 //  function handlePeriodTransitionIfRequired() external handlePeriodTransitionIfRequired {
 //  }
-
-  // INTERNAL METHODS
-
-  function nextId() internal returns (uint256) {
-    return ++idCounter;
-  }
 
   // VIEW METHODS
 
