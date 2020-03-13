@@ -7,16 +7,21 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-const CoinToken = artifacts.require('./CoinToken.sol');
-const City = artifacts.require('./City.sol');
+const { accounts, defaultSender, contract, web3 } = require('@openzeppelin/test-environment');
+const { assert } = require('chai');
 
-const web3 = City.web3;
+const CoinToken = contract.fromArtifact('CoinToken');
+const City = contract.fromArtifact('City');
+
 CoinToken.numberFormat = 'String';
 
 const { ether, assertRevert, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
 
 
-contract('Coin', ([deployer, pauser, alice, bob, charlie]) => {
+describe('Coin', () => {
+    const [pauser, alice, bob, charlie] = accounts;
+    const deployer = defaultSender;
+
     const baseAliceBalance = 10000000;
     const feePercent = 0.02;
     let coinToken;

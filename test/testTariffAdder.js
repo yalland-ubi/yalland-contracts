@@ -7,13 +7,15 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-const CoinToken = artifacts.require('./CoinToken.sol');
-const City = artifacts.require('./City.sol');
-const TariffAdder = artifacts.require('./TariffAdder.sol');
+const { accounts, defaultSender, contract, web3 } = require('@openzeppelin/test-environment');
+const { assert } = require('chai');
+
+const CoinToken = contract.fromArtifact('CoinToken');
+const City = contract.fromArtifact('City');
+const TariffAdder = contract.fromArtifact('TariffAdder');
 
 const pIteration = require('p-iteration');
 
-const web3 = City.web3;
 CoinToken.numberFormat = 'String';
 City.numberFormat = 'String';
 TariffAdder.numberFormat = 'String';
@@ -21,7 +23,10 @@ TariffAdder.numberFormat = 'String';
 const {ether, evmIncreaseTime, assertRevert} = require('@galtproject/solidity-test-chest')(web3);
 
 
-contract('TariffAdder', ([deployer, alice, bob, bob2, charlie, superuser, alice2, rateManager, joinManager]) => {
+describe('TariffAdder', () => {
+    const [alice, bob, bob2, charlie, superuser, alice2, rateManager, joinManager] = accounts;
+    const deployer = defaultSender;
+
     const baseCityEthBalance = 1000000;
     const payByTariff = 100;
     const mintForPeriods = 10;
