@@ -269,6 +269,45 @@ describe('YALDistributor Unit tests', () => {
                 );
             });
         });
+
+        describe('#changeMemberAddress()', () => {
+            beforeEach(async function() {
+                await increaseTime(11);
+                assert.equal(await dist.getCurrentPeriodId(), 0);
+                await dist.addMember(memberId1, bob, { from: verifier });
+            });
+
+            it('should allow changing address for an active member', async function() {
+                assert.equal(await dist.memberAddress2Id(bob), memberId1);
+                assert.equal(await dist.memberAddress2Id(alice), '0x0000000000000000000000000000000000000000000000000000000000000000');
+
+                const res = await dist.changeMemberAddress(memberId1, alice, { from: verifier });
+
+                const details = await dist.member(memberId1);
+                assert.equal(details.active, true);
+                assert.equal(details.addr, alice);
+
+                assert.equal(await dist.memberAddress2Id(alice), memberId1);
+                assert.equal(await dist.memberAddress2Id(bob), '0x0000000000000000000000000000000000000000000000000000000000000000');
+            });
+
+            it('should allow changing address for an inactive member', async function() {
+                await dist.disableMembers([memberId1], { from: verifier });
+                await dist.changeMemberAddress(memberId1, alice, { from: verifier });
+
+                const details = await dist.member(memberId1);
+                assert.equal(details.active, false);
+                assert.equal(details.addr, alice);
+            });
+
+            it('should deny non verifier changing a member address', async function() {
+                await assertRevert(dist.changeMemberAddress(memberId1, alice, { from: alice }), 'Only verifier allowed');
+            });
+
+            it('should deny changing a non-existent member address', async function() {
+                await assertRevert(dist.changeMemberAddress(memberId4, alice, { from: verifier }), ' Member doesn\'t exist');
+            });
+        });
     });
 
     describe('Owner Interface', () => {
@@ -328,4 +367,41 @@ describe('YALDistributor Unit tests', () => {
             });
         });
     });
+
+    describe('Member Interface', () => {
+        describe('#changeMyAddress()', () => {
+            beforeEach(async function() {
+                await increaseTime(11);
+                assert.equal(await dist.getCurrentPeriodId(), 0);
+                await dist.addMember(memberId1, bob, { from: verifier });
+            });
+
+            it('should allow an active member changing his address', async function() {
+                assert.equal(await dist.memberAddress2Id(bob), memberId1);
+                assert.equal(await dist.memberAddress2Id(alice), '0x0000000000000000000000000000000000000000000000000000000000000000');
+
+                await dist.changeMyAddress(memberId1, alice, { from: bob });
+
+                const details = await dist.member(memberId1);
+                assert.equal(details.active, true);
+                assert.equal(details.addr, alice);
+
+                assert.equal(await dist.memberAddress2Id(alice), memberId1);
+                assert.equal(await dist.memberAddress2Id(bob), '0x0000000000000000000000000000000000000000000000000000000000000000');
+            });
+
+            it('should allow inactive member changing his address', async function() {
+                await dist.disableMembers([memberId1], { from: verifier });
+                const res = await dist.changeMyAddress(memberId1, alice, { from: bob });
+
+                const details = await dist.member(memberId1);
+                assert.equal(details.active, false);
+                assert.equal(details.addr, alice);
+            });
+
+            it('should deny non member changing the member address', async function() {
+                await assertRevert(dist.changeMyAddress(memberId1, alice, { from: verifier }), 'Only the member allowed');
+            });
+        });
+    })
 });

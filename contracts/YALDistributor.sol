@@ -24,11 +24,13 @@ import "./interfaces/ICoinToken.sol";
 contract YALDistributor is Ownable, Pausable {
   using SafeMath for uint256;
 
+  event ActiveMemberCountChanged(uint256 activeMemberCount);
+  event AddMember(bytes32 memberId, address memberAddress);
+  event ChangeMemberAddress(bytes32 indexed memberId, address from, address to);
+  event ChangeMyAddress(bytes32 indexed memberId, address from, address to);
+  event SetPeriodVolume(uint256 oldPeriodVolume, uint256 newPeriodVolume);
   event SetVerifier(address verifier);
   event SetVerifierRewardShare(uint256 rewardShare);
-  event SetPeriodVolume(uint256 oldPeriodVolume, uint256 newPeriodVolume);
-  event AddMember(bytes32 memberId, address memberAddress);
-  event ActiveMemberCountChanged(uint256 activeMemberCount);
 
   struct Period {
     uint256 rewardPerMember;
@@ -195,7 +197,7 @@ contract YALDistributor is Ownable, Pausable {
   }
 
   function _addMember(bytes32 _memberId, address _memberAddress) internal {
-    require(memberAddress2Id[_memberAddress] == byte(0), "The address already registered");
+    require(memberAddress2Id[_memberAddress] == bytes32(0), "The address already registered");
 
     memberAddress2Id[_memberAddress] = _memberId;
 
@@ -250,9 +252,23 @@ contract YALDistributor is Ownable, Pausable {
     _decrementActiveMemberCount(len);
   }
 
+  /*
+   * @dev Validator changes a member address with a new one. MemberId remains the same.
+   * @params _memberIds to change
+   * @params _to address to change to
+   */
   function changeMemberAddress(bytes32 _memberId, address _to) external onlyVerifier {
     Member storage member = member[_memberId];
+
+    require(member.createdAt != 0, "Member doesn't exist");
+
+    address from = member.addr;
     member.addr = _to;
+
+    memberAddress2Id[from] = bytes32(0);
+    memberAddress2Id[_to] = _memberId;
+
+    emit ChangeMemberAddress(_memberId, from, _to);
   }
 
   function claimVerifierReward(uint256 _periodId, address _to) external onlyVerifier {
@@ -261,6 +277,7 @@ contract YALDistributor is Ownable, Pausable {
   }
 
   // MEMBER INTERFACE
+
   // @dev Claims msg.sender funds for the previous period
   function claimFunds(
     bytes32 _memberId
@@ -281,10 +298,24 @@ contract YALDistributor is Ownable, Pausable {
     token.mint(msg.sender, verifierPeriodReward[getCurrentPeriodId()]);
   }
 
+  /*
+   * @dev A member changes his address with a new one. MemberId remains the same.
+   * @params _memberIds to change
+   * @params _to address to change to
+   */
   function changeMyAddress(bytes32 _memberId, address _to) external {
     Member storage member = member[_memberId];
-    require(member.addr == msg.sender);
+
+    require(member.addr == msg.sender, "Only the member allowed");
+    require(member.createdAt != 0, "Member doesn't exist");
+
+    address from = member.addr;
     member.addr = _to;
+
+    memberAddress2Id[from] = bytes32(0);
+    memberAddress2Id[_to] = _memberId;
+
+    emit ChangeMyAddress(_memberId, from, _to);
   }
 
   // INTERNAL METHODS
