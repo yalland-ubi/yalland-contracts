@@ -16,7 +16,7 @@ const YALDistributor = contract.fromArtifact('YALDistributor');
 CoinToken.numberFormat = 'String';
 YALDistributor.numberFormat = 'String';
 
-const { ether, now, increaseTime, assertRevert, zeroAddress, getResTimestamp } = require('@galtproject/solidity-test-chest')(web3);
+const { ether, now, int, increaseTime, assertRevert, zeroAddress, getResTimestamp } = require('@galtproject/solidity-test-chest')(web3);
 
 const keccak256 = web3.utils.soliditySha3;
 
@@ -401,6 +401,80 @@ describe('YALDistributor Unit tests', () => {
 
             it('should deny non member changing the member address', async function() {
                 await assertRevert(dist.changeMyAddress(memberId1, alice, { from: verifier }), 'Only the member allowed');
+            });
+        });
+    })
+
+    describe('View Methods', () => {
+        describe('#getCurrentPeriodId()', async function() {
+            it('should revert before genesisTimestamp', async function() {
+                await increaseTime(5);
+                await assertRevert(dist.getCurrentPeriodId(), 'Contract not initiated yet');
+            });
+
+            it('should return 0 period on genesisTimestamp + 0.5 * periodLength', async function() {
+                await increaseTime(10 + periodLength *  0.5);
+                assert.equal(await dist.getCurrentPeriodId(), 0);
+            });
+
+            it('should return 2 period on genesisTimestamp + 2.5 * periodLength', async function() {
+                await increaseTime(10 + periodLength * 2.5);
+                assert.equal(await dist.getCurrentPeriodId(), 2);
+            });
+        });
+
+        describe('#currentPeriodBeginsAt()/getNextPeriodBeginsAt()', async function() {
+            it('should revert if the genesisTimestamp', async function() {
+                await increaseTime(8);
+                assert.equal(await dist.getNextPeriodBeginsAt(), await dist.genesisTimestamp());
+            });
+
+            it('should return correct time after genesis', async function() {
+                await increaseTime(11);
+                assert.equal(
+                    await dist.getCurrentPeriodBeginsAt(),
+                    await dist.genesisTimestamp()
+                );
+                assert.equal(
+                    await dist.getNextPeriodBeginsAt(),
+                    (int(await dist.genesisTimestamp()) + int(await dist.periodLength()))
+                );
+            });
+
+            it('should return correct time before 0->1 transition', async function() {
+                await increaseTime(10 + periodLength - 2);
+                assert.equal(
+                    await dist.getCurrentPeriodBeginsAt(),
+                    await dist.genesisTimestamp()
+                );
+                assert.equal(
+                    await dist.getNextPeriodBeginsAt(),
+                    (int(await dist.genesisTimestamp()) + int(await dist.periodLength()))
+                );
+            });
+
+            it('should return correct time after 0->1 transition', async function() {
+                await increaseTime(11 + periodLength);
+                assert.equal(
+                    await dist.getCurrentPeriodBeginsAt(),
+                    int(await dist.genesisTimestamp()) + int(await dist.periodLength())
+                );
+                assert.equal(
+                    await dist.getNextPeriodBeginsAt(),
+                    (int(await dist.genesisTimestamp()) + 2 *int(await dist.periodLength()))
+                );
+            });
+
+            it('should return correct time before 1->2 transition', async function() {
+                await increaseTime(10 + periodLength * 2 - 2);
+                assert.equal(
+                    await dist.getCurrentPeriodBeginsAt(),
+                    int(await dist.genesisTimestamp()) + int(await dist.periodLength())
+                );
+                assert.equal(
+                    await dist.getNextPeriodBeginsAt(),
+                    (int(await dist.genesisTimestamp()) + 2 *int(await dist.periodLength()))
+                );
             });
         });
     })
