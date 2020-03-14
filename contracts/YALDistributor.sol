@@ -24,6 +24,8 @@ import "./interfaces/ICoinToken.sol";
 contract YALDistributor is Ownable, Pausable {
   using SafeMath for uint256;
 
+  uint256 public constant HUNDREED_PCT = 100 ether;
+
   event ActiveMemberCountChanged(uint256 activeMemberCount);
   event AddMember(bytes32 memberId, address memberAddress);
   event ChangeMemberAddress(bytes32 indexed memberId, address from, address to);
@@ -34,7 +36,7 @@ contract YALDistributor is Ownable, Pausable {
 
   struct Period {
     uint256 rewardPerMember;
-    uint256 verifierPeriodReward;
+    uint256 verifierReward;
   }
 
   struct Member {
@@ -62,13 +64,8 @@ contract YALDistributor is Ownable, Pausable {
   mapping(bytes32 => Member) public member;
   mapping(address => bytes32) public memberAddress2Id;
 
-  // periodId => rewardPerMember
-  mapping(uint256 => uint256) public periodRewardPerMember;
-  // periodId => amount
-  mapping(uint256 => uint256) public verifierPeriodReward;
-
   // periodId => periodDetails
-  mapping(uint256 => Period) public periods;
+  mapping(uint256 => Period) public period;
 
   modifier onlyVerifier() {
     require(msg.sender == verifier, "Only verifier allowed");
@@ -80,13 +77,16 @@ contract YALDistributor is Ownable, Pausable {
   modifier handlePeriodTransitionIfRequired() {
     uint256 currentPeriodId = getCurrentPeriodId();
 
-    if (periodRewardPerMember[currentPeriodId] == 0 && activeMemberCount > 0) {
-      verifierPeriodReward[currentPeriodId] = periodVolume * verifierRewardShare;
+    Period storage currentPeriod = period[currentPeriodId];
+
+    if (currentPeriod.rewardPerMember == 0 && activeMemberCount > 0) {
+      currentPeriod.verifierReward = periodVolume.mul(verifierRewardShare) / HUNDREED_PCT;
 
       // imbalance will be left at the contract
-      uint256 currentPeriodRewardPerMember = (periodVolume * (100 ether - verifierRewardShare)) / activeMemberCount;
+      // uint256 currentPeriodRewardPerMember = (periodVolume * (100 ether - verifierRewardShare)) / activeMemberCount;
+      uint256 currentPeriodRewardPerMember = (periodVolume.mul(HUNDREED_PCT.sub(verifierRewardShare))) / (activeMemberCount * HUNDREED_PCT);
       assert(currentPeriodRewardPerMember > 0);
-      periodRewardPerMember[currentPeriodId] = currentPeriodRewardPerMember;
+      currentPeriod.rewardPerMember = currentPeriodRewardPerMember;
     }
 
     _;
@@ -154,7 +154,24 @@ contract YALDistributor is Ownable, Pausable {
   // VERIFIER INTERFACE
 
   /*
-   * @dev Adds multple members
+   * @dev Adds multple members. To be called before genesisTimestamp
+   * @params _memberIds unique credential keccack256() hashes
+   * @params _memberAddresses corresponding to _memberIds addresses
+   */
+  function addMembersBeforeGenesis(
+    bytes32[] calldata _memberIds,
+    address[] calldata _memberAddresses
+  )
+    external
+    onlyVerifier
+  {
+    require(now < genesisTimestamp, "Can be called before genesis only");
+
+    _addMembers(_memberIds, _memberAddresses);
+  }
+
+  /*
+   * @dev Adds multple members. To be called after genesisTimestamp
    * @params _memberIds unique credential keccack256() hashes
    * @params _memberAddresses corresponding to _memberIds addresses
    */
@@ -166,16 +183,7 @@ contract YALDistributor is Ownable, Pausable {
     handlePeriodTransitionIfRequired
     onlyVerifier
   {
-    uint256 len = _memberIds.length;
-
-    require(len > 0, "Missing input members");
-    require(len == _memberAddresses.length, "ID and address arrays length should match");
-
-    for (uint256 i = 0; i < len; i++) {
-      _addMember(_memberIds[i], _memberAddresses[i]);
-    }
-
-    _incrementActiveMemberCount(len);
+    _addMembers(_memberIds, _memberAddresses);
   }
 
   /*
@@ -194,20 +202,6 @@ contract YALDistributor is Ownable, Pausable {
     _addMember(_memberId, _memberAddress);
 
     _incrementActiveMemberCount(1);
-  }
-
-  function _addMember(bytes32 _memberId, address _memberAddress) internal {
-    require(memberAddress2Id[_memberAddress] == bytes32(0), "The address already registered");
-
-    memberAddress2Id[_memberAddress] = _memberId;
-
-    Member storage member = member[_memberId];
-
-    member.addr = _memberAddress;
-    member.active = true;
-    member.createdAt = now;
-
-    emit AddMember(_memberId, _memberAddress);
   }
 
   /*
@@ -273,7 +267,50 @@ contract YALDistributor is Ownable, Pausable {
 
   function claimVerifierReward(uint256 _periodId, address _to) external onlyVerifier {
     // TODO: add already claimed check
-    token.mint(_to, verifierPeriodReward[_periodId]);
+    token.mint(_to, period[_periodId].verifierReward);
+  }
+
+  // VERIFIER INTERNAL METHODS
+
+  function _addMembers(bytes32[] memory _memberIds, address[] memory _memberAddresses) internal {
+    uint256 len = _memberIds.length;
+
+    require(len > 0, "Missing input members");
+    require(len == _memberAddresses.length, "ID and address arrays length should match");
+
+    for (uint256 i = 0; i < len; i++) {
+      _addMember(_memberIds[i], _memberAddresses[i]);
+    }
+
+    _incrementActiveMemberCount(len);
+  }
+
+  function _addMember(bytes32 _memberId, address _memberAddress) internal {
+    require(memberAddress2Id[_memberAddress] == bytes32(0), "The address already registered");
+
+    memberAddress2Id[_memberAddress] = _memberId;
+
+    Member storage member = member[_memberId];
+
+    member.addr = _memberAddress;
+    member.active = true;
+    member.createdAt = now;
+
+    emit AddMember(_memberId, _memberAddress);
+  }
+
+  function _incrementActiveMemberCount(uint256 _n) internal {
+    uint256 newActiveMemberCount = activeMemberCount.add(_n);
+    activeMemberCount = newActiveMemberCount;
+
+    emit ActiveMemberCountChanged(newActiveMemberCount);
+  }
+
+  function _decrementActiveMemberCount(uint256 _n) internal {
+    uint256 newActiveMemberCount = activeMemberCount.sub(_n);
+    activeMemberCount = newActiveMemberCount;
+
+    emit ActiveMemberCountChanged(newActiveMemberCount);
   }
 
   // MEMBER INTERFACE
@@ -290,12 +327,12 @@ contract YALDistributor is Ownable, Pausable {
     require(member.addr == msg.sender, "Address doesn't match");
     require(member.active == true, "Not active member");
 
-    require(member.createdAt < getCurrentPeriodBeginsAt());
-    require(member.claimedPeriods[getCurrentPeriodId()] == false);
+    require(member.createdAt < getCurrentPeriodBeginsAt(), "Can't assign rewards for the creation period");
+    require(member.claimedPeriods[getCurrentPeriodId()] == false, "Already claimed for the current period");
 
     member.claimedPeriods[getCurrentPeriodId()] = true;
 
-    token.mint(msg.sender, verifierPeriodReward[getCurrentPeriodId()]);
+    token.mint(msg.sender, period[getCurrentPeriodId()].verifierReward);
   }
 
   /*
@@ -316,22 +353,6 @@ contract YALDistributor is Ownable, Pausable {
     memberAddress2Id[_to] = _memberId;
 
     emit ChangeMyAddress(_memberId, from, _to);
-  }
-
-  // INTERNAL METHODS
-
-  function _incrementActiveMemberCount(uint256 _n) internal {
-    uint256 newActiveMemberCount = activeMemberCount.add(_n);
-    activeMemberCount = newActiveMemberCount;
-
-    emit ActiveMemberCountChanged(newActiveMemberCount);
-  }
-
-  function _decrementActiveMemberCount(uint256 _n) internal {
-    uint256 newActiveMemberCount = activeMemberCount.sub(_n);
-    activeMemberCount = newActiveMemberCount;
-
-    emit ActiveMemberCountChanged(newActiveMemberCount);
   }
 
   // VIEW METHODS

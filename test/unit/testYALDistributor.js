@@ -54,6 +54,7 @@ describe('YALDistributor Unit tests', () => {
 
         await coinToken.mint(alice, ether(baseAliceBalance));
         await coinToken.setTransferFee(web3.utils.toWei(feePercent.toString(), 'szabo'));
+        await coinToken.addRoleTo(dist.address, "minter");
     });
 
     describe('Verifier Interface', () => {
@@ -82,6 +83,11 @@ describe('YALDistributor Unit tests', () => {
             it('should deny adding already existing member', async function() {
                 await dist.addMember(memberId, bob, { from: verifier });
                 await assertRevert(dist.addMember(memberId, bob, { from: verifier }), 'The address already registered');
+            });
+
+            it('should deny adding already existing address', async function() {
+                await dist.addMember(memberId1, bob, { from: verifier });
+                await assertRevert(dist.addMember(memberId2, bob, { from: verifier }), 'The address already registered');
             });
 
             it('should deny adding already existing member', async function() {
