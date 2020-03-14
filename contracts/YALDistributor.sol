@@ -38,6 +38,8 @@ contract YALDistributor is Ownable, Pausable {
   struct Member {
     bool active;
     uint256 createdAt;
+    uint256 lastEnabledAt;
+    uint256 lastDisabledAt;
     address addr;
     // periodId => claimed
     mapping(uint256 => bool) claimedPeriods;
@@ -171,10 +173,7 @@ contract YALDistributor is Ownable, Pausable {
       _addMember(_memberIds[i], _memberAddresses[i]);
     }
 
-    uint256 newActiveMemberCount = activeMemberCount + len;
-    activeMemberCount = newActiveMemberCount;
-
-    emit ActiveMemberCountChanged(newActiveMemberCount);
+    _incrementActiveMemberCount(len);
   }
 
   /*
@@ -192,10 +191,7 @@ contract YALDistributor is Ownable, Pausable {
   {
     _addMember(_memberId, _memberAddress);
 
-    uint256 newActiveMemberCount = activeMemberCount + 1;
-    activeMemberCount = newActiveMemberCount;
-
-    emit ActiveMemberCountChanged(newActiveMemberCount);
+    _incrementActiveMemberCount(1);
   }
 
   function _addMember(bytes32 _memberId, address _memberAddress) internal {
@@ -212,17 +208,46 @@ contract YALDistributor is Ownable, Pausable {
     emit AddMember(_memberId, _memberAddress);
   }
 
-  function activateMember(bytes32 _memberId) external handlePeriodTransitionIfRequired onlyVerifier {
-    Member storage member = member[_memberId];
-    require(member.active == false);
-    require(member.createdAt != 0);
-    activeMemberCount++;
+  /*
+   * @dev Activates multiple members
+   * @params _memberIds to enable
+   */
+  function enableMembers(bytes32[] calldata _memberIds) external handlePeriodTransitionIfRequired onlyVerifier {
+    uint256 len = _memberIds.length;
+
+    require(len > 0, "Missing input members");
+
+    for (uint256 i = 0; i < len; i++ ) {
+      Member storage member = member[_memberIds[i]];
+      require(member.active == false, "One of the members is active");
+      require(member.createdAt != 0, "Member doesn't exist");
+
+      member.active = true;
+      member.lastEnabledAt = now;
+    }
+
+    _incrementActiveMemberCount(len);
   }
 
-  function deactivateMember(bytes32 _memberId) external handlePeriodTransitionIfRequired onlyVerifier {
-    Member storage member = member[_memberId];
-    require(member.active == true);
-    activeMemberCount--;
+  /*
+   * @dev Deactivates multiple members
+   * @params _memberIds to disable
+   */
+  function disableMembers(bytes32[] calldata _memberIds) external handlePeriodTransitionIfRequired onlyVerifier {
+    uint256 len = _memberIds.length;
+
+    require(len > 0, "Missing input members");
+
+    for (uint256 i = 0; i < len; i++ ) {
+      Member storage member = member[_memberIds[i]];
+      require(member.active == true, "One of the members is inactive");
+      require(member.createdAt != 0, "Member doesn't exist");
+
+      member.active = false;
+      member.lastDisabledAt = now;
+    }
+
+    _decrementActiveMemberCount(len);
   }
 
   function changeMemberAddress(bytes32 _memberId, address _to) external onlyVerifier {
@@ -260,6 +285,22 @@ contract YALDistributor is Ownable, Pausable {
     Member storage member = member[_memberId];
     require(member.addr == msg.sender);
     member.addr = _to;
+  }
+
+  // INTERNAL METHODS
+
+  function _incrementActiveMemberCount(uint256 _n) internal {
+    uint256 newActiveMemberCount = activeMemberCount.add(_n);
+    activeMemberCount = newActiveMemberCount;
+
+    emit ActiveMemberCountChanged(newActiveMemberCount);
+  }
+
+  function _decrementActiveMemberCount(uint256 _n) internal {
+    uint256 newActiveMemberCount = activeMemberCount.sub(_n);
+    activeMemberCount = newActiveMemberCount;
+
+    emit ActiveMemberCountChanged(newActiveMemberCount);
   }
 
   // VIEW METHODS

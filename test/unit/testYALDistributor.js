@@ -31,6 +31,10 @@ describe('YALDistributor Unit tests', () => {
     const baseAliceBalance = 10000000;
     const feePercent = 0.02;
     const startAfter = 10;
+    const memberId1 = keccak256('bob');
+    const memberId2 = keccak256('charlie');
+    const memberId3 = keccak256('dan');
+    const memberId4 = keccak256('eve');
     let genesisTimestamp;
     let coinToken;
     let dist;
@@ -86,9 +90,6 @@ describe('YALDistributor Unit tests', () => {
         });
 
         describe('#addMembers()', () => {
-            const memberId1 = keccak256('bob');
-            const memberId2 = keccak256('charlie');
-            const memberId3 = keccak256('dan');
 
             it('should allow adding a single', async function() {
                 const res = await dist.addMembers([memberId1], [bob], { from: verifier });
@@ -153,6 +154,118 @@ describe('YALDistributor Unit tests', () => {
                 await assertRevert(
                     dist.addMembers([memberId1, memberId2], [bob, charlie], { from: alice }),
                     'Only verifier allowed'
+                );
+            });
+        });
+
+        describe('#disableMembers()', () => {
+            beforeEach(async function() {
+                await increaseTime(11);
+                assert.equal(await dist.getCurrentPeriodId(), 0);
+                await dist.addMember(memberId1, bob, { from: verifier });
+                await dist.addMember(memberId2, charlie, { from: verifier });
+                await dist.addMember(memberId3, dan, { from: verifier });
+            });
+
+            it('should allow disabling active member', async function() {
+                const res = await dist.disableMembers([memberId1], { from: verifier });
+                const disabledAt = await getResTimestamp(res);
+
+                const details = await dist.member(memberId1);
+                assert.equal(details.active, false);
+                assert.equal(details.addr, bob);
+                assert.equal(details.lastDisabledAt, disabledAt);
+                assert.equal(details.lastEnabledAt, 0);
+            });
+
+            it('should decrement activeMemberCount for a single item', async function() {
+                assert.equal(await dist.activeMemberCount(), 3);
+                await dist.disableMembers([memberId1], { from: verifier });
+                assert.equal(await dist.activeMemberCount(), 2);
+            });
+
+            it('should decrement activeMemberCount for multiple items', async function() {
+                assert.equal(await dist.activeMemberCount(), 3);
+                await dist.disableMembers([memberId1, memberId3, memberId2], { from: verifier });
+                assert.equal(await dist.activeMemberCount(), 0);
+            });
+
+            it('should deny disabling if one of the members is inactive', async function() {
+                await dist.disableMembers([memberId1], { from: verifier });
+                await assertRevert(
+                    dist.disableMembers([memberId1, memberId2, memberId3], { from: verifier }),
+                    'One of the members is inactive'
+                );
+            });
+
+            it('should deny non verifier disabling a member', async function() {
+                await assertRevert(dist.disableMembers([memberId1], { from: alice }), 'Only verifier allowed');
+            });
+
+            it('should deny disabling an empty list', async function() {
+                await assertRevert(dist.disableMembers([], { from: verifier }), 'Missing input members');
+            });
+
+            it('should deny disabling non existent member', async function() {
+                await assertRevert(
+                    dist.disableMembers([memberId4], { from: verifier }),
+                    'One of the members is inactive'
+                );
+            });
+        });
+
+        describe('#enableMembers()', () => {
+            beforeEach(async function() {
+                await increaseTime(11);
+                assert.equal(await dist.getCurrentPeriodId(), 0);
+                await dist.addMember(memberId1, bob, { from: verifier });
+                await dist.addMember(memberId2, charlie, { from: verifier });
+                await dist.addMember(memberId3, dan, { from: verifier });
+                await dist.disableMembers([memberId1, memberId3, memberId2], { from: verifier });
+            });
+
+            it('should allow enabled inactive member', async function() {
+                const res = await dist.enableMembers([memberId1], { from: verifier });
+                const enabledAt = await getResTimestamp(res);
+
+                const details = await dist.member(memberId1);
+                assert.equal(details.active, true);
+                assert.equal(details.addr, bob);
+                assert.equal(details.lastEnabledAt, enabledAt);
+            });
+
+            it('should increment activeMemberCount for a single item', async function() {
+                assert.equal(await dist.activeMemberCount(), 0);
+                await dist.enableMembers([memberId1], { from: verifier });
+                assert.equal(await dist.activeMemberCount(), 1);
+            });
+
+            it('should decrement activeMemberCount for multiple items', async function() {
+                assert.equal(await dist.activeMemberCount(), 0);
+                await dist.enableMembers([memberId1, memberId3, memberId2], { from: verifier });
+                assert.equal(await dist.activeMemberCount(), 3);
+            });
+
+            it('should deny enabling if one of the members is active', async function() {
+                await dist.enableMembers([memberId1], { from: verifier });
+                await assertRevert(
+                    dist.enableMembers([memberId1, memberId2, memberId3], { from: verifier }),
+                    'One of the members is active'
+                );
+            });
+
+            it('should deny non verifier enabling a member', async function() {
+                await assertRevert(dist.enableMembers([memberId1], { from: alice }), 'Only verifier allowed');
+            });
+
+            it('should deny enabling an empty list', async function() {
+                await assertRevert(dist.enableMembers([], { from: verifier }), 'Missing input members');
+            });
+
+            it('should deny enabling non existent member', async function() {
+                await assertRevert(
+                    dist.enableMembers([memberId4], { from: verifier }),
+                    'Member doesn\'t exist'
                 );
             });
         });
