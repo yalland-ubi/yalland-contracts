@@ -258,4 +258,29 @@ describe('YALDistribution Integration Tests', () => {
             assert.equal(res.rewardPerMember, ether(75 * 1000));
         });
     })
+
+    describe('When paused', () => {
+        it('should deny executing contracts', async function() {
+            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [bob, charlie, dan], { from: verifier });
+            await increaseTime(15 + 1 * periodLength);
+
+            await dist.pause();
+            assert.equal(await dist.paused(), true);
+
+            assert.equal(await dist.getCurrentPeriodId(), 1);
+
+            await assertRevert(
+                dist.claimFunds(memberId1, { from: bob }),
+                'Contract is paused'
+            );
+            await assertRevert(
+                dist.claimVerifierReward(0, bob, { from: verifier }),
+                'Contract is paused'
+            );
+            await assertRevert(
+                dist.changeMyAddress(memberId2, alice, { from: charlie }),
+                'Contract is paused'
+            );
+        });
+    });
 });

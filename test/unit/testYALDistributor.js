@@ -508,6 +508,21 @@ describe('YALDistributor Unit tests', () => {
                 await assertRevert(dist.setPeriodVolume(ether(123), { from: alice }), 'Ownable: caller is not the owner');
             });
         });
+
+        describe('#pause()/#unpause()', () => {
+            it('should allow the owner pausing/unpausing contract', async function() {
+                assert.equal(await dist.paused(), false);
+                await dist.pause();
+                assert.equal(await dist.paused(), true);
+                await dist.unpause();
+                assert.equal(await dist.paused(), false);
+            });
+
+            it('should deny non-owner pausing/unpausing contract', async function() {
+                await assertRevert(dist.pause({ from: verifier }), 'Ownable: caller is not the owner');
+                await assertRevert(dist.unpause({ from: verifier }), 'Ownable: caller is not the owner');
+            });
+        });
     });
 
     describe('Member Interface', () => {

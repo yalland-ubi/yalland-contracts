@@ -11,7 +11,6 @@ pragma solidity ^0.5.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/ownership/Ownable.sol";
-import "@openzeppelin/contracts/lifecycle/Pausable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./interfaces/ICoinToken.sol";
 
@@ -21,7 +20,7 @@ import "./interfaces/ICoinToken.sol";
  * @author Galt Project
  * @notice Mints YAL tokens on request according pre-configured formula
  **/
-contract YALDistributor is Ownable, Pausable {
+contract YALDistributor is Ownable {
   using SafeMath for uint256;
 
   uint256 public constant HUNDRED_PCT = 100 ether;
@@ -32,6 +31,8 @@ contract YALDistributor is Ownable, Pausable {
   event ChangeMyAddress(bytes32 indexed memberId, address from, address to);
   event ClaimFunds(bytes32 indexed memberId, uint256 indexed periodId, uint256 amount);
   event ClaimVerifierReward(uint256 indexed periodId, address to);
+  event Pause();
+  event Unpause();
   event SetPeriodVolume(uint256 oldPeriodVolume, uint256 newPeriodVolume);
   event SetVerifier(address verifier);
   event SetVerifierRewardShare(uint256 rewardShare);
@@ -55,6 +56,7 @@ contract YALDistributor is Ownable, Pausable {
   uint256 public genesisTimestamp;
   uint256 public periodLength;
   uint256 public periodVolume;
+  bool public paused;
 
   ICoinToken public token;
   uint256 public activeMemberCount;
@@ -72,6 +74,12 @@ contract YALDistributor is Ownable, Pausable {
 
   modifier onlyVerifier() {
     require(msg.sender == verifier, "Only verifier allowed");
+
+    _;
+  }
+
+  modifier whenNotPaused() {
+    require(!paused, "Contract is paused");
 
     _;
   }
@@ -152,6 +160,24 @@ contract YALDistributor is Ownable, Pausable {
     periodVolume = _periodVolume;
 
     emit SetPeriodVolume(oldPeriodVolume, _periodVolume);
+  }
+
+  /*
+   * @dev Pauses contract.
+   */
+  function pause() external onlyOwner {
+    require(paused == false, "Already paused");
+    paused = true;
+    emit Pause();
+  }
+
+  /*
+   * @dev Pauses contract.
+   */
+  function unpause() external onlyOwner {
+    require(paused == true, "Already unpaused");
+    paused = false;
+    emit Unpause();
   }
 
   // VERIFIER INTERFACE
@@ -273,7 +299,15 @@ contract YALDistributor is Ownable, Pausable {
    * @params _periodId to claim reward for
    * @params _to address to send reward to
    */
-  function claimVerifierReward(uint256 _periodId, address _to) external handlePeriodTransitionIfRequired onlyVerifier {
+  function claimVerifierReward(
+    uint256 _periodId,
+    address _to
+  )
+    external
+    handlePeriodTransitionIfRequired
+    whenNotPaused
+    onlyVerifier
+  {
     Period storage givenPeriod = period[_periodId];
 
     require(givenPeriod.verifierClaimedReward == false, "Already claimed for given period");
@@ -335,7 +369,7 @@ contract YALDistributor is Ownable, Pausable {
    * @params _periodId to claim reward for
    * @params _to address to send reward to
    */
-  function claimFunds(bytes32 _memberId) external handlePeriodTransitionIfRequired {
+  function claimFunds(bytes32 _memberId) external handlePeriodTransitionIfRequired whenNotPaused {
     Member storage member = member[_memberId];
     uint256 currentPeriodId = getCurrentPeriodId();
 
@@ -378,7 +412,7 @@ contract YALDistributor is Ownable, Pausable {
    * @params _memberIds to change
    * @params _to address to change to
    */
-  function changeMyAddress(bytes32 _memberId, address _to) external {
+  function changeMyAddress(bytes32 _memberId, address _to) external whenNotPaused {
     Member storage member = member[_memberId];
 
     require(member.addr == msg.sender, "Only the member allowed");
