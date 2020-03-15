@@ -59,50 +59,130 @@ describe('YALDistributor Unit tests', () => {
 
     describe('Verifier Interface', () => {
         describe('#addMember()', () => {
-            beforeEach(async function() {
-                await increaseTime(11);
-                assert.equal(await dist.getCurrentPeriodId(), 0);
-            });
-
             const memberId = keccak256('bob');
 
-            it('should allow adding a member', async function() {
-                const res = await dist.addMember(memberId, bob, { from: verifier });
-                const addedAt = await getResTimestamp(res);
-
-                assert.equal(await dist.memberAddress2Id(bob), memberId);
-
-                const details = await dist.member(memberId);
-                assert.equal(details.active, true);
-                assert.equal(details.addr, bob);
-                assert.equal(details.createdAt, addedAt);
-
-                assert.equal(await dist.activeMemberCount(), 1);
+            it('should deny calling the method before genesis', async function() {
+                await assertRevert(dist.addMember(memberId1, bob, { from: verifier }), ' Contract not initiated ye');
             });
 
-            it('should deny adding already existing member', async function() {
-                await dist.addMember(memberId, bob, { from: verifier });
-                await assertRevert(dist.addMember(memberId, bob, { from: verifier }), 'The address already registered');
-            });
+            describe('after genesis', () => {
+                beforeEach(async function() {
+                    await increaseTime(11);
+                    assert.equal(await dist.getCurrentPeriodId(), 0);
+                });
 
-            it('should deny adding already existing address', async function() {
-                await dist.addMember(memberId1, bob, { from: verifier });
-                await assertRevert(dist.addMember(memberId2, bob, { from: verifier }), 'The address already registered');
-            });
+                it('should allow adding a member', async function() {
+                    const res = await dist.addMember(memberId, bob, { from: verifier });
+                    const addedAt = await getResTimestamp(res);
 
-            it('should deny adding already existing member', async function() {
-                await assertRevert(dist.addMember(memberId, bob, { from: alice }), 'Only verifier allowed');
-            });
+                    assert.equal(await dist.memberAddress2Id(bob), memberId);
+
+                    const details = await dist.member(memberId);
+                    assert.equal(details.active, true);
+                    assert.equal(details.addr, bob);
+                    assert.equal(details.createdAt, addedAt);
+
+                    assert.equal(await dist.activeMemberCount(), 1);
+                });
+
+                it('should deny adding already existing member', async function() {
+                    await dist.addMember(memberId, bob, { from: verifier });
+                    await assertRevert(dist.addMember(memberId, bob, { from: verifier }), 'The address already registered');
+                });
+
+                it('should deny adding already existing address', async function() {
+                    await dist.addMember(memberId1, bob, { from: verifier });
+                    await assertRevert(dist.addMember(memberId2, bob, { from: verifier }), 'The address already registered');
+                });
+
+                it('should deny adding already existing member', async function() {
+                    await assertRevert(dist.addMember(memberId, bob, { from: alice }), 'Only verifier allowed');
+                });
+            })
         });
 
         describe('#addMembers()', () => {
-            beforeEach(async function() {
-                await increaseTime(11);
-                assert.equal(await dist.getCurrentPeriodId(), 0);
+            it('should deny calling the method before genesis', async function() {
+                await assertRevert(dist.addMembers([memberId1], [bob], { from: verifier }), 'Contract not initiated yet');
             });
 
+            describe('after genesis', () => {
+                beforeEach(async function() {
+                    await increaseTime(11);
+                    assert.equal(await dist.getCurrentPeriodId(), 0);
+                });
+
+                it('should allow adding a single', async function() {
+                    const res = await dist.addMembers([memberId1], [bob], { from: verifier });
+                    const addedAt = await getResTimestamp(res);
+
+                    assert.equal(await dist.memberAddress2Id(bob), memberId1);
+
+                    const details = await dist.member(memberId1);
+                    assert.equal(details.active, true);
+                    assert.equal(details.addr, bob);
+                    assert.equal(details.createdAt, addedAt);
+
+                    assert.equal(await dist.activeMemberCount(), 1);
+                });
+
+                it('should allow adding multiple members', async function() {
+                    const res = await dist.addMembers([memberId1, memberId2, memberId3], [bob, charlie, dan], { from: verifier });
+                    const addedAt = await getResTimestamp(res);
+
+                    assert.equal(await dist.activeMemberCount(), 3);
+
+                    assert.equal(await dist.memberAddress2Id(bob), memberId1);
+                    assert.equal(await dist.memberAddress2Id(charlie), memberId2);
+                    assert.equal(await dist.memberAddress2Id(dan), memberId3);
+
+                    let details = await dist.member(memberId1);
+                    assert.equal(details.active, true);
+                    assert.equal(details.addr, bob);
+                    assert.equal(details.createdAt, addedAt);
+
+                    details = await dist.member(memberId2);
+                    assert.equal(details.active, true);
+                    assert.equal(details.addr, charlie);
+                    assert.equal(details.createdAt, addedAt);
+
+                    details = await dist.member(memberId3);
+                    assert.equal(details.active, true);
+                    assert.equal(details.addr, dan);
+                    assert.equal(details.createdAt, addedAt);
+                });
+
+                it('should deny adding 0 elements', async function() {
+                    await assertRevert(dist.addMembers([], [], { from: verifier }), "Missing");
+                });
+
+                it('should deny adding different amount of ids/addresses', async function() {
+                    await assertRevert(
+                        dist.addMembers([memberId1, memberId2, memberId3], [bob, charlie], { from: verifier }),
+                        'ID and address arrays length should match'
+                    );
+                });
+
+                it('should deny adding already existing member', async function() {
+                    await dist.addMember(memberId1, bob, { from: verifier });
+                    await assertRevert(
+                        dist.addMembers([memberId1, memberId2], [bob, charlie], { from: verifier }),
+                        'The address already registered'
+                    );
+                });
+
+                it('should deny non-verifier calling the method', async function() {
+                    await assertRevert(
+                        dist.addMembers([memberId1, memberId2], [bob, charlie], { from: alice }),
+                        'Only verifier allowed'
+                    );
+                });
+            })
+        });
+
+        describe('#addMembersBeforeGenesis()', () => {
             it('should allow adding a single', async function() {
-                const res = await dist.addMembers([memberId1], [bob], { from: verifier });
+                const res = await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
                 const addedAt = await getResTimestamp(res);
 
                 assert.equal(await dist.memberAddress2Id(bob), memberId1);
@@ -116,7 +196,7 @@ describe('YALDistributor Unit tests', () => {
             });
 
             it('should allow adding multiple members', async function() {
-                const res = await dist.addMembers([memberId1, memberId2, memberId3], [bob, charlie, dan], { from: verifier });
+                const res = await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [bob, charlie, dan], { from: verifier });
                 const addedAt = await getResTimestamp(res);
 
                 assert.equal(await dist.activeMemberCount(), 3);
@@ -142,28 +222,36 @@ describe('YALDistributor Unit tests', () => {
             });
 
             it('should deny adding 0 elements', async function() {
-                await assertRevert(dist.addMembers([], [], { from: verifier }), "Missing");
+                await assertRevert(dist.addMembersBeforeGenesis([], [], { from: verifier }), "Missing");
             });
 
             it('should deny adding different amount of ids/addresses', async function() {
                 await assertRevert(
-                    dist.addMembers([memberId1, memberId2, memberId3], [bob, charlie], { from: verifier }),
-                   'ID and address arrays length should match'
+                    dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [bob, charlie], { from: verifier }),
+                    'ID and address arrays length should match'
                 );
             });
 
             it('should deny adding already existing member', async function() {
-                await dist.addMember(memberId1, bob, { from: verifier });
+                await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
                 await assertRevert(
-                    dist.addMembers([memberId1, memberId2], [bob, charlie], { from: verifier }),
+                    dist.addMembersBeforeGenesis([memberId1, memberId2], [bob, charlie], { from: verifier }),
                     'The address already registered'
                 );
             });
 
-            it('should deny non-owner calling the method', async function() {
+            it('should deny non-verifier calling the method', async function() {
                 await assertRevert(
-                    dist.addMembers([memberId1, memberId2], [bob, charlie], { from: alice }),
+                    dist.addMembersBeforeGenesis([memberId1, memberId2], [bob, charlie], { from: alice }),
                     'Only verifier allowed'
+                );
+            });
+
+            it('should deny calling this method after genesis', async function() {
+                await increaseTime(12);
+                await assertRevert(
+                    dist.addMembersBeforeGenesis([memberId1, memberId2], [bob, charlie], { from: verifier }),
+                    'Can be called before genesis only'
                 );
             });
         });
