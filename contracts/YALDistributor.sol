@@ -24,7 +24,7 @@ import "./interfaces/ICoinToken.sol";
 contract YALDistributor is Ownable, Pausable {
   using SafeMath for uint256;
 
-  uint256 public constant HUNDREED_PCT = 100 ether;
+  uint256 public constant HUNDRED_PCT = 100 ether;
 
   event ActiveMemberCountChanged(uint256 activeMemberCount);
   event AddMember(bytes32 memberId, address memberAddress);
@@ -83,11 +83,11 @@ contract YALDistributor is Ownable, Pausable {
     Period storage currentPeriod = period[currentPeriodId];
 
     if (currentPeriod.rewardPerMember == 0 && activeMemberCount > 0) {
-      currentPeriod.verifierReward = periodVolume.mul(verifierRewardShare) / HUNDREED_PCT;
+      currentPeriod.verifierReward = periodVolume.mul(verifierRewardShare) / HUNDRED_PCT;
 
       // imbalance will be left at the contract
       // uint256 currentPeriodRewardPerMember = (periodVolume * (100 ether - verifierRewardShare)) / activeMemberCount;
-      uint256 currentPeriodRewardPerMember = (periodVolume.mul(HUNDREED_PCT.sub(verifierRewardShare))) / (activeMemberCount * HUNDREED_PCT);
+      uint256 currentPeriodRewardPerMember = (periodVolume.mul(HUNDRED_PCT.sub(verifierRewardShare))) / (activeMemberCount * HUNDRED_PCT);
       assert(currentPeriodRewardPerMember > 0);
       currentPeriod.rewardPerMember = currentPeriodRewardPerMember;
     }
