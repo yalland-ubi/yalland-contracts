@@ -323,16 +323,40 @@ contract YALDistributor is Ownable, Pausable {
     handlePeriodTransitionIfRequired
   {
     Member storage member = member[_memberId];
+    uint256 currentPeriodId = getCurrentPeriodId();
 
     require(member.addr == msg.sender, "Address doesn't match");
     require(member.active == true, "Not active member");
 
     require(member.createdAt < getCurrentPeriodBeginsAt(), "Can't assign rewards for the creation period");
-    require(member.claimedPeriods[getCurrentPeriodId()] == false, "Already claimed for the current period");
+    require(member.claimedPeriods[currentPeriodId] == false, "Already claimed for the current period");
 
-    member.claimedPeriods[getCurrentPeriodId()] = true;
+    if (member.lastDisabledAt != 0 && currentPeriodId != 0) {
+      // last disabled at
+      uint256 ld = member.lastDisabledAt;
+      // last enabled at
+      uint256 le = member.lastEnabledAt;
+      uint256 currentPeriodStart = getCurrentPeriodBeginsAt();
+      uint256 previousPeriodStart = getPreviousPeriodBeginsAt();
 
-    token.mint(msg.sender, period[getCurrentPeriodId()].verifierReward);
+      require(
+        // both disabled and enabled in the current period
+        (ld >= currentPeriodStart && le >= currentPeriodStart)
+        // both disabled and enabled in the previous period
+        || (ld >= previousPeriodStart && le >= previousPeriodStart && ld < currentPeriodStart && le < currentPeriodStart)
+        // both disabled and enabled before the current period started
+        || (ld < currentPeriodStart && le < currentPeriodStart),
+        "One period should be skipped after re-enabling"
+      );
+    }
+
+    member.claimedPeriods[currentPeriodId] = true;
+
+    token.mint(msg.sender, period[currentPeriodId].verifierReward);
+  }
+
+  function _memberCanClaimReward() internal {
+
   }
 
   /*
@@ -364,6 +388,15 @@ contract YALDistributor is Ownable, Pausable {
 
     // return (blockTimestamp - genesisTimestamp) / periodLength;
     return (blockTimestamp.sub(genesisTimestamp)) / periodLength;
+  }
+
+  function getPreviousPeriodBeginsAt() public view returns (uint256) {
+    uint256 currentPeriodId = getCurrentPeriodId();
+
+    require(currentPeriodId > 0, "No pervios period");
+
+    // return ((getCurrentPeriod() - 1) * periodLength) + genesisTimestamp;
+    return ((currentPeriodId - 1).mul(periodLength)).add(genesisTimestamp);
   }
 
   function getNextPeriodBeginsAt() public view returns (uint256) {

@@ -123,41 +123,139 @@ describe('YALDistribution Integration Tests', () => {
         assert.equal(res.rewardPerMember, ether(62.5 * 1000));
     });
 
-    it('should allow increasing number of members claiming their funds', async function() {
-        // before genesis
-        await assertRevert(dist.claimFunds(memberId1, { from: bob }), 'Contract not initiated yet');
-        await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
+    describe('activate/deactivate', () => {
+        beforeEach(async function() {
+            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [bob, charlie, dan], { from: verifier });
+            await increaseTime(15 + 1 * periodLength);
+        })
 
-        await increaseTime(11);
+        it('should allow claiming a reward only once if disabled/enabled in the same period', async function() {
+            // P1
+            assert.equal(await dist.getCurrentPeriodId(), 1);
+            await dist.claimFunds(memberId1, { from: bob });
 
-        // period #0
-        assert.equal(await dist.getCurrentPeriodId(), 0);
+            let res = await dist.period(1);
+            assert.equal(res.rewardPerMember, ether(75 * 1000));
 
-        await dist.claimFunds(memberId1, { from: bob });
-        await assertRevert(dist.claimFunds(memberId1, { from: bob }), 'Already claimed for the current period');
+            await dist.disableMembers([memberId1], { from: verifier });
+            await increaseTime(0.5 * periodLength);
+            await dist.enableMembers([memberId1], { from: verifier });
 
-        let res = await dist.period(0);
-        assert.equal(res.verifierReward, ether(25 * 1000));
-        assert.equal(res.rewardPerMember, ether(225 * 1000));
+            await assertRevert(dist.claimFunds(memberId1, { from: bob }), 'Already claimed for the current period');
 
-        // add 2 more
-        await dist.addMembers([memberId2, memberId3], [dan, charlie], { from: verifier });
-        // change verifier reward
-        await dist.setVerifierRewardShare(ether(25));
+            // P2
+            await increaseTime(11 + periodLength);
+            await dist.claimFunds(memberId1, { from: bob });
 
-        // check this doesn't affect the already calculated rewards
-        res = await dist.period(0);
-        assert.equal(res.verifierReward, ether(25 * 1000));
-        assert.equal(res.rewardPerMember, ether(225 * 1000));
+            res = await dist.period(2);
+            assert.equal(res.rewardPerMember, ether(75 * 1000));
+        });
 
-        // period #1
-        await increaseTime(11 + periodLength);
+        it('should allow claiming reward after being disabled/enabled', async function() {
+            // P1
+            await dist.claimFunds(memberId1, { from: bob });
 
-        await dist.claimFunds(memberId1, { from: bob });
-        await assertRevert(dist.claimFunds(memberId1, { from: bob }), 'Already claimed for the current period');
+            let res = await dist.period(1);
+            assert.equal(res.rewardPerMember, ether(75 * 1000));
 
-        res = await dist.period(1);
-        assert.equal(res.verifierReward, ether(62.5 * 1000));
-        assert.equal(res.rewardPerMember, ether(62.5 * 1000));
-    });
+            await dist.disableMembers([memberId1], { from: verifier });
+            await dist.enableMembers([memberId1], { from: verifier });
+            await increaseTime(0.5 * periodLength);
+
+            await assertRevert(dist.claimFunds(memberId1, { from: bob }), 'Already claimed for the current period');
+
+            // P2
+            await increaseTime(11 + periodLength);
+            await dist.claimFunds(memberId1, { from: bob });
+
+            res = await dist.period(2);
+            assert.equal(res.rewardPerMember, ether(75 * 1000));
+        });
+
+        it('should deny me claiming a reward if disabled at P1 and enabled at P2', async function() {
+            // P1
+            assert.equal(await dist.getCurrentPeriodId(), 1);
+            await dist.claimFunds(memberId1, { from: bob });
+
+            await dist.disableMembers([memberId1], { from: verifier });
+            await increaseTime(periodLength);
+
+            let res = await dist.period(1);
+            assert.equal(res.rewardPerMember, ether(75 * 1000));
+
+            // P2
+            assert.equal(await dist.getCurrentPeriodId(), 2);
+            await dist.enableMembers([memberId1], { from: verifier });
+
+            await assertRevert(
+                dist.claimFunds(memberId1, { from: bob }),
+               'One period should be skipped after re-enabling'
+            );
+
+            res = await dist.period(2);
+            assert.equal(res.rewardPerMember, ether(112.5 * 1000));
+
+            // but allow at P3
+            await increaseTime(11 + periodLength);
+            assert.equal(await dist.getCurrentPeriodId(), 3);
+            await dist.claimFunds(memberId1, { from: bob });
+
+            res = await dist.period(3);
+            assert.equal(res.rewardPerMember, ether(75 * 1000));
+
+            // and at P4
+            await increaseTime(periodLength);
+            assert.equal(await dist.getCurrentPeriodId(), 4);
+            await dist.claimFunds(memberId1, { from: bob });
+
+            res = await dist.period(4);
+            assert.equal(res.rewardPerMember, ether(75 * 1000));
+        });
+
+        it('should deny me claiming a reward if disabled at P1 and enabled at P3', async function() {
+            // P1
+            assert.equal(await dist.getCurrentPeriodId(), 1);
+            await dist.claimFunds(memberId1, { from: bob });
+
+            await dist.disableMembers([memberId1], { from: verifier });
+
+            let res = await dist.period(1);
+            assert.equal(res.rewardPerMember, ether(75 * 1000));
+
+            // is disabled at P2
+            await increaseTime(periodLength);
+            assert.equal(await dist.getCurrentPeriodId(), 2);
+
+            await assertRevert(
+                dist.claimFunds(memberId1, { from: bob }),
+                'Not active member'
+            );
+
+            // period 2 reward was not distributed since no one had claimed it
+            res = await dist.period(2);
+            assert.equal(res.rewardPerMember, ether(0));
+
+            // still deny at P3
+            await increaseTime(periodLength);
+            assert.equal(await dist.getCurrentPeriodId(), 3);
+            // enable at P3
+            await dist.enableMembers([memberId1], { from: verifier });
+
+            await assertRevert(
+                dist.claimFunds(memberId1, { from: bob }),
+                'One period should be skipped after re-enabling'
+            );
+
+            res = await dist.period(3);
+            assert.equal(res.rewardPerMember, ether(112.5 * 1000));
+
+            // but allow at P4
+            await increaseTime(periodLength);
+            assert.equal(await dist.getCurrentPeriodId(), 4);
+            await dist.claimFunds(memberId1, { from: bob });
+
+            res = await dist.period(4);
+            assert.equal(res.rewardPerMember, ether(75 * 1000));
+        });
+    })
 });
