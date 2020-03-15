@@ -30,6 +30,7 @@ contract YALDistributor is Ownable, Pausable {
   event AddMember(bytes32 memberId, address memberAddress);
   event ChangeMemberAddress(bytes32 indexed memberId, address from, address to);
   event ChangeMyAddress(bytes32 indexed memberId, address from, address to);
+  event ClaimVerifierReward(uint256 indexed periodId, address to);
   event SetPeriodVolume(uint256 oldPeriodVolume, uint256 newPeriodVolume);
   event SetVerifier(address verifier);
   event SetVerifierRewardShare(uint256 rewardShare);
@@ -37,6 +38,7 @@ contract YALDistributor is Ownable, Pausable {
   struct Period {
     uint256 rewardPerMember;
     uint256 verifierReward;
+    bool verifierClaimedReward;
   }
 
   struct Member {
@@ -265,9 +267,16 @@ contract YALDistributor is Ownable, Pausable {
     emit ChangeMemberAddress(_memberId, from, _to);
   }
 
-  function claimVerifierReward(uint256 _periodId, address _to) external onlyVerifier {
-    // TODO: add already claimed check
-    token.mint(_to, period[_periodId].verifierReward);
+  function claimVerifierReward(uint256 _periodId, address _to) external handlePeriodTransitionIfRequired onlyVerifier {
+    Period storage givenPeriod = period[_periodId];
+
+    require(givenPeriod.verifierClaimedReward == false, "Already claimed for given period");
+
+    givenPeriod.verifierClaimedReward = true;
+
+    token.mint(_to, givenPeriod.verifierReward);
+
+    emit ClaimVerifierReward(_periodId, _to);
   }
 
   // VERIFIER INTERNAL METHODS
@@ -353,10 +362,6 @@ contract YALDistributor is Ownable, Pausable {
     member.claimedPeriods[currentPeriodId] = true;
 
     token.mint(msg.sender, period[currentPeriodId].verifierReward);
-  }
-
-  function _memberCanClaimReward() internal {
-
   }
 
   /*

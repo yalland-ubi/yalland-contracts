@@ -16,7 +16,7 @@ const YALDistributor = contract.fromArtifact('YALDistributor');
 CoinToken.numberFormat = 'String';
 YALDistributor.numberFormat = 'String';
 
-const { ether, now, int, increaseTime, assertRevert, zeroAddress, getResTimestamp } = require('@galtproject/solidity-test-chest')(web3);
+const { ether, now, int, increaseTime, assertRevert, zeroAddress, getResTimestamp, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
 
 const keccak256 = web3.utils.soliditySha3;
 
@@ -58,12 +58,12 @@ describe('YALDistributor Unit tests', () => {
     });
 
     describe('Verifier Interface', () => {
-        beforeEach(async function() {
-            await increaseTime(11);
-            assert.equal(await dist.getCurrentPeriodId(), 0);
-        });
-
         describe('#addMember()', () => {
+            beforeEach(async function() {
+                await increaseTime(11);
+                assert.equal(await dist.getCurrentPeriodId(), 0);
+            });
+
             const memberId = keccak256('bob');
 
             it('should allow adding a member', async function() {
@@ -96,6 +96,10 @@ describe('YALDistributor Unit tests', () => {
         });
 
         describe('#addMembers()', () => {
+            beforeEach(async function() {
+                await increaseTime(11);
+                assert.equal(await dist.getCurrentPeriodId(), 0);
+            });
 
             it('should allow adding a single', async function() {
                 const res = await dist.addMembers([memberId1], [bob], { from: verifier });
@@ -312,6 +316,50 @@ describe('YALDistributor Unit tests', () => {
 
             it('should deny changing a non-existent member address', async function() {
                 await assertRevert(dist.changeMemberAddress(memberId4, alice, { from: verifier }), ' Member doesn\'t exist');
+            });
+        });
+
+        describe('#claimVerifierReward', () => {
+            it('should allow verifier claiming reward', async function() {
+                await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
+
+                await increaseTime(11);
+
+                // P0
+                assert.equal(await dist.getCurrentPeriodId(), 0);
+
+                const charlieBalanceBefore = await coinToken.balanceOf(charlie);
+                await dist.claimVerifierReward(0, charlie, { from: verifier });
+                const charlieBalanceAfter = await coinToken.balanceOf(charlie);
+
+                let res = await dist.period(0);
+                assert.equal(res.verifierReward, ether(25 * 1000));
+
+                assertErc20BalanceChanged(charlieBalanceBefore, charlieBalanceAfter, ether(25 * 1000))
+            });
+
+            it('should deny verifier claiming reward twice', async function() {
+                await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
+                await increaseTime(11);
+
+                // P0
+                assert.equal(await dist.getCurrentPeriodId(), 0);
+                await dist.claimVerifierReward(0, charlie, { from: verifier });
+                await assertRevert(dist.claimVerifierReward(0, charlie, { from: verifier }));
+            });
+
+            it('should not assign P0 verifier reward if there were no users at genesisTimestamp', async function() {
+                await increaseTime(11);
+
+                // P0
+                assert.equal(await dist.getCurrentPeriodId(), 0);
+
+                await dist.addMember(memberId1, bob, { from: verifier });
+
+                let res = await dist.period(0);
+                assert.equal(res.verifierReward, 0);
+
+                await dist.claimVerifierReward(0, charlie, { from: verifier });
             });
         });
     });
