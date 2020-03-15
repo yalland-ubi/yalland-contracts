@@ -393,26 +393,18 @@ contract YALDistributor is Ownable, Pausable {
   function getPreviousPeriodBeginsAt() public view returns (uint256) {
     uint256 currentPeriodId = getCurrentPeriodId();
 
-    require(currentPeriodId > 0, "No pervios period");
+    require(currentPeriodId > 0, "No previous period");
 
     // return ((getCurrentPeriod() - 1) * periodLength) + genesisTimestamp;
     return ((currentPeriodId - 1).mul(periodLength)).add(genesisTimestamp);
   }
 
   function getNextPeriodBeginsAt() public view returns (uint256) {
-    if (block.timestamp <= genesisTimestamp) {
-      return genesisTimestamp;
-    }
-
     // return ((getCurrentPeriod() + 1) * periodLength) + genesisTimestamp;
     return ((getCurrentPeriodId() + 1).mul(periodLength)).add(genesisTimestamp);
   }
 
   function getCurrentPeriodBeginsAt() public view returns (uint256) {
-    if (block.timestamp <= genesisTimestamp) {
-      return genesisTimestamp;
-    }
-
     // return (getCurrentPeriod() * periodLength) + genesisTimestamp;
     return (getCurrentPeriodId().mul(periodLength)).add(genesisTimestamp);
   }

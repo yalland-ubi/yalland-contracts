@@ -429,14 +429,17 @@ describe('YALDistributor Unit tests', () => {
             });
         });
 
-        describe('#currentPeriodBeginsAt()/getNextPeriodBeginsAt()', async function() {
-            it('should revert if the genesisTimestamp', async function() {
+        describe('#currentPeriodBeginsAt()/#getNextPeriodBeginsAt()/#getPreviousPeriodBeginsAt()', async function() {
+            it('should return correct time genesisTimestamp', async function() {
                 await increaseTime(8);
-                assert.equal(await dist.getNextPeriodBeginsAt(), await dist.genesisTimestamp());
+                await assertRevert(dist.getPreviousPeriodBeginsAt(), 'Contract not initiated yet');
+                await assertRevert(dist.getCurrentPeriodBeginsAt(), 'Contract not initiated yet');
+                await assertRevert(dist.getNextPeriodBeginsAt(), 'Contract not initiated yet');
             });
 
-            it('should return correct time after genesis', async function() {
+            it('should return correct time on P1', async function() {
                 await increaseTime(11);
+                await assertRevert(dist.getPreviousPeriodBeginsAt(), 'No previous period');
                 assert.equal(
                     await dist.getCurrentPeriodBeginsAt(),
                     await dist.genesisTimestamp()
@@ -449,6 +452,7 @@ describe('YALDistributor Unit tests', () => {
 
             it('should return correct time before 0->1 transition', async function() {
                 await increaseTime(10 + periodLength - 2);
+                await assertRevert(dist.getPreviousPeriodBeginsAt(), 'No previous period');
                 assert.equal(
                     await dist.getCurrentPeriodBeginsAt(),
                     await dist.genesisTimestamp()
@@ -462,6 +466,10 @@ describe('YALDistributor Unit tests', () => {
             it('should return correct time after 0->1 transition', async function() {
                 await increaseTime(11 + periodLength);
                 assert.equal(
+                    await dist.getPreviousPeriodBeginsAt(),
+                    await dist.genesisTimestamp()
+                );
+                assert.equal(
                     await dist.getCurrentPeriodBeginsAt(),
                     int(await dist.genesisTimestamp()) + int(await dist.periodLength())
                 );
@@ -473,6 +481,10 @@ describe('YALDistributor Unit tests', () => {
 
             it('should return correct time before 1->2 transition', async function() {
                 await increaseTime(10 + periodLength * 2 - 2);
+                assert.equal(
+                    await dist.getPreviousPeriodBeginsAt(),
+                    await dist.genesisTimestamp()
+                );
                 assert.equal(
                     await dist.getCurrentPeriodBeginsAt(),
                     int(await dist.genesisTimestamp()) + int(await dist.periodLength())
