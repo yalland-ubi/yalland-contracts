@@ -42,7 +42,8 @@ describe('YALDistribution Integration Tests', () => {
     beforeEach(async function () {
         genesisTimestamp = parseInt(await now(), 10) + startAfter;
         coinToken = await CoinToken.new("Coin token", "COIN", 18);
-        dist = await YALDistributor.new(
+        dist = await YALDistributor.new();
+        await dist.initialize(
             periodVolume,
             verifier,
             verifierRewardShare,
@@ -55,6 +56,21 @@ describe('YALDistribution Integration Tests', () => {
         await coinToken.mint(alice, ether(baseAliceBalance));
         await coinToken.setTransferFee(web3.utils.toWei(feePercent.toString(), 'szabo'));
         await coinToken.addRoleTo(dist.address, "minter");
+    });
+
+    it('should not allow 2nd initialize call', async function() {
+        await assertRevert(
+            dist.initialize(
+            periodVolume,
+            verifier,
+            verifierRewardShare,
+
+            coinToken.address,
+            periodLength,
+            genesisTimestamp
+            ),
+            'Contract instance has already been initialized'
+        );
     });
 
     it('should allow single member claiming his funds', async function() {

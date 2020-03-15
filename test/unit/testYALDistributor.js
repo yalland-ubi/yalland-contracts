@@ -42,7 +42,8 @@ describe('YALDistributor Unit tests', () => {
     beforeEach(async function () {
         genesisTimestamp = parseInt(await now(), 10) + startAfter;
         coinToken = await CoinToken.new("Coin token", "COIN", 18);
-        dist = await YALDistributor.new(
+        dist = await YALDistributor.new();
+        await dist.initialize(
             periodVolume,
             verifier,
             verifierRewardShare,

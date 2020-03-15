@@ -10,8 +10,8 @@
 pragma solidity ^0.5.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
 import "./interfaces/ICoinToken.sol";
 
 
@@ -20,7 +20,7 @@ import "./interfaces/ICoinToken.sol";
  * @author Galt Project
  * @notice Mints YAL tokens on request according pre-configured formula
  **/
-contract YALDistributor is Ownable {
+contract YALDistributor is OwnableAndInitializable {
   using SafeMath for uint256;
 
   uint256 public constant HUNDRED_PCT = 100 ether;
@@ -103,7 +103,11 @@ contract YALDistributor is Ownable {
     _;
   }
 
-  constructor(
+  constructor() public {
+  }
+
+  // @dev The Owner role will be assigned to tx.origin
+  function initialize(
     // can be changed later:
     uint256 _periodVolume,
     address _verifier,
@@ -114,7 +118,8 @@ contract YALDistributor is Ownable {
     uint256 _periodLength,
     uint256 _genesisTimestamp
   )
-    public
+    external
+    isInitializer
   {
     periodVolume = _periodVolume;
     verifier = _verifier;
