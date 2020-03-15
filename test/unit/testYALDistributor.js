@@ -373,6 +373,7 @@ describe('YALDistributor Unit tests', () => {
                 await increaseTime(11);
                 assert.equal(await dist.getCurrentPeriodId(), 0);
                 await dist.addMember(memberId1, bob, { from: verifier });
+                await dist.addMember(memberId2, charlie, { from: verifier });
             });
 
             it('should allow changing address for an active member', async function() {
@@ -403,7 +404,11 @@ describe('YALDistributor Unit tests', () => {
             });
 
             it('should deny changing a non-existent member address', async function() {
-                await assertRevert(dist.changeMemberAddress(memberId4, alice, { from: verifier }), ' Member doesn\'t exist');
+                await assertRevert(dist.changeMemberAddress(memberId4, alice, { from: verifier }), 'Member doesn\'t exist');
+            });
+
+            it('should deny changing to an already occupied address', async function() {
+                await assertRevert(dist.changeMemberAddress(memberId1, charlie, { from: verifier }), 'Address is already taken by another member');
             });
         });
 
@@ -531,6 +536,7 @@ describe('YALDistributor Unit tests', () => {
                 await increaseTime(11);
                 assert.equal(await dist.getCurrentPeriodId(), 0);
                 await dist.addMember(memberId1, bob, { from: verifier });
+                await dist.addMember(memberId2, charlie, { from: verifier });
             });
 
             it('should allow an active member changing his address', async function() {
@@ -558,6 +564,10 @@ describe('YALDistributor Unit tests', () => {
 
             it('should deny non member changing the member address', async function() {
                 await assertRevert(dist.changeMyAddress(memberId1, alice, { from: verifier }), 'Only the member allowed');
+            });
+
+            it('should deny an active member changing already occupied address', async function() {
+                await assertRevert(dist.changeMyAddress(memberId1, charlie, { from: bob }), 'Address is already taken by another member');
             });
         });
 

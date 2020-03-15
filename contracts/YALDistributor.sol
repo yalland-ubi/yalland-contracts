@@ -284,6 +284,7 @@ contract YALDistributor is Ownable {
     Member storage member = member[_memberId];
 
     require(member.createdAt != 0, "Member doesn't exist");
+    require(memberAddress2Id[_to] == bytes32(0), "Address is already taken by another member");
 
     address from = member.addr;
     member.addr = _to;
@@ -417,6 +418,7 @@ contract YALDistributor is Ownable {
 
     require(member.addr == msg.sender, "Only the member allowed");
     require(member.createdAt != 0, "Member doesn't exist");
+    require(memberAddress2Id[_to] == bytes32(0), "Address is already taken by another member");
 
     address from = member.addr;
     member.addr = _to;
