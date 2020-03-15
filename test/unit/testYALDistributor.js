@@ -545,6 +545,37 @@ describe('YALDistributor Unit tests', () => {
                 await assertRevert(dist.changeMyAddress(memberId1, alice, { from: verifier }), 'Only the member allowed');
             });
         });
+
+        describe('#changeMyAddress()', () => {
+            beforeEach(async function() {
+                await increaseTime(11);
+                assert.equal(await dist.getCurrentPeriodId(), 0);
+                await dist.addMembers([memberId1, memberId2, memberId3], [bob, charlie, dan], { from: verifier });
+                await increaseTime(periodLength);
+            });
+
+            it('should allow an active member claiming his reward', async function() {
+                const charlieBalanceBefore = await coinToken.balanceOf(charlie);
+                await dist.claimFunds(memberId2, { from: charlie });
+                const charlieBalanceAfter = await coinToken.balanceOf(charlie);
+
+                assertErc20BalanceChanged(charlieBalanceBefore, charlieBalanceAfter, ether(75 * 1000));
+            });
+
+            it('should not allow claiming reward twice a period', async function() {
+                await dist.claimFunds(memberId2, { from: charlie });
+                await assertRevert(dist.claimFunds(memberId2, { from: charlie }), 'Already claimed for the current period');
+            });
+
+            it('should deny non-active member claiming funds', async function() {
+                await dist.disableMembers([memberId2], { from: verifier });
+                await assertRevert(dist.claimFunds(memberId2, { from: charlie }), ' Not active member');
+            });
+
+            it('should not allow an active member claiming another member reward', async function() {
+                await assertRevert(dist.claimFunds(memberId1, { from: charlie }), 'Address doesn\'t match');
+            });
+        });
     })
 
     describe('View Methods', () => {

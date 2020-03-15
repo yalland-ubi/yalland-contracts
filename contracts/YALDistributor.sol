@@ -30,6 +30,7 @@ contract YALDistributor is Ownable, Pausable {
   event AddMember(bytes32 memberId, address memberAddress);
   event ChangeMemberAddress(bytes32 indexed memberId, address from, address to);
   event ChangeMyAddress(bytes32 indexed memberId, address from, address to);
+  event ClaimFunds(bytes32 indexed memberId, uint256 indexed periodId, uint256 amount);
   event ClaimVerifierReward(uint256 indexed periodId, address to);
   event SetPeriodVolume(uint256 oldPeriodVolume, uint256 newPeriodVolume);
   event SetVerifier(address verifier);
@@ -249,7 +250,7 @@ contract YALDistributor is Ownable, Pausable {
   }
 
   /*
-   * @dev Validator changes a member address with a new one. MemberId remains the same.
+   * @dev Verifier changes a member address with a new one. MemberId remains the same.
    * @params _memberIds to change
    * @params _to address to change to
    */
@@ -267,6 +268,11 @@ contract YALDistributor is Ownable, Pausable {
     emit ChangeMemberAddress(_memberId, from, _to);
   }
 
+  /*
+   * @dev Verifier claims their reward for the given period.
+   * @params _periodId to claim reward for
+   * @params _to address to send reward to
+   */
   function claimVerifierReward(uint256 _periodId, address _to) external handlePeriodTransitionIfRequired onlyVerifier {
     Period storage givenPeriod = period[_periodId];
 
@@ -324,13 +330,12 @@ contract YALDistributor is Ownable, Pausable {
 
   // MEMBER INTERFACE
 
-  // @dev Claims msg.sender funds for the previous period
-  function claimFunds(
-    bytes32 _memberId
-  )
-    external
-    handlePeriodTransitionIfRequired
-  {
+  /*
+   * @dev  period
+   * @params _periodId to claim reward for
+   * @params _to address to send reward to
+   */
+  function claimFunds(bytes32 _memberId) external handlePeriodTransitionIfRequired {
     Member storage member = member[_memberId];
     uint256 currentPeriodId = getCurrentPeriodId();
 
@@ -361,7 +366,11 @@ contract YALDistributor is Ownable, Pausable {
 
     member.claimedPeriods[currentPeriodId] = true;
 
-    token.mint(msg.sender, period[currentPeriodId].verifierReward);
+    uint256 rewardPerMember = period[currentPeriodId].rewardPerMember;
+
+    token.mint(msg.sender, period[currentPeriodId].rewardPerMember);
+
+    emit ClaimFunds(_memberId, currentPeriodId, rewardPerMember);
   }
 
   /*
