@@ -51,6 +51,7 @@ contract YALDistributor is OwnableAndInitializable {
     uint256 lastEnabledAt;
     uint256 lastDisabledAt;
     address addr;
+    uint256 totalClaimed;
     // periodId => claimed
     mapping(uint256 => bool) claimedPeriods;
   }
@@ -286,7 +287,8 @@ contract YALDistributor is OwnableAndInitializable {
     require(len > 0, "Missing input members");
 
     for (uint256 i = 0; i < len; i++ ) {
-      Member storage member = member[memberAddress2Id[_memberAddresses[i]]];
+      bytes32 memberId = memberAddress2Id[_memberAddresses[i]];
+      Member storage member = member[memberId];
       require(member.active == true, "One of the members is inactive");
       require(member.createdAt != 0, "Member doesn't exist");
 
@@ -444,6 +446,8 @@ contract YALDistributor is OwnableAndInitializable {
     member.claimedPeriods[currentPeriodId] = true;
 
     uint256 rewardPerMember = period[currentPeriodId].rewardPerMember;
+
+    member.totalClaimed = member.totalClaimed.add(rewardPerMember);
 
     token.mint(msg.sender, period[currentPeriodId].rewardPerMember);
 
