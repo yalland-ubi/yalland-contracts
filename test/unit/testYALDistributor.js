@@ -21,8 +21,7 @@ const { ether, now, int, increaseTime, assertRevert, zeroAddress, getResTimestam
 const keccak256 = web3.utils.soliditySha3;
 
 describe('YALDistributor Unit tests', () => {
-    const [pauser, verifier, alice, bob, charlie, dan] = accounts;
-    const deployer = defaultSender;
+    const [verifier, alice, bob, charlie, dan] = accounts;
 
     // 7 days
     const periodLength = 7 * 24 * 60 * 60;
@@ -267,7 +266,7 @@ describe('YALDistributor Unit tests', () => {
             });
 
             it('should allow disabling active member', async function() {
-                const res = await dist.disableMembers([memberId1], { from: verifier });
+                const res = await dist.disableMembers([bob], { from: verifier });
                 const disabledAt = await getResTimestamp(res);
 
                 const details = await dist.member(memberId1);
@@ -279,26 +278,26 @@ describe('YALDistributor Unit tests', () => {
 
             it('should decrement activeMemberCount for a single item', async function() {
                 assert.equal(await dist.activeMemberCount(), 3);
-                await dist.disableMembers([memberId1], { from: verifier });
+                await dist.disableMembers([bob], { from: verifier });
                 assert.equal(await dist.activeMemberCount(), 2);
             });
 
             it('should decrement activeMemberCount for multiple items', async function() {
                 assert.equal(await dist.activeMemberCount(), 3);
-                await dist.disableMembers([memberId1, memberId3, memberId2], { from: verifier });
+                await dist.disableMembers([bob, charlie, dan], { from: verifier });
                 assert.equal(await dist.activeMemberCount(), 0);
             });
 
             it('should deny disabling if one of the members is inactive', async function() {
-                await dist.disableMembers([memberId1], { from: verifier });
+                await dist.disableMembers([bob], { from: verifier });
                 await assertRevert(
-                    dist.disableMembers([memberId1, memberId2, memberId3], { from: verifier }),
+                    dist.disableMembers([bob, charlie, dan], { from: verifier }),
                     'One of the members is inactive'
                 );
             });
 
             it('should deny non verifier disabling a member', async function() {
-                await assertRevert(dist.disableMembers([memberId1], { from: alice }), 'Only verifier allowed');
+                await assertRevert(dist.disableMembers([bob], { from: alice }), 'Only verifier allowed');
             });
 
             it('should deny disabling an empty list', async function() {
@@ -307,7 +306,7 @@ describe('YALDistributor Unit tests', () => {
 
             it('should deny disabling non existent member', async function() {
                 await assertRevert(
-                    dist.disableMembers([memberId4], { from: verifier }),
+                    dist.disableMembers([alice], { from: verifier }),
                     'One of the members is inactive'
                 );
             });
@@ -320,11 +319,11 @@ describe('YALDistributor Unit tests', () => {
                 await dist.addMember(memberId1, bob, { from: verifier });
                 await dist.addMember(memberId2, charlie, { from: verifier });
                 await dist.addMember(memberId3, dan, { from: verifier });
-                await dist.disableMembers([memberId1, memberId3, memberId2], { from: verifier });
+                await dist.disableMembers([bob, charlie, dan], { from: verifier });
             });
 
             it('should allow enabled inactive member', async function() {
-                const res = await dist.enableMembers([memberId1], { from: verifier });
+                const res = await dist.enableMembers([bob], { from: verifier });
                 const enabledAt = await getResTimestamp(res);
 
                 const details = await dist.member(memberId1);
@@ -335,26 +334,26 @@ describe('YALDistributor Unit tests', () => {
 
             it('should increment activeMemberCount for a single item', async function() {
                 assert.equal(await dist.activeMemberCount(), 0);
-                await dist.enableMembers([memberId1], { from: verifier });
+                await dist.enableMembers([bob], { from: verifier });
                 assert.equal(await dist.activeMemberCount(), 1);
             });
 
             it('should decrement activeMemberCount for multiple items', async function() {
                 assert.equal(await dist.activeMemberCount(), 0);
-                await dist.enableMembers([memberId1, memberId3, memberId2], { from: verifier });
+                await dist.enableMembers([bob, charlie, dan], { from: verifier });
                 assert.equal(await dist.activeMemberCount(), 3);
             });
 
             it('should deny enabling if one of the members is active', async function() {
-                await dist.enableMembers([memberId1], { from: verifier });
+                await dist.enableMembers([bob], { from: verifier });
                 await assertRevert(
-                    dist.enableMembers([memberId1, memberId2, memberId3], { from: verifier }),
+                    dist.enableMembers([bob, charlie, dan], { from: verifier }),
                     'One of the members is active'
                 );
             });
 
             it('should deny non verifier enabling a member', async function() {
-                await assertRevert(dist.enableMembers([memberId1], { from: alice }), 'Only verifier allowed');
+                await assertRevert(dist.enableMembers([bob], { from: alice }), 'Only verifier allowed');
             });
 
             it('should deny enabling an empty list', async function() {
@@ -363,7 +362,7 @@ describe('YALDistributor Unit tests', () => {
 
             it('should deny enabling non existent member', async function() {
                 await assertRevert(
-                    dist.enableMembers([memberId4], { from: verifier }),
+                    dist.enableMembers([alice], { from: verifier }),
                     'Member doesn\'t exist'
                 );
             });
@@ -392,7 +391,7 @@ describe('YALDistributor Unit tests', () => {
             });
 
             it('should allow changing address for an inactive member', async function() {
-                await dist.disableMembers([memberId1], { from: verifier });
+                await dist.disableMembers([bob], { from: verifier });
                 await dist.changeMemberAddress(memberId1, alice, { from: verifier });
 
                 const details = await dist.member(memberId1);
@@ -450,7 +449,7 @@ describe('YALDistributor Unit tests', () => {
             });
 
             it('should allow changing address for an inactive member', async function() {
-                await dist.disableMembers([memberId1], { from: verifier });
+                await dist.disableMembers([bob], { from: verifier });
                 await dist.changeMemberAddresses([memberId1, memberId3], [alice, bob], { from: verifier });
 
                 const details = await dist.member(memberId1);
@@ -628,7 +627,7 @@ describe('YALDistributor Unit tests', () => {
             });
 
             it('should allow inactive member changing his address', async function() {
-                await dist.disableMembers([memberId1], { from: verifier });
+                await dist.disableMembers([bob], { from: verifier });
                 await dist.changeMyAddress(alice, { from: bob });
 
                 const details = await dist.member(memberId1);
@@ -667,7 +666,7 @@ describe('YALDistributor Unit tests', () => {
             });
 
             it('should deny non-active member claiming funds', async function() {
-                await dist.disableMembers([memberId2], { from: verifier });
+                await dist.disableMembers([charlie], { from: verifier });
                 await assertRevert(dist.claimFunds(memberId2, { from: charlie }), ' Not active member');
             });
 

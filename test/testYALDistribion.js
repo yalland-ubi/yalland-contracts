@@ -153,9 +153,9 @@ describe('YALDistribution Integration Tests', () => {
             let res = await dist.period(1);
             assert.equal(res.rewardPerMember, ether(75 * 1000));
 
-            await dist.disableMembers([memberId1], { from: verifier });
+            await dist.disableMembers([bob], { from: verifier });
             await increaseTime(0.5 * periodLength);
-            await dist.enableMembers([memberId1], { from: verifier });
+            await dist.enableMembers([bob], { from: verifier });
 
             await assertRevert(dist.claimFunds(memberId1, { from: bob }), 'Already claimed for the current period');
 
@@ -174,8 +174,8 @@ describe('YALDistribution Integration Tests', () => {
             let res = await dist.period(1);
             assert.equal(res.rewardPerMember, ether(75 * 1000));
 
-            await dist.disableMembers([memberId1], { from: verifier });
-            await dist.enableMembers([memberId1], { from: verifier });
+            await dist.disableMembers([bob], { from: verifier });
+            await dist.enableMembers([bob], { from: verifier });
             await increaseTime(0.5 * periodLength);
 
             await assertRevert(dist.claimFunds(memberId1, { from: bob }), 'Already claimed for the current period');
@@ -193,7 +193,7 @@ describe('YALDistribution Integration Tests', () => {
             assert.equal(await dist.getCurrentPeriodId(), 1);
             await dist.claimFunds(memberId1, { from: bob });
 
-            await dist.disableMembers([memberId1], { from: verifier });
+            await dist.disableMembers([bob], { from: verifier });
             await increaseTime(periodLength);
 
             let res = await dist.period(1);
@@ -201,7 +201,7 @@ describe('YALDistribution Integration Tests', () => {
 
             // P2
             assert.equal(await dist.getCurrentPeriodId(), 2);
-            await dist.enableMembers([memberId1], { from: verifier });
+            await dist.enableMembers([bob], { from: verifier });
 
             await assertRevert(
                 dist.claimFunds(memberId1, { from: bob }),
@@ -233,7 +233,7 @@ describe('YALDistribution Integration Tests', () => {
             assert.equal(await dist.getCurrentPeriodId(), 1);
             await dist.claimFunds(memberId1, { from: bob });
 
-            await dist.disableMembers([memberId1], { from: verifier });
+            await dist.disableMembers([bob], { from: verifier });
 
             let res = await dist.period(1);
             assert.equal(res.rewardPerMember, ether(75 * 1000));
@@ -255,7 +255,7 @@ describe('YALDistribution Integration Tests', () => {
             await increaseTime(periodLength);
             assert.equal(await dist.getCurrentPeriodId(), 3);
             // enable at P3
-            await dist.enableMembers([memberId1], { from: verifier });
+            await dist.enableMembers([bob], { from: verifier });
 
             await assertRevert(
                 dist.claimFunds(memberId1, { from: bob }),

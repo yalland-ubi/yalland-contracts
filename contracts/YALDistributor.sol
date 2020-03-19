@@ -240,15 +240,21 @@ contract YALDistributor is OwnableAndInitializable {
 
   /*
    * @dev Activates multiple members
-   * @params _memberIds to enable
+   * @param _memberAddresses to enable
    */
-  function enableMembers(bytes32[] calldata _memberIds) external handlePeriodTransitionIfRequired onlyVerifier {
-    uint256 len = _memberIds.length;
+  function enableMembers(
+    address[] calldata _memberAddresses
+  )
+    external
+    handlePeriodTransitionIfRequired
+    onlyVerifier
+  {
+    uint256 len = _memberAddresses.length;
 
     require(len > 0, "Missing input members");
 
     for (uint256 i = 0; i < len; i++ ) {
-      Member storage member = member[_memberIds[i]];
+      Member storage member = member[memberAddress2Id[_memberAddresses[i]]];
       require(member.active == false, "One of the members is active");
       require(member.createdAt != 0, "Member doesn't exist");
 
@@ -261,15 +267,21 @@ contract YALDistributor is OwnableAndInitializable {
 
   /*
    * @dev Deactivates multiple members
-   * @params _memberIds to disable
+   * @param _memberAddresses to disable
    */
-  function disableMembers(bytes32[] calldata _memberIds) external handlePeriodTransitionIfRequired onlyVerifier {
-    uint256 len = _memberIds.length;
+  function disableMembers(
+    address[] calldata _memberAddresses
+  )
+    external
+    handlePeriodTransitionIfRequired
+    onlyVerifier
+  {
+    uint256 len = _memberAddresses.length;
 
     require(len > 0, "Missing input members");
 
     for (uint256 i = 0; i < len; i++ ) {
-      Member storage member = member[_memberIds[i]];
+      Member storage member = member[memberAddress2Id[_memberAddresses[i]]];
       require(member.active == true, "One of the members is inactive");
       require(member.createdAt != 0, "Member doesn't exist");
 
