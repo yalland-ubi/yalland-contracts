@@ -485,4 +485,8 @@ contract YALDistributor is OwnableAndInitializable {
   function isPeriodClaimedByMember(bytes32 _memberId, uint256 _periodId) external view returns (bool) {
     return member[_memberId].claimedPeriods[_periodId];
   }
+
+  function isPeriodClaimedByAddress(address _memberAddress, uint256 _periodId) external view returns (bool) {
+    return member[memberAddress2Id[_memberAddress]].claimedPeriods[_periodId];
+  }
 }

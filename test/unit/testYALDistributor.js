@@ -779,5 +779,29 @@ describe('YALDistributor Unit tests', () => {
                 assert.equal(await dist.isPeriodClaimedByMember(memberId1, 1), true);
             });
         });
+
+        describe('#isPeriodClaimedByAddress()', () => {
+            it('should return correct values', async function() {
+                await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
+                await increaseTime(11);
+
+                // P1
+                assert.equal(await dist.getCurrentPeriodId(), 0);
+                assert.equal(await dist.isPeriodClaimedByAddress(bob, 0), false);
+
+                await dist.claimFunds(memberId1, { from: bob });
+
+                assert.equal(await dist.isPeriodClaimedByAddress(bob, 0), true);
+
+                // P2
+                await increaseTime(periodLength);
+                assert.equal(await dist.getCurrentPeriodId(), 1);
+                assert.equal(await dist.isPeriodClaimedByAddress(bob, 1), false);
+
+                await dist.claimFunds(memberId1, { from: bob });
+
+                assert.equal(await dist.isPeriodClaimedByAddress(bob, 1), true);
+            });
+        });
     })
 });
