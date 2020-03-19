@@ -11,6 +11,7 @@ pragma solidity ^0.5.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
 import "./interfaces/ICoinToken.sol";
 
@@ -22,6 +23,7 @@ import "./interfaces/ICoinToken.sol";
  **/
 contract YALDistributor is OwnableAndInitializable {
   using SafeMath for uint256;
+  using EnumerableSet for EnumerableSet.AddressSet;
 
   uint256 public constant HUNDRED_PCT = 100 ether;
 
@@ -74,6 +76,8 @@ contract YALDistributor is OwnableAndInitializable {
 
   // periodId => periodDetails
   mapping(uint256 => Period) public period;
+
+  EnumerableSet.AddressSet internal activeAddressesCache;
 
   modifier onlyVerifier() {
     require(msg.sender == verifier, "Only verifier allowed");
@@ -257,7 +261,8 @@ contract YALDistributor is OwnableAndInitializable {
     require(len > 0, "Missing input members");
 
     for (uint256 i = 0; i < len; i++ ) {
-      bytes32 memberId = memberAddress2Id[_memberAddresses[i]];
+      address addr = _memberAddresses[i];
+      bytes32 memberId = memberAddress2Id[addr];
       Member storage member = member[memberId];
       require(member.active == false, "One of the members is active");
       require(member.createdAt != 0, "Member doesn't exist");
@@ -265,7 +270,9 @@ contract YALDistributor is OwnableAndInitializable {
       member.active = true;
       member.lastEnabledAt = now;
 
-      emit EnableMember(memberId, _memberAddresses[i]);
+      activeAddressesCache.add(addr);
+
+      emit EnableMember(memberId, addr);
     }
 
     _incrementActiveMemberCount(len);
@@ -287,7 +294,8 @@ contract YALDistributor is OwnableAndInitializable {
     require(len > 0, "Missing input members");
 
     for (uint256 i = 0; i < len; i++ ) {
-      bytes32 memberId = memberAddress2Id[_memberAddresses[i]];
+      address addr = _memberAddresses[i];
+      bytes32 memberId = memberAddress2Id[addr];
       Member storage member = member[memberId];
       require(member.active == true, "One of the members is inactive");
       require(member.createdAt != 0, "Member doesn't exist");
@@ -295,7 +303,9 @@ contract YALDistributor is OwnableAndInitializable {
       member.active = false;
       member.lastDisabledAt = now;
 
-      emit DisableMember(memberId, _memberAddresses[i]);
+      activeAddressesCache.remove(addr);
+
+      emit DisableMember(memberId, addr);
     }
 
     _decrementActiveMemberCount(len);
@@ -375,6 +385,8 @@ contract YALDistributor is OwnableAndInitializable {
     member.active = true;
     member.createdAt = now;
 
+    activeAddressesCache.add(_memberAddress);
+
     emit AddMember(_memberId, _memberAddress);
   }
 
@@ -390,6 +402,9 @@ contract YALDistributor is OwnableAndInitializable {
 
     memberAddress2Id[from] = bytes32(0);
     memberAddress2Id[_to] = memberId;
+
+    activeAddressesCache.remove(from);
+    activeAddressesCache.add(_to);
 
     emit ChangeMemberAddress(memberId, from, _to);
   }
@@ -472,6 +487,9 @@ contract YALDistributor is OwnableAndInitializable {
     memberAddress2Id[from] = bytes32(0);
     memberAddress2Id[_to] = memberId;
 
+    activeAddressesCache.remove(from);
+    activeAddressesCache.add(_to);
+
     emit ChangeMyAddress(memberId, from, _to);
   }
 
@@ -503,6 +521,14 @@ contract YALDistributor is OwnableAndInitializable {
   function getCurrentPeriodBeginsAt() public view returns (uint256) {
     // return (getCurrentPeriod() * periodLength) + genesisTimestamp;
     return (getCurrentPeriodId().mul(periodLength)).add(genesisTimestamp);
+  }
+
+  function getActiveAddressList() external view returns (address[] memory) {
+    return activeAddressesCache.enumerate();
+  }
+
+  function getActiveAddressSize() external view returns (uint256) {
+    return activeAddressesCache.length();
   }
 
   function isPeriodClaimedByMember(bytes32 _memberId, uint256 _periodId) external view returns (bool) {

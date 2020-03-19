@@ -21,7 +21,7 @@ const { ether, now, int, increaseTime, assertRevert, zeroAddress, getResTimestam
 const keccak256 = web3.utils.soliditySha3;
 
 describe('YALDistribution Integration Tests', () => {
-    const [verifier, alice, bob, charlie, dan] = accounts;
+    const [verifier, alice, bob, charlie, dan, eve] = accounts;
 
     // 7 days
     const periodLength = 7 * 24 * 60 * 60;
@@ -30,6 +30,7 @@ describe('YALDistribution Integration Tests', () => {
     const baseAliceBalance = 10000000;
     const feePercent = 0.02;
     const startAfter = 10;
+    const memberId0 = keccak256('alice');
     const memberId1 = keccak256('bob');
     const memberId2 = keccak256('charlie');
     const memberId3 = keccak256('dan');
@@ -273,6 +274,36 @@ describe('YALDistribution Integration Tests', () => {
             assert.equal(res.rewardPerMember, ether(75 * 1000));
         });
     })
+
+    describe('Active member caching', () => {
+        it('should correctly cache active member addresses', async function() {
+            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [bob, charlie, dan], { from: verifier });
+            assert.sameMembers(await dist.getActiveAddressList(), [bob, charlie, dan]);
+            assert.equal(await dist.getActiveAddressSize(), 3);
+
+            await increaseTime(11);
+
+            await dist.disableMembers([bob, charlie], { from: verifier });
+            assert.sameMembers(await dist.getActiveAddressList(), [dan]);
+            assert.equal(await dist.getActiveAddressSize(), 1);
+
+            await dist.disableMembers([dan], { from: verifier });
+            assert.sameMembers(await dist.getActiveAddressList(), []);
+            assert.equal(await dist.getActiveAddressSize(), 0);
+
+            await dist.addMember(memberId0, alice, { from: verifier });
+            assert.sameMembers(await dist.getActiveAddressList(), [alice]);
+            assert.equal(await dist.getActiveAddressSize(), 1);
+
+            await dist.enableMembers([bob, charlie, dan], { from: verifier });
+            assert.sameMembers(await dist.getActiveAddressList(), [alice, bob, charlie, dan]);
+            assert.equal(await dist.getActiveAddressSize(), 4);
+
+            await dist.addMembers([memberId4], [eve], { from: verifier });
+            assert.sameMembers(await dist.getActiveAddressList(), [alice, bob, charlie, dan, eve]);
+            assert.equal(await dist.getActiveAddressSize(), 5);
+        })
+    });
 
     describe('When paused', () => {
         it('should deny executing contracts', async function() {
