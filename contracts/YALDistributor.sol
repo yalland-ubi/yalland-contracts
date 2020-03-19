@@ -281,23 +281,26 @@ contract YALDistributor is OwnableAndInitializable {
   }
 
   /*
+   * @dev Verifier changes multiple member addresses with a new ones. MemberIds remain the same.
+   * @param _memberIds to change
+   * @param _to addresses to change to
+   */
+  function changeMemberAddresses(bytes32[] calldata _memberIds, address[] calldata _toAddresses) external onlyVerifier {
+    uint256 len = _memberIds.length;
+    require(len == _toAddresses.length, "Both ids and addresses array should have the same size");
+
+    for(uint256 i = 0; i < len; i++) {
+      _changeMemberAddress(_memberIds[i], _toAddresses[i]);
+    }
+  }
+
+  /*
    * @dev Verifier changes a member address with a new one. MemberId remains the same.
-   * @params _memberIds to change
-   * @params _to address to change to
+   * @param _memberIds to change
+   * @param _to address to change to
    */
   function changeMemberAddress(bytes32 _memberId, address _to) external onlyVerifier {
-    Member storage member = member[_memberId];
-
-    require(member.createdAt != 0, "Member doesn't exist");
-    require(memberAddress2Id[_to] == bytes32(0), "Address is already taken by another member");
-
-    address from = member.addr;
-    member.addr = _to;
-
-    memberAddress2Id[from] = bytes32(0);
-    memberAddress2Id[_to] = _memberId;
-
-    emit ChangeMemberAddress(_memberId, from, _to);
+    _changeMemberAddress(_memberId, _to);
   }
 
   /*
@@ -352,6 +355,21 @@ contract YALDistributor is OwnableAndInitializable {
     member.createdAt = now;
 
     emit AddMember(_memberId, _memberAddress);
+  }
+
+  function _changeMemberAddress(bytes32 _memberId, address _to) internal {
+    Member storage member = member[_memberId];
+
+    require(member.createdAt != 0, "Member doesn't exist");
+    require(memberAddress2Id[_to] == bytes32(0), "Address is already taken by another member");
+
+    address from = member.addr;
+    member.addr = _to;
+
+    memberAddress2Id[from] = bytes32(0);
+    memberAddress2Id[_to] = _memberId;
+
+    emit ChangeMemberAddress(_memberId, from, _to);
   }
 
   function _incrementActiveMemberCount(uint256 _n) internal {

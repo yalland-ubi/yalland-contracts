@@ -413,6 +413,73 @@ describe('YALDistributor Unit tests', () => {
             });
         });
 
+        describe('#changeMemberAddresses()', () => {
+            beforeEach(async function() {
+                await increaseTime(11);
+                assert.equal(await dist.getCurrentPeriodId(), 0);
+                await dist.addMember(memberId1, bob, { from: verifier });
+                await dist.addMember(memberId2, charlie, { from: verifier });
+                await dist.addMember(memberId3, dan, { from: verifier });
+            });
+
+            it('should allow changing address for an active member', async function() {
+                assert.equal(await dist.memberAddress2Id(dan), memberId3);
+                assert.equal(await dist.memberAddress2Id(bob), memberId1);
+                assert.equal(
+                    await dist.memberAddress2Id(alice),
+                    '0x0000000000000000000000000000000000000000000000000000000000000000'
+                );
+
+                // bob => alice && dan => bob
+                await dist.changeMemberAddresses([memberId1, memberId3], [alice, bob], { from: verifier });
+
+                let details = await dist.member(memberId1);
+                assert.equal(details.active, true);
+                assert.equal(details.addr, alice);
+
+                details = await dist.member(memberId3);
+                assert.equal(details.active, true);
+                assert.equal(details.addr, bob);
+
+                assert.equal(await dist.memberAddress2Id(alice), memberId1);
+                assert.equal(await dist.memberAddress2Id(bob), memberId3);
+                assert.equal(
+                    await dist.memberAddress2Id(dan),
+                    '0x0000000000000000000000000000000000000000000000000000000000000000'
+                );
+            });
+
+            it('should allow changing address for an inactive member', async function() {
+                await dist.disableMembers([memberId1], { from: verifier });
+                await dist.changeMemberAddresses([memberId1, memberId3], [alice, bob], { from: verifier });
+
+                const details = await dist.member(memberId1);
+                assert.equal(details.active, false);
+                assert.equal(details.addr, alice);
+            });
+
+            it('should deny non verifier changing a member address', async function() {
+                await assertRevert(
+                    dist.changeMemberAddresses([memberId1], [alice], { from: alice }),
+                    'Only verifier allowed'
+                );
+            });
+
+            it('should deny changing a non-existent member address', async function() {
+                await assertRevert(
+                    dist.changeMemberAddresses([memberId4, memberId3], [alice, alice], { from: verifier }),
+                    'Member doesn\'t exist'
+                );
+            });
+
+            it('should deny changing to an already occupied address', async function() {
+                await assertRevert(
+                    dist.changeMemberAddresses([memberId1], [charlie], { from: verifier }),
+                    'Address is already taken by another member'
+                );
+            });
+        });
+
         describe('#claimVerifierReward', () => {
             it('should allow verifier claiming reward', async function() {
                 await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
