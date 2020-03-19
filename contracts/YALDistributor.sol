@@ -96,7 +96,7 @@ contract YALDistributor is OwnableAndInitializable {
       currentPeriod.verifierReward = periodVolume.mul(verifierRewardShare) / HUNDRED_PCT;
 
       // imbalance will be left at the contract
-      // uint256 currentPeriodRewardPerMember = (periodVolume * (100 ether - verifierRewardShare)) / activeMemberCount;
+      // uint256 currentPeriodRewardPerMember = (periodVolume * (100 ether - verifierRewardShare)) / (activeMemberCount * 100 ether);
       uint256 currentPeriodRewardPerMember = (periodVolume.mul(HUNDRED_PCT.sub(verifierRewardShare))) / (activeMemberCount * HUNDRED_PCT);
       assert(currentPeriodRewardPerMember > 0);
       currentPeriod.rewardPerMember = currentPeriodRewardPerMember;
@@ -136,7 +136,7 @@ contract YALDistributor is OwnableAndInitializable {
 
   /*
    * @dev Changes a verifier address to a new one.
-   * @params _verifier a new verifier address, address(0) if a verifier role is disabled
+   * @param _verifier a new verifier address, address(0) if a verifier role is disabled
    */
   function setVerifier(address _verifier) external onlyOwner {
     verifier = _verifier;
@@ -146,7 +146,7 @@ contract YALDistributor is OwnableAndInitializable {
 
   /*
    * @dev Changes a verifier reward share to a new one.
-   * @params _verifierRewardShare a new verifier reward share, 0 if there should be no reward for
+   * @param _verifierRewardShare a new verifier reward share, 0 if there should be no reward for
    * a verifier; 100% == 100 ether
    */
   function setVerifierRewardShare(uint256 _verifierRewardShare) external onlyOwner {
@@ -159,7 +159,7 @@ contract YALDistributor is OwnableAndInitializable {
 
   /*
    * @dev Changes a periodVolume to a new value.
-   * @params _periodVolume a new periodVolume value, 0 if the distribution shuold be disabled
+   * @param _periodVolume a new periodVolume value, 0 if the distribution should be disabled
    */
   function setPeriodVolume(uint256 _periodVolume) external onlyOwner {
     uint256 oldPeriodVolume = periodVolume;
@@ -190,9 +190,9 @@ contract YALDistributor is OwnableAndInitializable {
   // VERIFIER INTERFACE
 
   /*
-   * @dev Adds multple members. To be called before genesisTimestamp
-   * @params _memberIds unique credential keccack256() hashes
-   * @params _memberAddresses corresponding to _memberIds addresses
+   * @dev Adds multiple members. To be called before genesisTimestamp
+   * @param _memberIds unique credential keccack256() hashes
+   * @param _memberAddresses corresponding to _memberIds addresses
    */
   function addMembersBeforeGenesis(
     bytes32[] calldata _memberIds,
@@ -207,9 +207,9 @@ contract YALDistributor is OwnableAndInitializable {
   }
 
   /*
-   * @dev Adds multple members. To be called after genesisTimestamp
-   * @params _memberIds unique credential keccack256() hashes
-   * @params _memberAddresses corresponding to _memberIds addresses
+   * @dev Adds multiple members. To be called after genesisTimestamp
+   * @param _memberIds unique credential keccack256() hashes
+   * @param _memberAddresses corresponding to _memberIds addresses
    */
   function addMembers(
     bytes32[] calldata _memberIds,
@@ -224,8 +224,8 @@ contract YALDistributor is OwnableAndInitializable {
 
   /*
    * @dev Adds a single member
-   * @params _memberId a unique credential keccack256()
-   * @params _memberAddress corresponding to _memberIds address
+   * @param _memberId a unique credential keccack256()
+   * @param _memberAddress corresponding to _memberIds address
    */
   function addMember(
     bytes32 _memberId,
@@ -324,8 +324,8 @@ contract YALDistributor is OwnableAndInitializable {
 
   /*
    * @dev Verifier claims their reward for the given period.
-   * @params _periodId to claim reward for
-   * @params _to address to send reward to
+   * @param _periodId to claim reward for
+   * @param _to address to send reward to
    */
   function claimVerifierReward(
     uint256 _periodId,
@@ -410,8 +410,6 @@ contract YALDistributor is OwnableAndInitializable {
 
   /*
    * @dev Claims member funds
-   * @params _periodId to claim reward for
-   * @params _to address to send reward to
    */
   function claimFunds() external handlePeriodTransitionIfRequired whenNotPaused {
     bytes32 memberId = memberAddress2Id[msg.sender];
