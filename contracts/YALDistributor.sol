@@ -433,23 +433,23 @@ contract YALDistributor is OwnableAndInitializable {
 
   /*
    * @dev A member changes his address with a new one. MemberId remains the same.
-   * @params _memberIds to change
-   * @params _to address to change to
+   * @param _to address to change to
    */
-  function changeMyAddress(bytes32 _memberId, address _to) external whenNotPaused {
-    Member storage member = member[_memberId];
+  function changeMyAddress(address _to) external whenNotPaused {
+    address from = msg.sender;
+    bytes32 memberId = memberAddress2Id[from];
+    Member storage member = member[memberId];
 
     require(member.addr == msg.sender, "Only the member allowed");
     require(member.createdAt != 0, "Member doesn't exist");
     require(memberAddress2Id[_to] == bytes32(0), "Address is already taken by another member");
 
-    address from = member.addr;
     member.addr = _to;
 
     memberAddress2Id[from] = bytes32(0);
-    memberAddress2Id[_to] = _memberId;
+    memberAddress2Id[_to] = memberId;
 
-    emit ChangeMyAddress(_memberId, from, _to);
+    emit ChangeMyAddress(memberId, from, _to);
   }
 
   // VIEW METHODS

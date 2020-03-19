@@ -294,7 +294,7 @@ describe('YALDistribution Integration Tests', () => {
                 'Contract is paused'
             );
             await assertRevert(
-                dist.changeMyAddress(memberId2, alice, { from: charlie }),
+                dist.changeMyAddress(alice, { from: charlie }),
                 'Contract is paused'
             );
         });

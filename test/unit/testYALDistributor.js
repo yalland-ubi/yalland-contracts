@@ -609,21 +609,27 @@ describe('YALDistributor Unit tests', () => {
 
             it('should allow an active member changing his address', async function() {
                 assert.equal(await dist.memberAddress2Id(bob), memberId1);
-                assert.equal(await dist.memberAddress2Id(alice), '0x0000000000000000000000000000000000000000000000000000000000000000');
+                assert.equal(
+                    await dist.memberAddress2Id(alice),
+                    '0x0000000000000000000000000000000000000000000000000000000000000000'
+                );
 
-                await dist.changeMyAddress(memberId1, alice, { from: bob });
+                await dist.changeMyAddress(alice, { from: bob });
 
                 const details = await dist.member(memberId1);
                 assert.equal(details.active, true);
                 assert.equal(details.addr, alice);
 
                 assert.equal(await dist.memberAddress2Id(alice), memberId1);
-                assert.equal(await dist.memberAddress2Id(bob), '0x0000000000000000000000000000000000000000000000000000000000000000');
+                assert.equal(
+                    await dist.memberAddress2Id(bob),
+                    '0x0000000000000000000000000000000000000000000000000000000000000000'
+                );
             });
 
             it('should allow inactive member changing his address', async function() {
                 await dist.disableMembers([memberId1], { from: verifier });
-                const res = await dist.changeMyAddress(memberId1, alice, { from: bob });
+                await dist.changeMyAddress(alice, { from: bob });
 
                 const details = await dist.member(memberId1);
                 assert.equal(details.active, false);
@@ -631,15 +637,15 @@ describe('YALDistributor Unit tests', () => {
             });
 
             it('should deny non member changing the member address', async function() {
-                await assertRevert(dist.changeMyAddress(memberId1, alice, { from: verifier }), 'Only the member allowed');
+                await assertRevert(dist.changeMyAddress(alice, { from: verifier }), 'Only the member allowed');
             });
 
             it('should deny an active member changing already occupied address', async function() {
-                await assertRevert(dist.changeMyAddress(memberId1, charlie, { from: bob }), 'Address is already taken by another member');
+                await assertRevert(dist.changeMyAddress(charlie, { from: bob }), 'Address is already taken by another member');
             });
         });
 
-        describe('#changeMyAddress()', () => {
+        describe('#claimFunds()', () => {
             beforeEach(async function() {
                 await increaseTime(11);
                 assert.equal(await dist.getCurrentPeriodId(), 0);
