@@ -31,6 +31,8 @@ contract YALDistributor is OwnableAndInitializable {
   event ChangeMyAddress(bytes32 indexed memberId, address from, address to);
   event ClaimFunds(bytes32 indexed memberId, uint256 indexed periodId, uint256 amount);
   event ClaimVerifierReward(uint256 indexed periodId, address to);
+  event EnableMember(bytes32 indexed memberId, address indexed memberAddress);
+  event DisableMember(bytes32 indexed memberId, address indexed memberAddress);
   event Pause();
   event Unpause();
   event SetPeriodVolume(uint256 oldPeriodVolume, uint256 newPeriodVolume);
@@ -254,12 +256,15 @@ contract YALDistributor is OwnableAndInitializable {
     require(len > 0, "Missing input members");
 
     for (uint256 i = 0; i < len; i++ ) {
-      Member storage member = member[memberAddress2Id[_memberAddresses[i]]];
+      bytes32 memberId = memberAddress2Id[_memberAddresses[i]];
+      Member storage member = member[memberId];
       require(member.active == false, "One of the members is active");
       require(member.createdAt != 0, "Member doesn't exist");
 
       member.active = true;
       member.lastEnabledAt = now;
+
+      emit EnableMember(memberId, _memberAddresses[i]);
     }
 
     _incrementActiveMemberCount(len);
@@ -287,6 +292,8 @@ contract YALDistributor is OwnableAndInitializable {
 
       member.active = false;
       member.lastDisabledAt = now;
+
+      emit DisableMember(memberId, _memberAddresses[i]);
     }
 
     _decrementActiveMemberCount(len);
