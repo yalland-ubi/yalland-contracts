@@ -7,7 +7,7 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-const { accounts, defaultSender, contract, web3 } = require('@openzeppelin/test-environment');
+const { accounts, contract, web3 } = require('@openzeppelin/test-environment');
 const { assert } = require('chai');
 
 const CoinToken = contract.fromArtifact('CoinToken');
@@ -21,7 +21,7 @@ const { ether, now, int, increaseTime, assertRevert, zeroAddress, getResTimestam
 const keccak256 = web3.utils.soliditySha3;
 
 describe('YALDistributor Unit tests', () => {
-    const [verifier, alice, bob, charlie, dan] = accounts;
+    const [verifier, alice, bob, charlie, dan, eve] = accounts;
 
     // 7 days
     const periodLength = 7 * 24 * 60 * 60;
@@ -378,21 +378,27 @@ describe('YALDistributor Unit tests', () => {
 
             it('should allow changing address for an active member', async function() {
                 assert.equal(await dist.memberAddress2Id(bob), memberId1);
-                assert.equal(await dist.memberAddress2Id(alice), '0x0000000000000000000000000000000000000000000000000000000000000000');
+                assert.equal(
+                    await dist.memberAddress2Id(alice),
+                    '0x0000000000000000000000000000000000000000000000000000000000000000'
+                );
 
-                const res = await dist.changeMemberAddress(memberId1, alice, { from: verifier });
+                const res = await dist.changeMemberAddress(bob, alice, { from: verifier });
 
                 const details = await dist.member(memberId1);
                 assert.equal(details.active, true);
                 assert.equal(details.addr, alice);
 
                 assert.equal(await dist.memberAddress2Id(alice), memberId1);
-                assert.equal(await dist.memberAddress2Id(bob), '0x0000000000000000000000000000000000000000000000000000000000000000');
+                assert.equal(
+                    await dist.memberAddress2Id(bob),
+                    '0x0000000000000000000000000000000000000000000000000000000000000000'
+                );
             });
 
             it('should allow changing address for an inactive member', async function() {
                 await dist.disableMembers([bob], { from: verifier });
-                await dist.changeMemberAddress(memberId1, alice, { from: verifier });
+                await dist.changeMemberAddress(bob, alice, { from: verifier });
 
                 const details = await dist.member(memberId1);
                 assert.equal(details.active, false);
@@ -400,15 +406,18 @@ describe('YALDistributor Unit tests', () => {
             });
 
             it('should deny non verifier changing a member address', async function() {
-                await assertRevert(dist.changeMemberAddress(memberId1, alice, { from: alice }), 'Only verifier allowed');
+                await assertRevert(dist.changeMemberAddress(bob, alice, { from: alice }), 'Only verifier allowed');
             });
 
             it('should deny changing a non-existent member address', async function() {
-                await assertRevert(dist.changeMemberAddress(memberId4, alice, { from: verifier }), 'Member doesn\'t exist');
+                await assertRevert(dist.changeMemberAddress(dan, alice, { from: verifier }), 'Member doesn\'t exist');
             });
 
             it('should deny changing to an already occupied address', async function() {
-                await assertRevert(dist.changeMemberAddress(memberId1, charlie, { from: verifier }), 'Address is already taken by another member');
+                await assertRevert(
+                    dist.changeMemberAddress(bob, charlie, { from: verifier }),
+                    'Address is already taken by another member'
+                );
             });
         });
 
@@ -430,7 +439,7 @@ describe('YALDistributor Unit tests', () => {
                 );
 
                 // bob => alice && dan => bob
-                await dist.changeMemberAddresses([memberId1, memberId3], [alice, bob], { from: verifier });
+                await dist.changeMemberAddresses([bob, dan], [alice, bob], { from: verifier });
 
                 let details = await dist.member(memberId1);
                 assert.equal(details.active, true);
@@ -450,7 +459,7 @@ describe('YALDistributor Unit tests', () => {
 
             it('should allow changing address for an inactive member', async function() {
                 await dist.disableMembers([bob], { from: verifier });
-                await dist.changeMemberAddresses([memberId1, memberId3], [alice, bob], { from: verifier });
+                await dist.changeMemberAddresses([bob, charlie], [alice, bob], { from: verifier });
 
                 const details = await dist.member(memberId1);
                 assert.equal(details.active, false);
@@ -459,21 +468,21 @@ describe('YALDistributor Unit tests', () => {
 
             it('should deny non verifier changing a member address', async function() {
                 await assertRevert(
-                    dist.changeMemberAddresses([memberId1], [alice], { from: alice }),
+                    dist.changeMemberAddresses([bob], [alice], { from: alice }),
                     'Only verifier allowed'
                 );
             });
 
             it('should deny changing a non-existent member address', async function() {
                 await assertRevert(
-                    dist.changeMemberAddresses([memberId4, memberId3], [alice, alice], { from: verifier }),
+                    dist.changeMemberAddresses([eve, dan], [alice, alice], { from: verifier }),
                     'Member doesn\'t exist'
                 );
             });
 
             it('should deny changing to an already occupied address', async function() {
                 await assertRevert(
-                    dist.changeMemberAddresses([memberId1], [charlie], { from: verifier }),
+                    dist.changeMemberAddresses([bob], [charlie], { from: verifier }),
                     'Address is already taken by another member'
                 );
             });
@@ -654,24 +663,20 @@ describe('YALDistributor Unit tests', () => {
 
             it('should allow an active member claiming his reward', async function() {
                 const charlieBalanceBefore = await coinToken.balanceOf(charlie);
-                await dist.claimFunds(memberId2, { from: charlie });
+                await dist.claimFunds({ from: charlie });
                 const charlieBalanceAfter = await coinToken.balanceOf(charlie);
 
                 assertErc20BalanceChanged(charlieBalanceBefore, charlieBalanceAfter, ether(75 * 1000));
             });
 
             it('should not allow claiming reward twice a period', async function() {
-                await dist.claimFunds(memberId2, { from: charlie });
-                await assertRevert(dist.claimFunds(memberId2, { from: charlie }), 'Already claimed for the current period');
+                await dist.claimFunds({ from: charlie });
+                await assertRevert(dist.claimFunds({ from: charlie }), 'Already claimed for the current period');
             });
 
             it('should deny non-active member claiming funds', async function() {
                 await dist.disableMembers([charlie], { from: verifier });
-                await assertRevert(dist.claimFunds(memberId2, { from: charlie }), ' Not active member');
-            });
-
-            it('should not allow an active member claiming another member reward', async function() {
-                await assertRevert(dist.claimFunds(memberId1, { from: charlie }), 'Address doesn\'t match');
+                await assertRevert(dist.claimFunds({ from: charlie }), ' Not active member');
             });
         });
     })
@@ -770,7 +775,7 @@ describe('YALDistributor Unit tests', () => {
                 assert.equal(await dist.getCurrentPeriodId(), 0);
                 assert.equal(await dist.isPeriodClaimedByMember(memberId1, 0), false);
 
-                await dist.claimFunds(memberId1, { from: bob });
+                await dist.claimFunds({ from: bob });
 
                 assert.equal(await dist.isPeriodClaimedByMember(memberId1, 0), true);
 
@@ -779,7 +784,7 @@ describe('YALDistributor Unit tests', () => {
                 assert.equal(await dist.getCurrentPeriodId(), 1);
                 assert.equal(await dist.isPeriodClaimedByMember(memberId1, 1), false);
 
-                await dist.claimFunds(memberId1, { from: bob });
+                await dist.claimFunds({ from: bob });
 
                 assert.equal(await dist.isPeriodClaimedByMember(memberId1, 1), true);
             });
@@ -794,7 +799,7 @@ describe('YALDistributor Unit tests', () => {
                 assert.equal(await dist.getCurrentPeriodId(), 0);
                 assert.equal(await dist.isPeriodClaimedByAddress(bob, 0), false);
 
-                await dist.claimFunds(memberId1, { from: bob });
+                await dist.claimFunds({ from: bob });
 
                 assert.equal(await dist.isPeriodClaimedByAddress(bob, 0), true);
 
@@ -803,7 +808,7 @@ describe('YALDistributor Unit tests', () => {
                 assert.equal(await dist.getCurrentPeriodId(), 1);
                 assert.equal(await dist.isPeriodClaimedByAddress(bob, 1), false);
 
-                await dist.claimFunds(memberId1, { from: bob });
+                await dist.claimFunds({ from: bob });
 
                 assert.equal(await dist.isPeriodClaimedByAddress(bob, 1), true);
             });

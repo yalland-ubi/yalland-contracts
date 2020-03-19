@@ -294,25 +294,25 @@ contract YALDistributor is OwnableAndInitializable {
 
   /*
    * @dev Verifier changes multiple member addresses with a new ones. MemberIds remain the same.
-   * @param _memberIds to change
-   * @param _to addresses to change to
+   * @param _fromAddresses to change from
+   * @param _toAddresses to change to
    */
-  function changeMemberAddresses(bytes32[] calldata _memberIds, address[] calldata _toAddresses) external onlyVerifier {
-    uint256 len = _memberIds.length;
+  function changeMemberAddresses(address[] calldata _fromAddresses, address[] calldata _toAddresses) external onlyVerifier {
+    uint256 len = _fromAddresses.length;
     require(len == _toAddresses.length, "Both ids and addresses array should have the same size");
 
     for(uint256 i = 0; i < len; i++) {
-      _changeMemberAddress(_memberIds[i], _toAddresses[i]);
+      _changeMemberAddress(_fromAddresses[i], _toAddresses[i]);
     }
   }
 
   /*
    * @dev Verifier changes a member address with a new one. MemberId remains the same.
-   * @param _memberIds to change
+   * @param _from address to change from
    * @param _to address to change to
    */
-  function changeMemberAddress(bytes32 _memberId, address _to) external onlyVerifier {
-    _changeMemberAddress(_memberId, _to);
+  function changeMemberAddress(address _from, address _to) external onlyVerifier {
+    _changeMemberAddress(_from, _to);
   }
 
   /*
@@ -369,19 +369,20 @@ contract YALDistributor is OwnableAndInitializable {
     emit AddMember(_memberId, _memberAddress);
   }
 
-  function _changeMemberAddress(bytes32 _memberId, address _to) internal {
-    Member storage member = member[_memberId];
+  function _changeMemberAddress(address _memberAddress, address _to) internal {
+    bytes32 memberId = memberAddress2Id[_memberAddress];
+    Member storage member = member[memberId];
+    address from = member.addr;
 
     require(member.createdAt != 0, "Member doesn't exist");
     require(memberAddress2Id[_to] == bytes32(0), "Address is already taken by another member");
 
-    address from = member.addr;
     member.addr = _to;
 
     memberAddress2Id[from] = bytes32(0);
-    memberAddress2Id[_to] = _memberId;
+    memberAddress2Id[_to] = memberId;
 
-    emit ChangeMemberAddress(_memberId, from, _to);
+    emit ChangeMemberAddress(memberId, from, _to);
   }
 
   function _incrementActiveMemberCount(uint256 _n) internal {
@@ -401,12 +402,13 @@ contract YALDistributor is OwnableAndInitializable {
   // MEMBER INTERFACE
 
   /*
-   * @dev  period
+   * @dev Claims member funds
    * @params _periodId to claim reward for
    * @params _to address to send reward to
    */
-  function claimFunds(bytes32 _memberId) external handlePeriodTransitionIfRequired whenNotPaused {
-    Member storage member = member[_memberId];
+  function claimFunds() external handlePeriodTransitionIfRequired whenNotPaused {
+    bytes32 memberId = memberAddress2Id[msg.sender];
+    Member storage member = member[memberId];
     uint256 currentPeriodId = getCurrentPeriodId();
 
     require(member.addr == msg.sender, "Address doesn't match");
@@ -440,7 +442,7 @@ contract YALDistributor is OwnableAndInitializable {
 
     token.mint(msg.sender, period[currentPeriodId].rewardPerMember);
 
-    emit ClaimFunds(_memberId, currentPeriodId, rewardPerMember);
+    emit ClaimFunds(memberId, currentPeriodId, rewardPerMember);
   }
 
   /*
