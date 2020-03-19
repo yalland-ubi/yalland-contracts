@@ -481,4 +481,8 @@ contract YALDistributor is OwnableAndInitializable {
     // return (getCurrentPeriod() * periodLength) + genesisTimestamp;
     return (getCurrentPeriodId().mul(periodLength)).add(genesisTimestamp);
   }
+
+  function isPeriodClaimedByMember(bytes32 _memberId, uint256 _periodId) external view returns (bool) {
+    return member[_memberId].claimedPeriods[_periodId];
+  }
 }

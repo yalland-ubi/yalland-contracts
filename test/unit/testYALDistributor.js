@@ -755,5 +755,29 @@ describe('YALDistributor Unit tests', () => {
                 );
             });
         });
+
+        describe('#isPeriodClaimedByMember()', () => {
+            it('should return correct values', async function() {
+                await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
+                await increaseTime(11);
+
+                // P1
+                assert.equal(await dist.getCurrentPeriodId(), 0);
+                assert.equal(await dist.isPeriodClaimedByMember(memberId1, 0), false);
+
+                await dist.claimFunds(memberId1, { from: bob });
+
+                assert.equal(await dist.isPeriodClaimedByMember(memberId1, 0), true);
+
+                // P2
+                await increaseTime(periodLength);
+                assert.equal(await dist.getCurrentPeriodId(), 1);
+                assert.equal(await dist.isPeriodClaimedByMember(memberId1, 1), false);
+
+                await dist.claimFunds(memberId1, { from: bob });
+
+                assert.equal(await dist.isPeriodClaimedByMember(memberId1, 1), true);
+            });
+        });
     })
 });
