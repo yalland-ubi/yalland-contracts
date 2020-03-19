@@ -678,6 +678,33 @@ describe('YALDistributor Unit tests', () => {
                 await dist.disableMembers([charlie], { from: verifier });
                 await assertRevert(dist.claimFunds({ from: charlie }), ' Not active member');
             });
+
+            it('should increase totalClaimed value on each successful claim', async function() {
+                assert.equal((await dist.period(0)).rewardPerMember, 0);
+                assert.equal((await dist.member(memberId2)).totalClaimed, 0);
+
+                // P1
+                await dist.claimFunds({ from: charlie });
+                assert.equal(await dist.getCurrentPeriodId(), 1);
+                assert.equal((await dist.period(1)).rewardPerMember, ether(75 * 1000));
+                assert.equal((await dist.member(memberId2)).totalClaimed, ether(75 * 1000));
+
+                // P2
+                await increaseTime(periodLength);
+                await dist.claimFunds({ from: charlie });
+                assert.equal(await dist.getCurrentPeriodId(), 2);
+                assert.equal((await dist.period(2)).rewardPerMember, ether(75 * 1000));
+                assert.equal((await dist.member(memberId2)).totalClaimed, ether(2 * 75 * 1000));
+
+                await dist.disableMembers([bob], { from: verifier });
+
+                // P3
+                await increaseTime(periodLength);
+                await dist.claimFunds({ from: charlie });
+                assert.equal(await dist.getCurrentPeriodId(), 3);
+                assert.equal((await dist.period(3)).rewardPerMember, ether(112.5 * 1000));
+                assert.equal((await dist.member(memberId2)).totalClaimed, ether((2 * 75 + 112.5) * 1000));
+            });
         });
     })
 
