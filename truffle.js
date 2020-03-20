@@ -28,11 +28,6 @@ module.exports = {
             network_id: "*" // Match any network id
         },
         testnet57: {
-            host: "127.0.0.1",
-            port: 8545,
-            network_id: "*" // Match any network id
-        },
-        yalland: {
             // 1 gwei
             gasPrice: 1000 * 1000 * 1000,
             // 10M
