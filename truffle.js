@@ -7,20 +7,17 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-/*
- * NB: since truffle-hdwallet-provider 0.0.5 you must wrap HDWallet providers in a 
- * function when declaring them. Failure to do so will cause commands to hang. ex:
- * ```
- * mainnet: {
- *     provider: function() { 
- *       return new HDWalletProvider(mnemonic, 'https://mainnet.infura.io/<infura-key>') 
- *     },
- *     network_id: '1',
- *     gas: 4500000,
- *     gasPrice: 10000000000,
- *   },
- */
 const Ganache = require('ganache-core');
+const HDWalletProvider = require('@truffle/hdwallet-provider');
+const web3 = require('web3');
+
+function getProvider(rpc) {
+    return function() {
+        const provider = new web3.providers.WebsocketProvider(rpc);
+        return new HDWalletProvider(process.env.DEPLOYMENT_KEY, provider);
+    };
+}
+
 module.exports = {
     // See <http://truffleframework.com/docs/advanced/configuration>
     // to customize your Truffle configuration!
@@ -31,9 +28,13 @@ module.exports = {
             network_id: "*" // Match any network id
         },
         testnet57: {
-            host: "127.0.0.1",
-            port: 8545,
-            network_id: "*" // Match any network id
+            // 1 gwei
+            gasPrice: 1000 * 1000 * 1000,
+            // 10M
+            gasLimit: 20 * 1000 * 1000,
+            skipDryRun: true,
+            provider: getProvider('wss://server.yalland.com:8646/'),
+            network_id: '*'
         },
         test: {
             // https://github.com/trufflesuite/ganache-core#usage

@@ -6,12 +6,17 @@
  * (Founded by [Nikolai Popeka](https://github.com/npopeka) by
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
+const { accounts, defaultSender, contract, web3 } = require('@openzeppelin/test-environment');
+const { assert } = require('chai');
 
-const CoinToken = artifacts.require('./CoinToken.sol');
-const City = artifacts.require('./City.sol');
+const CoinToken = contract.fromArtifact('CoinToken');
+const City = contract.fromArtifact('City');
 
 
-contract('City', ([deployer, alice, rateManager, joinManager, leaveManager]) => {
+describe('City', () => {
+    const [alice, rateManager, joinManager, leaveManager] = accounts;
+    const deployer = defaultSender;
+
     const payByTariff = web3.utils.toWei('10', 'ether');
     const mintForPeriods = 10;
     let coinToken;

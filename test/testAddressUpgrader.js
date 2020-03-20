@@ -7,11 +7,13 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-const CoinToken = artifacts.require('./CoinToken.sol');
-const City = artifacts.require('./City.sol');
-const AddressUpgrader = artifacts.require('./AddressUpgrader.sol');
+const { accounts, defaultSender, contract, web3 } = require('@openzeppelin/test-environment');
+const { assert } = require('chai');
 
-const web3 = City.web3;
+const CoinToken = contract.fromArtifact('CoinToken');
+const City = contract.fromArtifact('City');
+const AddressUpgrader = contract.fromArtifact('AddressUpgrader');
+
 CoinToken.numberFormat = 'String';
 City.numberFormat = 'String';
 AddressUpgrader.numberFormat = 'String';
@@ -19,7 +21,10 @@ AddressUpgrader.numberFormat = 'String';
 const {ether, evmIncreaseTime, assertRevert} = require('@galtproject/solidity-test-chest')(web3);
 
 
-contract('AddressUpgrader', ([deployer, alice, bob, bob2, charlie, superuser, alice2, rateManager, joinManager]) => {
+describe('AddressUpgrader', () => {
+    const [alice, bob, bob2, charlie, superuser, alice2, rateManager, joinManager] = accounts;
+    const deployer = defaultSender;
+
     const payByTariff = web3.utils.toWei('10', 'ether');
     const mintForPeriods = 10;
     const baseAliceBalance = 10000000;
