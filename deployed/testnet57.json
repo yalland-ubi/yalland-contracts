@@ -2620,7 +2620,7 @@
       "signature": "0xad75160a"
     }
   ],
-  "testCoinTokenAddress": "0xa603F3a3dBa31A74416ad9f711add5340A10c436",
+  "testCoinTokenAddress": "0x6f6327257c315F81ddED7152A4CeF23298BD7aD1",
   "testCoinTokenAbi": [
     {
       "inputs": [
@@ -3482,7 +3482,7 @@
       "signature": "0xe941fa78"
     }
   ],
-  "testYalDistributorAddress": "0x502e077bd3199F1c8Cd72d2d09BbD3877F753022",
+  "testYalDistributorAddress": "0xAD7e5FC15293253cC2A7504539A743C7DdC77F50",
   "testYalDistributorAbi": [
     {
       "inputs": [],
@@ -4518,6 +4518,28 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0x4a4ded24"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_memberAddress",
+          "type": "address"
+        }
+      ],
+      "name": "isCurrentPeriodClaimedByAddress",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xbbc43daf"
     },
     {
       "constant": true,
