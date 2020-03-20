@@ -16,7 +16,7 @@ const YALDistributor = contract.fromArtifact('YALDistributor');
 CoinToken.numberFormat = 'String';
 YALDistributor.numberFormat = 'String';
 
-const { ether, now, int, increaseTime, assertRevert, zeroAddress, getResTimestamp } = require('@galtproject/solidity-test-chest')(web3);
+const { ether, now, getEventArg, increaseTime, assertRevert } = require('@galtproject/solidity-test-chest')(web3);
 
 const keccak256 = web3.utils.soliditySha3;
 
@@ -302,6 +302,41 @@ describe('YALDistribution Integration Tests', () => {
             await dist.addMembers([memberId4], [eve], { from: verifier });
             assert.sameMembers(await dist.getActiveAddressList(), [alice, bob, charlie, dan, eve]);
             assert.equal(await dist.getActiveAddressSize(), 5);
+        })
+    });
+
+    describe('Active member caching', () => {
+        it('should emit event on a period change', async function() {
+            // PG
+            await dist.addMembersBeforeGenesis([memberId1, memberId2], [bob, charlie], { from: verifier });
+
+            // P0
+            await increaseTime(12);
+            assert.equal(await dist.getCurrentPeriodId(), 0);
+
+            let res = await dist.addMember(memberId3, dan, { from: verifier });
+
+            assert.equal(getEventArg(res, 'PeriodChange', 'newPeriodId'), 0);
+            assert.equal(getEventArg(res, 'PeriodChange', 'verifierReward'), ether(25 * 1000));
+            assert.equal(getEventArg(res, 'PeriodChange', 'rewardPerMember'), ether(112.5 * 1000));
+            assert.equal(getEventArg(res, 'PeriodChange', 'activeMemberCount'), 2);
+
+            // change verifier reward
+            await dist.setVerifierRewardShare(ether(40));
+            await dist.setPeriodVolume(ether(1000 * 1000));
+            assert.equal(await dist.verifierRewardShare(), ether(40));
+            assert.equal(await dist.periodVolume(), ether(1000 * 1000));
+
+            // P1
+            await increaseTime(periodLength);
+            assert.equal(await dist.getCurrentPeriodId(), 1);
+
+            res = await dist.claimFunds(dan, { from: anyone });
+
+            assert.equal(getEventArg(res, 'PeriodChange', 'newPeriodId'), 1);
+            assert.equal(getEventArg(res, 'PeriodChange', 'verifierReward'), ether(400 * 1000));
+            assert.equal(getEventArg(res, 'PeriodChange', 'rewardPerMember'), ether(200 * 1000));
+            assert.equal(getEventArg(res, 'PeriodChange', 'activeMemberCount'), 3);
         })
     });
 
