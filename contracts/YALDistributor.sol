@@ -450,6 +450,7 @@ contract YALDistributor is OwnableAndInitializable {
     external
     handlePeriodTransitionIfRequired
     whenNotPaused
+    onlyVerifier
   {
     uint256 currentPeriodId = getCurrentPeriodId();
     uint256 rewardPerMember = period[currentPeriodId].rewardPerMember;
@@ -471,11 +472,11 @@ contract YALDistributor is OwnableAndInitializable {
    * @dev Claims member funds
    * @params _memberAddress to claim funds for
    */
-  function claimFunds(address _memberAddress) external handlePeriodTransitionIfRequired whenNotPaused {
+  function claimFunds() external handlePeriodTransitionIfRequired whenNotPaused {
     uint256 currentPeriodId = getCurrentPeriodId();
 
     _claimFunds(
-      _memberAddress,
+      msg.sender,
       period[currentPeriodId].rewardPerMember,
       currentPeriodId,
       getCurrentPeriodBeginsAt()
