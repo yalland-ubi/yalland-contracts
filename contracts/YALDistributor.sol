@@ -35,7 +35,13 @@ contract YALDistributor is OwnableAndInitializable {
   event ClaimVerifierReward(uint256 indexed periodId, address to);
   event EnableMember(bytes32 indexed memberId, address indexed memberAddress);
   event DisableMember(bytes32 indexed memberId, address indexed memberAddress);
-  event PeriodChange(uint256 newPeriodId, uint256 rewardPerMember, uint256 verifierReward, uint256 activeMemberCount);
+  event PeriodChange(
+    uint256 newPeriodId,
+    uint256 volume,
+    uint256 rewardPerMember,
+    uint256 verifierReward,
+    uint256 activeMemberCount
+  );
   event Pause();
   event Unpause();
   event SetPeriodVolume(uint256 oldPeriodVolume, uint256 newPeriodVolume);
@@ -107,7 +113,13 @@ contract YALDistributor is OwnableAndInitializable {
       assert(currentPeriodRewardPerMember > 0);
       currentPeriod.rewardPerMember = currentPeriodRewardPerMember;
 
-      emit PeriodChange(currentPeriodId, currentPeriodRewardPerMember, currentPeriod.verifierReward, activeMemberCount);
+      emit PeriodChange(
+        currentPeriodId,
+        periodVolume,
+        currentPeriodRewardPerMember,
+        currentPeriod.verifierReward,
+        activeMemberCount
+      );
     }
 
     _;

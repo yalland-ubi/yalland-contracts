@@ -317,6 +317,7 @@ describe('YALDistribution Integration Tests', () => {
             let res = await dist.addMember(memberId3, dan, { from: verifier });
 
             assert.equal(getEventArg(res, 'PeriodChange', 'newPeriodId'), 0);
+            assert.equal(getEventArg(res, 'PeriodChange', 'volume'), ether(250 * 1000));
             assert.equal(getEventArg(res, 'PeriodChange', 'verifierReward'), ether(25 * 1000));
             assert.equal(getEventArg(res, 'PeriodChange', 'rewardPerMember'), ether(112.5 * 1000));
             assert.equal(getEventArg(res, 'PeriodChange', 'activeMemberCount'), 2);
@@ -334,6 +335,7 @@ describe('YALDistribution Integration Tests', () => {
             res = await dist.claimFunds(dan, { from: anyone });
 
             assert.equal(getEventArg(res, 'PeriodChange', 'newPeriodId'), 1);
+            assert.equal(getEventArg(res, 'PeriodChange', 'volume'), ether(1000 * 1000));
             assert.equal(getEventArg(res, 'PeriodChange', 'verifierReward'), ether(400 * 1000));
             assert.equal(getEventArg(res, 'PeriodChange', 'rewardPerMember'), ether(200 * 1000));
             assert.equal(getEventArg(res, 'PeriodChange', 'activeMemberCount'), 3);
