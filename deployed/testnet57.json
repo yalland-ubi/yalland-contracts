@@ -2620,7 +2620,7 @@
       "signature": "0xad75160a"
     }
   ],
-  "testCoinTokenAddress": "0xa603F3a3dBa31A74416ad9f711add5340A10c436",
+  "testCoinTokenAddress": "0x10D9C4510c5c6ff787764FA47D628add37e19908",
   "testCoinTokenAbi": [
     {
       "inputs": [
@@ -3482,7 +3482,7 @@
       "signature": "0xe941fa78"
     }
   ],
-  "testYalDistributorAddress": "0x502e077bd3199F1c8Cd72d2d09BbD3877F753022",
+  "testYalDistributorAddress": "0xc30DdC2fa71f6d0a8227F1537249Cf839ee17ed8",
   "testYalDistributorAbi": [
     {
       "inputs": [],
@@ -4393,19 +4393,13 @@
     },
     {
       "constant": false,
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_memberAddress",
-          "type": "address"
-        }
-      ],
+      "inputs": [],
       "name": "claimFunds",
       "outputs": [],
       "payable": false,
       "stateMutability": "nonpayable",
       "type": "function",
-      "signature": "0x693d0df2"
+      "signature": "0xac307773"
     },
     {
       "constant": false,
@@ -4518,6 +4512,50 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0x4a4ded24"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_memberId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "isCurrentPeriodClaimedByMember",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x2cbd2c80"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_memberAddress",
+          "type": "address"
+        }
+      ],
+      "name": "isCurrentPeriodClaimedByAddress",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xbbc43daf"
     },
     {
       "constant": true,
