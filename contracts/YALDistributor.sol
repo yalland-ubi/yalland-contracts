@@ -31,7 +31,7 @@ contract YALDistributor is OwnableAndInitializable {
   event AddMember(bytes32 memberId, address memberAddress);
   event ChangeMemberAddress(bytes32 indexed memberId, address from, address to);
   event ChangeMyAddress(bytes32 indexed memberId, address from, address to);
-  event ClaimFunds(bytes32 indexed memberId, uint256 indexed periodId, uint256 amount);
+  event ClaimFunds(bytes32 indexed memberId, address indexed addr, uint256 indexed periodId, uint256 amount);
   event ClaimVerifierReward(uint256 indexed periodId, address to);
   event EnableMember(bytes32 indexed memberId, address indexed memberAddress);
   event DisableMember(bytes32 indexed memberId, address indexed memberAddress);
@@ -426,47 +426,89 @@ contract YALDistributor is OwnableAndInitializable {
   // MEMBER INTERFACE
 
   /*
-   * @dev Claims member funds
+   * @dev Claims multiple member funds
+   * @params _memberAddresses to claim funds for
    */
-  function claimFunds() external handlePeriodTransitionIfRequired whenNotPaused {
-    bytes32 memberId = memberAddress2Id[msg.sender];
-    Member storage member = member[memberId];
+  function claimFundsMultiple(
+    address[] calldata _memberAddresses
+  )
+    external
+    handlePeriodTransitionIfRequired
+    whenNotPaused
+  {
+    uint256 currentPeriodId = getCurrentPeriodId();
+    uint256 rewardPerMember = period[currentPeriodId].rewardPerMember;
+    uint256 currentPeriodBeginsAt = getCurrentPeriodBeginsAt();
+
+    uint256 len = _memberAddresses.length;
+
+    for (uint256 i = 0; i < len; i++) {
+      _claimFunds(
+        _memberAddresses[i],
+        rewardPerMember,
+        currentPeriodId,
+        currentPeriodBeginsAt
+      );
+    }
+  }
+
+  /*
+   * @dev Claims member funds
+   * @params _memberAddress to claim funds for
+   */
+  function claimFunds(address _memberAddress) external handlePeriodTransitionIfRequired whenNotPaused {
     uint256 currentPeriodId = getCurrentPeriodId();
 
-    require(member.addr == msg.sender, "Address doesn't match");
+    _claimFunds(
+      _memberAddress,
+      period[currentPeriodId].rewardPerMember,
+      currentPeriodId,
+      getCurrentPeriodBeginsAt()
+    );
+  }
+
+  function _claimFunds(
+    address _memberAddress,
+    uint256 _rewardPerMember,
+    uint256 _currentPeriodId,
+    uint256 _currentPeriodStart
+  )
+    internal
+  {
+    bytes32 memberId = memberAddress2Id[_memberAddress];
+    Member storage member = member[memberId];
+
+    require(member.addr == _memberAddress, "Address doesn't match");
     require(member.active == true, "Not active member");
 
-    require(member.createdAt < getCurrentPeriodBeginsAt(), "Can't assign rewards for the creation period");
-    require(member.claimedPeriods[currentPeriodId] == false, "Already claimed for the current period");
+    require(member.createdAt < _currentPeriodStart, "Can't assign rewards for the creation period");
+    require(member.claimedPeriods[_currentPeriodId] == false, "Already claimed for the current period");
 
-    if (member.lastDisabledAt != 0 && currentPeriodId != 0) {
+    if (member.lastDisabledAt != 0 && _currentPeriodId != 0) {
       // last disabled at
       uint256 ld = member.lastDisabledAt;
       // last enabled at
       uint256 le = member.lastEnabledAt;
-      uint256 currentPeriodStart = getCurrentPeriodBeginsAt();
       uint256 previousPeriodStart = getPreviousPeriodBeginsAt();
 
       require(
         // both disabled and enabled in the current period
-        (ld >= currentPeriodStart && le >= currentPeriodStart)
+        (ld >= _currentPeriodStart && le >= _currentPeriodStart)
         // both disabled and enabled in the previous period
-        || (ld >= previousPeriodStart && le >= previousPeriodStart && ld < currentPeriodStart && le < currentPeriodStart)
+        || (ld >= previousPeriodStart && le >= previousPeriodStart && ld < _currentPeriodStart && le < _currentPeriodStart)
         // both disabled and enabled before the current period started
-        || (ld < currentPeriodStart && le < currentPeriodStart),
+        || (ld < _currentPeriodStart && le < _currentPeriodStart),
         "One period should be skipped after re-enabling"
       );
     }
 
-    member.claimedPeriods[currentPeriodId] = true;
+    member.claimedPeriods[_currentPeriodId] = true;
 
-    uint256 rewardPerMember = period[currentPeriodId].rewardPerMember;
+    member.totalClaimed = member.totalClaimed.add(_rewardPerMember);
 
-    member.totalClaimed = member.totalClaimed.add(rewardPerMember);
+    token.mint(_memberAddress, _rewardPerMember);
 
-    token.mint(msg.sender, period[currentPeriodId].rewardPerMember);
-
-    emit ClaimFunds(memberId, currentPeriodId, rewardPerMember);
+    emit ClaimFunds(memberId, _memberAddress, _currentPeriodId, _rewardPerMember);
   }
 
   /*

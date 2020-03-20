@@ -21,7 +21,7 @@ const { ether, now, int, increaseTime, assertRevert, zeroAddress, getResTimestam
 const keccak256 = web3.utils.soliditySha3;
 
 describe('YALDistributor Unit tests', () => {
-    const [verifier, alice, bob, charlie, dan, eve] = accounts;
+    const [verifier, alice, bob, charlie, dan, eve, anyone] = accounts;
 
     // 7 days
     const periodLength = 7 * 24 * 60 * 60;
@@ -653,7 +653,7 @@ describe('YALDistributor Unit tests', () => {
             });
         });
 
-        describe('#claimFunds()', () => {
+        describe('#claimFundsMultiple()', () => {
             beforeEach(async function() {
                 await increaseTime(11);
                 assert.equal(await dist.getCurrentPeriodId(), 0);
@@ -661,22 +661,28 @@ describe('YALDistributor Unit tests', () => {
                 await increaseTime(periodLength);
             });
 
-            it('should allow an active member claiming his reward', async function() {
+            it('should allow claiming reward for an active member', async function() {
                 const charlieBalanceBefore = await coinToken.balanceOf(charlie);
-                await dist.claimFunds({ from: charlie });
+                const danBalanceBefore = await coinToken.balanceOf(dan);
+                await dist.claimFundsMultiple([charlie, dan], { from: anyone });
                 const charlieBalanceAfter = await coinToken.balanceOf(charlie);
+                const danBalanceAfter = await coinToken.balanceOf(dan);
 
                 assertErc20BalanceChanged(charlieBalanceBefore, charlieBalanceAfter, ether(75 * 1000));
+                assertErc20BalanceChanged(danBalanceBefore, danBalanceAfter, ether(75 * 1000));
             });
 
             it('should not allow claiming reward twice a period', async function() {
-                await dist.claimFunds({ from: charlie });
-                await assertRevert(dist.claimFunds({ from: charlie }), 'Already claimed for the current period');
+                await dist.claimFunds(charlie, { from: anyone });
+                await assertRevert(
+                    dist.claimFundsMultiple([charlie, dan], { from: alice }),
+                    'Already claimed for the current period'
+                );
             });
 
-            it('should deny non-active member claiming funds', async function() {
+            it('should deny claiming a reward for a non-active member', async function() {
                 await dist.disableMembers([charlie], { from: verifier });
-                await assertRevert(dist.claimFunds({ from: charlie }), ' Not active member');
+                await assertRevert(dist.claimFundsMultiple([charlie, dan], { from: anyone }), ' Not active member');
             });
 
             it('should increase totalClaimed value on each successful claim', async function() {
@@ -684,14 +690,14 @@ describe('YALDistributor Unit tests', () => {
                 assert.equal((await dist.member(memberId2)).totalClaimed, 0);
 
                 // P1
-                await dist.claimFunds({ from: charlie });
+                await dist.claimFundsMultiple([charlie], { from: charlie });
                 assert.equal(await dist.getCurrentPeriodId(), 1);
                 assert.equal((await dist.period(1)).rewardPerMember, ether(75 * 1000));
                 assert.equal((await dist.member(memberId2)).totalClaimed, ether(75 * 1000));
 
                 // P2
                 await increaseTime(periodLength);
-                await dist.claimFunds({ from: charlie });
+                await dist.claimFundsMultiple([charlie], { from: charlie });
                 assert.equal(await dist.getCurrentPeriodId(), 2);
                 assert.equal((await dist.period(2)).rewardPerMember, ether(75 * 1000));
                 assert.equal((await dist.member(memberId2)).totalClaimed, ether(2 * 75 * 1000));
@@ -700,7 +706,61 @@ describe('YALDistributor Unit tests', () => {
 
                 // P3
                 await increaseTime(periodLength);
-                await dist.claimFunds({ from: charlie });
+                await dist.claimFundsMultiple([charlie], { from: charlie });
+                assert.equal(await dist.getCurrentPeriodId(), 3);
+                assert.equal((await dist.period(3)).rewardPerMember, ether(112.5 * 1000));
+                assert.equal((await dist.member(memberId2)).totalClaimed, ether((2 * 75 + 112.5) * 1000));
+            });
+        });
+
+        describe('#claimFunds()', () => {
+            beforeEach(async function() {
+                await increaseTime(11);
+                assert.equal(await dist.getCurrentPeriodId(), 0);
+                await dist.addMembers([memberId1, memberId2, memberId3], [bob, charlie, dan], { from: verifier });
+                await increaseTime(periodLength);
+            });
+
+            it('should allow claiming reward for an active member', async function() {
+                const charlieBalanceBefore = await coinToken.balanceOf(charlie);
+                await dist.claimFunds(charlie, { from: anyone });
+                const charlieBalanceAfter = await coinToken.balanceOf(charlie);
+
+                assertErc20BalanceChanged(charlieBalanceBefore, charlieBalanceAfter, ether(75 * 1000));
+            });
+
+            it('should not allow claiming reward twice a period', async function() {
+                await dist.claimFunds(charlie, { from: anyone });
+                await assertRevert(dist.claimFunds(charlie, { from: alice }), 'Already claimed for the current period');
+            });
+
+            it('should deny claiming a reward for a non-active member', async function() {
+                await dist.disableMembers([charlie], { from: verifier });
+                await assertRevert(dist.claimFunds(charlie, { from: anyone }), ' Not active member');
+            });
+
+            it('should increase totalClaimed value on each successful claim', async function() {
+                assert.equal((await dist.period(0)).rewardPerMember, 0);
+                assert.equal((await dist.member(memberId2)).totalClaimed, 0);
+
+                // P1
+                await dist.claimFunds(charlie, { from: charlie });
+                assert.equal(await dist.getCurrentPeriodId(), 1);
+                assert.equal((await dist.period(1)).rewardPerMember, ether(75 * 1000));
+                assert.equal((await dist.member(memberId2)).totalClaimed, ether(75 * 1000));
+
+                // P2
+                await increaseTime(periodLength);
+                await dist.claimFunds(charlie, { from: charlie });
+                assert.equal(await dist.getCurrentPeriodId(), 2);
+                assert.equal((await dist.period(2)).rewardPerMember, ether(75 * 1000));
+                assert.equal((await dist.member(memberId2)).totalClaimed, ether(2 * 75 * 1000));
+
+                await dist.disableMembers([bob], { from: verifier });
+
+                // P3
+                await increaseTime(periodLength);
+                await dist.claimFunds(charlie, { from: charlie });
                 assert.equal(await dist.getCurrentPeriodId(), 3);
                 assert.equal((await dist.period(3)).rewardPerMember, ether(112.5 * 1000));
                 assert.equal((await dist.member(memberId2)).totalClaimed, ether((2 * 75 + 112.5) * 1000));
@@ -802,7 +862,7 @@ describe('YALDistributor Unit tests', () => {
                 assert.equal(await dist.getCurrentPeriodId(), 0);
                 assert.equal(await dist.isPeriodClaimedByMember(memberId1, 0), false);
 
-                await dist.claimFunds({ from: bob });
+                await dist.claimFunds(bob, { from: bob });
 
                 assert.equal(await dist.isPeriodClaimedByMember(memberId1, 0), true);
 
@@ -811,7 +871,7 @@ describe('YALDistributor Unit tests', () => {
                 assert.equal(await dist.getCurrentPeriodId(), 1);
                 assert.equal(await dist.isPeriodClaimedByMember(memberId1, 1), false);
 
-                await dist.claimFunds({ from: bob });
+                await dist.claimFunds(bob, { from: bob });
 
                 assert.equal(await dist.isPeriodClaimedByMember(memberId1, 1), true);
             });
@@ -826,7 +886,7 @@ describe('YALDistributor Unit tests', () => {
                 assert.equal(await dist.getCurrentPeriodId(), 0);
                 assert.equal(await dist.isPeriodClaimedByAddress(bob, 0), false);
 
-                await dist.claimFunds({ from: bob });
+                await dist.claimFunds(bob, { from: bob });
 
                 assert.equal(await dist.isPeriodClaimedByAddress(bob, 0), true);
 
@@ -835,7 +895,7 @@ describe('YALDistributor Unit tests', () => {
                 assert.equal(await dist.getCurrentPeriodId(), 1);
                 assert.equal(await dist.isPeriodClaimedByAddress(bob, 1), false);
 
-                await dist.claimFunds({ from: bob });
+                await dist.claimFunds(bob, { from: anyone });
 
                 assert.equal(await dist.isPeriodClaimedByAddress(bob, 1), true);
             });
