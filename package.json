@@ -16,6 +16,7 @@
     "deploy-prod": "yarn && NODE_ENV=production node ./node_modules/.bin/webpack && surge ./dist dcity.surge.sh",
     "build": "yarn && NODE_ENV=production node ./node_modules/.bin/webpack",
     "migrate": "truffle migrate --network testnet57",
+    "migrate-kovan": "truffle migrate --network kovan -f 1001",
     "migrate-test": "truffle migrate --network testnet57 -f 1001"
   },
   "repository": {
@@ -30,9 +31,11 @@
   "homepage": "https://github.com/galtspace/dcity#readme",
   "dependencies": {
     "@galtproject/libs": "git+ssh://git@github.com/galtproject/galtproject-common.git#7639cda",
-    "@galtproject/solidity-test-chest": "https://github.com/galtproject/solidity-test-chest#77e3459",
+    "@galtproject/solidity-test-chest": "https://github.com/galtproject/solidity-test-chest#898238d",
     "@galtproject/utils": "^0.9.1",
     "@openzeppelin/contracts": "2.5.0",
+    "@openzeppelin/gsn-helpers": "^0.2.3",
+    "@openzeppelin/gsn-provider": "^0.1.10",
     "@sentry/browser": "^4.0.0-rc.1",
     "@truffle/hdwallet-provider": "^1.0.28",
     "async": "^2.5.0",
