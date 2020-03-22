@@ -12,6 +12,18 @@ module.exports = {
         defaultGasPrice: 20e9, // Gas price for contract calls (when unspecified)
         artifactsDir: 'build/contracts' // Directory where contract artifacts are stored
     },
+    setupProvider: (baseProvider) => {
+        const { GSNDevProvider } = require('@openzeppelin/gsn-provider');
+        const { accounts } = require('@openzeppelin/test-environment');
 
-    blockGasLimit: 9500000 // Maximum gas per block
+        return new GSNDevProvider(baseProvider, {
+            txfee: 70,
+            useGSN: false,
+            debug: true,
+            ownerAddress: accounts[8],
+            relayerAddress: accounts[9],
+        });
+    },
+
+    blockGasLimit: 9900000 // Maximum gas per block
 };

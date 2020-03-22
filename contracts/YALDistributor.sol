@@ -14,6 +14,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
 import "./interfaces/ICoinToken.sol";
+import "./GSNRecipientUserSignature.sol";
 
 
 /**
@@ -21,7 +22,7 @@ import "./interfaces/ICoinToken.sol";
  * @author Galt Project
  * @notice Mints YAL tokens on request according pre-configured formula
  **/
-contract YALDistributor is OwnableAndInitializable {
+contract YALDistributor is OwnableAndInitializable, GSNRecipientUserSignature {
   using SafeMath for uint256;
   using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -56,10 +57,10 @@ contract YALDistributor is OwnableAndInitializable {
 
   struct Member {
     bool active;
+    address addr;
     uint256 createdAt;
     uint256 lastEnabledAt;
     uint256 lastDisabledAt;
-    address addr;
     uint256 totalClaimed;
     // periodId => claimed
     mapping(uint256 => bool) claimedPeriods;
@@ -150,6 +151,10 @@ contract YALDistributor is OwnableAndInitializable {
     token = ICoinToken(_token);
     periodLength = _periodLength;
     genesisTimestamp = _genesisTimestamp;
+  }
+
+  function _canExecuteRelayedCall(address _caller) internal view returns (bool) {
+    return member[memberAddress2Id[_caller]].active;
   }
 
   // OWNER INTERFACE
@@ -476,7 +481,7 @@ contract YALDistributor is OwnableAndInitializable {
     uint256 currentPeriodId = getCurrentPeriodId();
 
     _claimFunds(
-      msg.sender,
+      _msgSender(),
       period[currentPeriodId].rewardPerMember,
       currentPeriodId,
       getCurrentPeriodBeginsAt()
@@ -532,11 +537,11 @@ contract YALDistributor is OwnableAndInitializable {
    * @param _to address to change to
    */
   function changeMyAddress(address _to) external whenNotPaused {
-    address from = msg.sender;
+    address from = _msgSender();
     bytes32 memberId = memberAddress2Id[from];
     Member storage member = member[memberId];
 
-    require(member.addr == msg.sender, "Only the member allowed");
+    require(member.addr == _msgSender(), "Only the member allowed");
     require(member.createdAt != 0, "Member doesn't exist");
     require(memberAddress2Id[_to] == bytes32(0), "Address is already taken by another member");
 
