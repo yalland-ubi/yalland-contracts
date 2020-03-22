@@ -43,7 +43,6 @@ contract GSNRecipientUserSignature is GSNRecipient {
       address(this) // Prevents replays in multiple recipients
     );
     if (_canExecuteRelayedCall(keccak256(blob).toEthSignedMessageHash().recover(approvalData)) == true) {
-      // TODO: allow only particular method calls
       return _approveRelayedCall();
     } else {
       return _rejectRelayedCall(uint256(GSNRecipientSignatureErrorCodes.INVALID_SIGNER));

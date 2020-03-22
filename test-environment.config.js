@@ -19,7 +19,7 @@ module.exports = {
         return new GSNDevProvider(baseProvider, {
             txfee: 70,
             useGSN: false,
-            debug: true,
+            debug: false,
             ownerAddress: accounts[8],
             relayerAddress: accounts[9],
         });

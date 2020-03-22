@@ -1,3 +1,5 @@
+const { assert } = require('chai');
+
 function helpers(web3) {
     const keccak256 = web3.utils.soliditySha3;
     const { toBN } = web3.utils;
@@ -31,8 +33,17 @@ function helpers(web3) {
         );
     };
 
+    function assertRelayedCall(receipt) {
+        assert.equal(
+            receipt.to,
+            '0xd216153c06e857cd7f72665e0af1d7d82172f494',
+            'The call should be relayed'
+        )
+    }
+
     return {
         approveFunction,
+        assertRelayedCall,
         fixSignature,
     }
 }
