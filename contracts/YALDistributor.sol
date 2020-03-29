@@ -282,12 +282,12 @@ contract YALDistributor is OwnableAndInitializable {
     for (uint256 i = 0; i < len; i++ ) {
       address addr = _memberAddresses[i];
       bytes32 memberId = memberAddress2Id[addr];
-      Member storage member = member[memberId];
-      require(member.active == false, "One of the members is active");
-      require(member.createdAt != 0, "Member doesn't exist");
+      Member storage m = member[memberId];
+      require(m.active == false, "One of the members is active");
+      require(m.createdAt != 0, "Member doesn't exist");
 
-      member.active = true;
-      member.lastEnabledAt = now;
+      m.active = true;
+      m.lastEnabledAt = now;
 
       activeAddressesCache.add(addr);
 
@@ -315,12 +315,12 @@ contract YALDistributor is OwnableAndInitializable {
     for (uint256 i = 0; i < len; i++ ) {
       address addr = _memberAddresses[i];
       bytes32 memberId = memberAddress2Id[addr];
-      Member storage member = member[memberId];
-      require(member.active == true, "One of the members is inactive");
-      require(member.createdAt != 0, "Member doesn't exist");
+      Member storage m = member[memberId];
+      require(m.active == true, "One of the members is inactive");
+      require(m.createdAt != 0, "Member doesn't exist");
 
-      member.active = false;
-      member.lastDisabledAt = now;
+      m.active = false;
+      m.lastDisabledAt = now;
 
       activeAddressesCache.remove(addr);
 
@@ -398,11 +398,11 @@ contract YALDistributor is OwnableAndInitializable {
 
     memberAddress2Id[_memberAddress] = _memberId;
 
-    Member storage member = member[_memberId];
+    Member storage m = member[_memberId];
 
-    member.addr = _memberAddress;
-    member.active = true;
-    member.createdAt = now;
+    m.addr = _memberAddress;
+    m.active = true;
+    m.createdAt = now;
 
     activeAddressesCache.add(_memberAddress);
 
@@ -411,13 +411,14 @@ contract YALDistributor is OwnableAndInitializable {
 
   function _changeMemberAddress(address _memberAddress, address _to) internal {
     bytes32 memberId = memberAddress2Id[_memberAddress];
-    Member storage member = member[memberId];
-    address from = member.addr;
+    Member storage m = member[memberId];
+    address from = m.addr;
 
-    require(member.createdAt != 0, "Member doesn't exist");
+    require(m.createdAt != 0, "Member doesn't exist");
     require(memberAddress2Id[_to] == bytes32(0), "Address is already taken by another member");
+    require(_memberAddress != _to, "Can't migrate to the same address");
 
-    member.addr = _to;
+    m.addr = _to;
 
     memberAddress2Id[from] = bytes32(0);
     memberAddress2Id[_to] = memberId;
@@ -496,19 +497,19 @@ contract YALDistributor is OwnableAndInitializable {
     internal
   {
     bytes32 memberId = memberAddress2Id[_memberAddress];
-    Member storage member = member[memberId];
+    Member storage m = member[memberId];
 
-    require(member.addr == _memberAddress, "Address doesn't match");
-    require(member.active == true, "Not active member");
+    require(m.addr == _memberAddress, "Address doesn't match");
+    require(m.active == true, "Not active member");
 
-    require(member.createdAt < _currentPeriodStart, "Can't assign rewards for the creation period");
-    require(member.claimedPeriods[_currentPeriodId] == false, "Already claimed for the current period");
+    require(m.createdAt < _currentPeriodStart, "Can't assign rewards for the creation period");
+    require(m.claimedPeriods[_currentPeriodId] == false, "Already claimed for the current period");
 
-    if (member.lastDisabledAt != 0 && _currentPeriodId != 0) {
+    if (m.lastDisabledAt != 0 && _currentPeriodId != 0) {
       // last disabled at
-      uint256 ld = member.lastDisabledAt;
+      uint256 ld = m.lastDisabledAt;
       // last enabled at
-      uint256 le = member.lastEnabledAt;
+      uint256 le = m.lastEnabledAt;
       uint256 previousPeriodStart = getPreviousPeriodBeginsAt();
 
       require(
@@ -522,9 +523,9 @@ contract YALDistributor is OwnableAndInitializable {
       );
     }
 
-    member.claimedPeriods[_currentPeriodId] = true;
+    m.claimedPeriods[_currentPeriodId] = true;
 
-    member.totalClaimed = member.totalClaimed.add(_rewardPerMember);
+    m.totalClaimed = m.totalClaimed.add(_rewardPerMember);
 
     token.mint(_memberAddress, _rewardPerMember);
 
@@ -538,13 +539,14 @@ contract YALDistributor is OwnableAndInitializable {
   function changeMyAddress(address _to) external whenNotPaused {
     address from = _msgSender();
     bytes32 memberId = memberAddress2Id[from];
-    Member storage member = member[memberId];
+    Member storage m = member[memberId];
 
-    require(member.addr == _msgSender(), "Only the member allowed");
-    require(member.createdAt != 0, "Member doesn't exist");
+    require(m.addr == _msgSender(), "Only the member allowed");
+    require(m.createdAt != 0, "Member doesn't exist");
     require(memberAddress2Id[_to] == bytes32(0), "Address is already taken by another member");
+    require(_msgSender() != _to, "Can't migrate to the same address");
 
-    member.addr = _to;
+    m.addr = _to;
 
     memberAddress2Id[from] = bytes32(0);
     memberAddress2Id[_to] = memberId;
