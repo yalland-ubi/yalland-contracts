@@ -214,6 +214,10 @@ export default {
                 return $contracts.$city.addRoleTo(sendOptions(), address, role);
             },
 
+            async removeCityRole(address, role) {
+                return $contracts.$city.removeRoleFrom(sendOptions(), address, role);
+            },
+
             async sendCityContractMethod(methodName, args) {
                 return $contracts.$city.sendMethodWithArgs(sendOptions(), methodName, args);
             },

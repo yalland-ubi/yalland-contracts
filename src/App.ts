@@ -177,6 +177,9 @@ export default {
             addCityRole: (address, role) => {
                 return this.$galtUser.addCityRole(address, role);
             },
+            removeCityRole: (address, role) => {
+                return this.$galtUser.removeCityRole(address, role);
+            },
             sendCityContractMethod: (methodName, args = []) => {
                 return this.$galtUser.sendCityContractMethod(methodName, args);
             },
