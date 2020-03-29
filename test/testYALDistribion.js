@@ -25,7 +25,7 @@ const { approveFunction } = require('./helpers')(web3);
 
 const keccak256 = web3.utils.soliditySha3;
 
-describe('YALDistribution Integration Tests', () => {
+describe.skip('YALDistribution Integration Tests', () => {
     const [verifier, alice, bob, charlie, dan, eve, anyone] = accounts;
 
     // 7 days

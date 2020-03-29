@@ -646,7 +646,7 @@ describe('YALDistributor Unit tests', () => {
                 );
             });
 
-            it('should allow an active member changing his address using GSN', async function() {
+            it.skip('should allow an active member changing his address using GSN', async function() {
                 assert.equal(await dist.memberAddress2Id(bob), memberId1);
                 assert.equal(
                     await dist.memberAddress2Id(alice),
@@ -765,7 +765,7 @@ describe('YALDistributor Unit tests', () => {
                 assertErc20BalanceChanged(charlieBalanceBefore, charlieBalanceAfter, ether(75 * 1000));
             });
 
-            it('should allow claiming reward for an active member using GSN', async function() {
+            it.skip('should allow claiming reward for an active member using GSN', async function() {
                 const charlieBalanceBefore = await coinToken.balanceOf(charlie);
                 const { receipt } = await dist.claimFunds({ from: charlie, useGSN: true });
                 assertRelayedCall(receipt);

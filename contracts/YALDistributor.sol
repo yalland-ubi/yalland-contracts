@@ -14,7 +14,6 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
 import "./interfaces/ICoinToken.sol";
-import "./GSNRecipientSigned.sol";
 
 
 /**
@@ -22,7 +21,7 @@ import "./GSNRecipientSigned.sol";
  * @author Galt Project
  * @notice Mints YAL tokens on request according pre-configured formula
  **/
-contract YALDistributor is OwnableAndInitializable, GSNRecipientSigned {
+contract YALDistributor is OwnableAndInitializable {
   using SafeMath for uint256;
   using EnumerableSet for EnumerableSet.AddressSet;
 
