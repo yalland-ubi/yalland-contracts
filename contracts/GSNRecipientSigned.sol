@@ -4,7 +4,7 @@ import "@openzeppelin/contracts/GSN/GSNRecipient.sol";
 import "@openzeppelin/contracts/cryptography/ECDSA.sol";
 
 
-contract GSNRecipientUserSignature is GSNRecipient {
+contract GSNRecipientSigned is GSNRecipient {
   using ECDSA for bytes32;
 
   enum GSNRecipientSignatureErrorCodes {

@@ -33,9 +33,9 @@ function helpers(web3) {
         );
     };
 
-    function assertRelayedCall(receipt) {
+    function assertRelayedCall(response) {
         assert.equal(
-            receipt.to,
+            response.receipt.to,
             '0xd216153c06e857cd7f72665e0af1d7d82172f494',
             'The call should be relayed'
         )

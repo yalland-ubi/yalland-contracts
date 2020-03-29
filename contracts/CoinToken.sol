@@ -15,9 +15,10 @@ import "@openzeppelin/contracts/token/ERC20/ERC20Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "@galtproject/libs/contracts/traits/Permissionable.sol";
 import "./interfaces/ICoinToken.sol";
+import "./GSNRecipientSigned.sol";
 
 
-contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Detailed, Permissionable {
+contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Detailed, Permissionable, GSNRecipientSigned {
   uint256 public constant INITIAL_SUPPLY = 0;
 
   string public constant MINTER_ROLE = "minter";
@@ -44,7 +45,7 @@ contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Deta
     _addRoleTo(msg.sender, FEE_MANAGER_ROLE);
     // ROLE_MANAGER is assigned to the msg.sender in Permissionable()
   }
-  
+
   modifier hasMintPermission() {
     require(hasRole(_msgSender(), MINTER_ROLE), "Only minter allowed");
     _;
@@ -65,6 +66,10 @@ contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Deta
   modifier onlyPauser() {
     require(hasRole(_msgSender(), PAUSER_ROLE), "Only pauser allowed");
     _;
+  }
+
+  function _canExecuteRelayedCall(address _caller) internal view returns (bool) {
+    return balanceOf(_caller) > 0;
   }
 
   // MANAGER INTERFACE
