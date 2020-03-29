@@ -9,7 +9,6 @@
 
 pragma solidity ^0.5.13;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
@@ -373,9 +372,9 @@ contract YALDistributor is OwnableAndInitializable {
 
     givenPeriod.verifierClaimedReward = true;
 
-    token.mint(_to, givenPeriod.verifierReward);
-
     emit ClaimVerifierReward(_periodId, _to);
+
+    token.mint(_to, givenPeriod.verifierReward);
   }
 
   // VERIFIER INTERNAL METHODS
@@ -527,9 +526,9 @@ contract YALDistributor is OwnableAndInitializable {
 
     m.totalClaimed = m.totalClaimed.add(_rewardPerMember);
 
-    token.mint(_memberAddress, _rewardPerMember);
-
     emit ClaimFunds(memberId, _memberAddress, _currentPeriodId, _rewardPerMember);
+
+    token.mint(_memberAddress, _rewardPerMember);
   }
 
   /*
