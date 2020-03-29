@@ -41,8 +41,7 @@ module.exports = async function (truffle, network, accounts) {
 
         await dist.initialize(
             periodVolume,
-            // verifierAddress
-            deployer,
+            yalDistributorVerifier,
             verifierRewardShare,
 
             coinTokenAddress,
@@ -50,7 +49,6 @@ module.exports = async function (truffle, network, accounts) {
             genesisTimestamp
         );
 
-        await dist.setVerifier(yalDistributorVerifier);
         await dist.transferOwnership(yalDistributorOwner);
 
         console.log('Saving addresses and abi to deployed folder...');
