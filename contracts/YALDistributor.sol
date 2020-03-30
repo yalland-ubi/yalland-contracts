@@ -619,16 +619,16 @@ contract YALDistributor is OwnableAndInitializable {
     uint256 lastDisabledAt,
     uint256 totalClaimed
   ) {
-    bytes32 _id = memberAddress2Id[_memberAddress];
-    Member storage _member = member[_id];
+    bytes32 memberId = memberAddress2Id[_memberAddress];
+    Member storage m = member[memberId];
     return (
-      _id,
-      _member.active,
-      _member.addr,
-      _member.createdAt,
-      _member.lastEnabledAt,
-      _member.lastDisabledAt,
-      _member.totalClaimed
+      memberId,
+      m.active,
+      m.addr,
+      m.createdAt,
+      m.lastEnabledAt,
+      m.lastDisabledAt,
+      m.totalClaimed
     );
   }
 }
