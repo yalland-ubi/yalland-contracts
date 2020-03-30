@@ -22,6 +22,7 @@ module.exports = async function (truffle, network, accounts) {
     }
     const data = JSON.parse(fs.readFileSync(`${__dirname}/../deployed/${network}.json`).toString());
 
+
     // User1 private: 849381f70496d2d13ceb5ca5c07fb88445df8d5f78492ffa2d318b7d6118a933
     // User1 address: 111119454839c655ecbf662a292de4fc597a9f44
     // User2 private: 83e4b681814f3bbe09952d94999e194c25a52e5c3ebf36b09d77f16ff8a10da8
@@ -29,9 +30,11 @@ module.exports = async function (truffle, network, accounts) {
     // User3 private: 53fc51359ec13ead43b3a31253063188c13c82ec4769dfdcc17dcc37edcacfd6
     // User3 address: 3333331e386a009d9538e759a92ddb37f8da4852
 
-    const beneficiary = '0x15d9bb6e47ef19fdf4e2e67c95ed997588c3fd37';
+
+
+    const beneficiary = '0x699224Cc2b2D2DDF8bc7852582541cF4DdC4F77f';
     truffle.then(async () => {
-        const deployer = truffle.networks.testnet57.from;
+        const deployer = truffle.networks.kovan.from;
         console.log('deployer address:', deployer);
 
         console.log('Create contract instances...');
@@ -57,22 +60,24 @@ module.exports = async function (truffle, network, accounts) {
             genesisTimestamp
         );
 
-        await coinToken.setTransferFee(web3.utils.toWei('0.02', 'szabo'));
-        await coinToken.addRoleTo(dist.address, "minter");
+        await Promise.all([
+            coinToken.setTransferFee(web3.utils.toWei('0.02', 'szabo')),
+            coinToken.addRoleTo(dist.address, "minter"),
+            dist.addMembersBeforeGenesis(
+                [
+                    keccak256('user1'),
+                    keccak256('user2'),
+                    keccak256('user3'),
+                ],
+                [
+                    '111119454839c655ecbf662a292de4fc597a9f44',
+                    '2222ebc798ebe6517adf90483d1ca69b5276978b',
+                    '3333331e386a009d9538e759a92ddb37f8da4852'
+                ]),
+            coinToken.addRoleTo(beneficiary, await coinToken.ROLE_ROLE_MANAGER())
+        ]);
 
-        await dist.addMembersBeforeGenesis(
-            [
-                keccak256('user1'),
-                keccak256('user2'),
-                keccak256('user3'),
-            ],
-            [
-                '111119454839c655ecbf662a292de4fc597a9f44',
-                '2222ebc798ebe6517adf90483d1ca69b5276978b',
-                '3333331e386a009d9538e759a92ddb37f8da4852'
-            ]);
 
-        await coinToken.addRoleTo(beneficiary, await coinToken.ROLE_ROLE_MANAGER());
         await coinToken.removeRoleFrom(deployer, await coinToken.ROLE_ROLE_MANAGER());
         await dist.setVerifier(beneficiary);
         await dist.transferOwnership(beneficiary);

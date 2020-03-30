@@ -7,8 +7,12 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-const { accounts, defaultSender, contract, web3 } = require('@openzeppelin/test-environment');
+const { accounts, contract, web3 } = require('@openzeppelin/test-environment');
 const { assert } = require('chai');
+const {
+    deployRelayHub,
+    fundRecipient,
+} = require('@openzeppelin/gsn-helpers');
 
 const CoinToken = contract.fromArtifact('CoinToken');
 const YALDistributor = contract.fromArtifact('YALDistributor');
@@ -16,11 +20,12 @@ const YALDistributor = contract.fromArtifact('YALDistributor');
 CoinToken.numberFormat = 'String';
 YALDistributor.numberFormat = 'String';
 
-const { ether, now, getEventArg, increaseTime, assertRevert } = require('@galtproject/solidity-test-chest')(web3);
+const { ether, now, getEventArg, increaseTime, assertRevert, assertGsnReject } = require('@galtproject/solidity-test-chest')(web3);
+const { approveFunction } = require('./helpers')(web3);
 
 const keccak256 = web3.utils.soliditySha3;
 
-describe('YALDistribution Integration Tests', () => {
+describe.skip('YALDistribution Integration Tests', () => {
     const [verifier, alice, bob, charlie, dan, eve, anyone] = accounts;
 
     // 7 days
@@ -56,6 +61,12 @@ describe('YALDistribution Integration Tests', () => {
         await coinToken.mint(alice, ether(baseAliceBalance));
         await coinToken.setTransferFee(web3.utils.toWei(feePercent.toString(), 'szabo'));
         await coinToken.addRoleTo(dist.address, "minter");
+
+        // this will affect on dist provider too
+        coinToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
+
+        await deployRelayHub(web3);
+        await fundRecipient(web3, { recipient: dist.address, amount: ether(1) });
     });
 
     it('should not allow 2nd initialize call', async function() {
@@ -74,16 +85,23 @@ describe('YALDistribution Integration Tests', () => {
     });
 
     it('should allow single member claiming his funds', async function() {
-        // before genesis
-        await assertRevert(dist.claimFunds({ from: bob }), 'Contract not initiated yet');
+        await assertGsnReject(
+            dist.claimFunds({ from: bob, useGSN: true }),
+            'Contract not initiated yet'
+        );
+        await assertRevert(dist.claimFunds({ from: bob, useGSN: false }), 'Contract not initiated yet');
         await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
 
-        await increaseTime(11);
+        const member = await dist.getMemberByAddress(bob);
+        assert.equal(member.id, memberId1);
+        assert.equal(member.addr, bob);
+
+        await increaseTime(21);
 
         // period #0
         assert.equal(await dist.getCurrentPeriodId(), 0);
 
-        await dist.claimFunds({ from: bob });
+        await dist.claimFunds({ from: bob, useGSN: true });
         await assertRevert(dist.claimFunds({ from: bob }), 'Already claimed for the current period');
 
         let res = await dist.period(0);
@@ -94,7 +112,7 @@ describe('YALDistribution Integration Tests', () => {
         await increaseTime(11 + periodLength);
 
         await dist.claimFunds({ from: bob });
-        await assertRevert(dist.claimFunds({ from: bob }), 'Already claimed for the current period');
+        await assertRevert(dist.claimFunds({ from: bob, useGSN: true }), 'Already claimed for the current period');
 
         res = await dist.period(1);
         assert.equal(res.verifierReward, ether(25 * 1000));
@@ -131,7 +149,7 @@ describe('YALDistribution Integration Tests', () => {
         // period #1
         await increaseTime(11 + periodLength);
 
-        await dist.claimFunds({ from: bob });
+        await dist.claimFunds({ from: bob, useGSN: true });
         await assertRevert(dist.claimFunds({ from: bob }), 'Already claimed for the current period');
 
         res = await dist.period(1);
@@ -148,7 +166,7 @@ describe('YALDistribution Integration Tests', () => {
         it('should allow claiming a reward only once if disabled/enabled in the same period', async function() {
             // P1
             assert.equal(await dist.getCurrentPeriodId(), 1);
-            await dist.claimFunds({ from: bob });
+            await dist.claimFunds({ from: bob, useGSN: true });
 
             let res = await dist.period(1);
             assert.equal(res.rewardPerMember, ether(75 * 1000));
@@ -169,7 +187,7 @@ describe('YALDistribution Integration Tests', () => {
 
         it('should allow claiming reward after being disabled/enabled', async function() {
             // P1
-            await dist.claimFunds({ from: bob });
+            await dist.claimFunds({ from: bob, useGSN: true });
 
             let res = await dist.period(1);
             assert.equal(res.rewardPerMember, ether(75 * 1000));
@@ -191,7 +209,7 @@ describe('YALDistribution Integration Tests', () => {
         it('should deny me claiming a reward if disabled at P1 and enabled at P2', async function() {
             // P1
             assert.equal(await dist.getCurrentPeriodId(), 1);
-            await dist.claimFunds({ from: bob });
+            await dist.claimFunds({ from: bob, useGSN: true });
 
             await dist.disableMembers([bob], { from: verifier });
             await increaseTime(periodLength);

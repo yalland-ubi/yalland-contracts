@@ -9,9 +9,14 @@
 
 const { accounts, contract, web3 } = require('@openzeppelin/test-environment');
 const { assert } = require('chai');
+const {
+    deployRelayHub,
+    fundRecipient,
+} = require('@openzeppelin/gsn-helpers');
 
 const CoinToken = contract.fromArtifact('CoinToken');
 const YALDistributor = contract.fromArtifact('YALDistributor');
+const { approveFunction, assertRelayedCall } = require('../helpers')(web3);
 
 CoinToken.numberFormat = 'String';
 YALDistributor.numberFormat = 'String';
@@ -55,6 +60,12 @@ describe('YALDistributor Unit tests', () => {
         await coinToken.mint(alice, ether(baseAliceBalance));
         await coinToken.setTransferFee(web3.utils.toWei(feePercent.toString(), 'szabo'));
         await coinToken.addRoleTo(dist.address, "minter");
+
+        // this will affect on dist provider too
+        coinToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
+
+        await deployRelayHub(web3);
+        await fundRecipient(web3, { recipient: dist.address, amount: ether(1) });
     });
 
     describe('Verifier Interface', () => {
@@ -635,6 +646,27 @@ describe('YALDistributor Unit tests', () => {
                 );
             });
 
+            it.skip('should allow an active member changing his address using GSN', async function() {
+                assert.equal(await dist.memberAddress2Id(bob), memberId1);
+                assert.equal(
+                    await dist.memberAddress2Id(alice),
+                    '0x0000000000000000000000000000000000000000000000000000000000000000'
+                );
+
+                const { receipt } = await dist.changeMyAddress(alice, { from: bob, useGSN: true });
+                assertRelayedCall(receipt);
+
+                const details = await dist.member(memberId1);
+                assert.equal(details.active, true);
+                assert.equal(details.addr, alice);
+
+                assert.equal(await dist.memberAddress2Id(alice), memberId1);
+                assert.equal(
+                    await dist.memberAddress2Id(bob),
+                    '0x0000000000000000000000000000000000000000000000000000000000000000'
+                );
+            });
+
             it('should allow inactive member changing his address', async function() {
                 await dist.disableMembers([bob], { from: verifier });
                 await dist.changeMyAddress(alice, { from: bob });
@@ -728,6 +760,15 @@ describe('YALDistributor Unit tests', () => {
             it('should allow claiming reward for an active member', async function() {
                 const charlieBalanceBefore = await coinToken.balanceOf(charlie);
                 await dist.claimFunds({ from: charlie });
+                const charlieBalanceAfter = await coinToken.balanceOf(charlie);
+
+                assertErc20BalanceChanged(charlieBalanceBefore, charlieBalanceAfter, ether(75 * 1000));
+            });
+
+            it.skip('should allow claiming reward for an active member using GSN', async function() {
+                const charlieBalanceBefore = await coinToken.balanceOf(charlie);
+                const { receipt } = await dist.claimFunds({ from: charlie, useGSN: true });
+                assertRelayedCall(receipt);
                 const charlieBalanceAfter = await coinToken.balanceOf(charlie);
 
                 assertErc20BalanceChanged(charlieBalanceBefore, charlieBalanceAfter, ether(75 * 1000));
@@ -866,7 +907,7 @@ describe('YALDistributor Unit tests', () => {
                 assert.equal(await dist.getCurrentPeriodId(), 0);
                 assert.equal(await dist.isPeriodClaimedByMember(memberId1, 0), false);
 
-                await dist.claimFunds(bob, { from: bob });
+                await dist.claimFunds({ from: bob });
 
                 assert.equal(await dist.isPeriodClaimedByMember(memberId1, 0), true);
 
@@ -875,7 +916,7 @@ describe('YALDistributor Unit tests', () => {
                 assert.equal(await dist.getCurrentPeriodId(), 1);
                 assert.equal(await dist.isPeriodClaimedByMember(memberId1, 1), false);
 
-                await dist.claimFunds(bob, { from: bob });
+                await dist.claimFunds({ from: bob });
 
                 assert.equal(await dist.isPeriodClaimedByMember(memberId1, 1), true);
             });

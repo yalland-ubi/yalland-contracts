@@ -27,6 +27,26 @@ module.exports = {
             port: 8545,
             network_id: "*" // Match any network id
         },
+        kovan: {
+            // 1 gwei
+            gasPrice: 9000 * 1000 * 1000,
+            // 10M
+            gasLimit: 9 * 1000 * 1000,
+            skipDryRun: true,
+            provider: getProvider('wss://kovan.infura.io/ws/v3/e37391279cc043d29ca318d1bfcfcce1'),
+            // provider: getProvider('wss://wss-rpc.kovan.galtproject.io'),
+            network_id: '*'
+        },
+        yalland: {
+            // 1 gwei
+            gasPrice: 1000 * 1000 * 1000,
+            // 10M
+            gasLimit: 9 * 1000 * 1000,
+            skipDryRun: true,
+            provider: getProvider('wss://server.yalland.com:8646/'),
+            network_id: '*'
+        },
+        // network name deprecated
         testnet57: {
             // 1 gwei
             gasPrice: 1000 * 1000 * 1000,
@@ -52,7 +72,7 @@ module.exports = {
     },
     compilers: {
         solc: {
-            version: 'native',
+            version: process.env.SOLC || 'native',
             settings: {
                 optimizer: {
                     enabled: true,
