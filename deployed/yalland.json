@@ -861,7 +861,7 @@
       "signature": "0xe941fa78"
     }
   ],
-  "yalDistributorAddress": "0x0C5c13B2BD3C67CEd1D6ae2947f53D2b02c03e0c",
+  "yalDistributorAddress": "0x5d02BF9c39eE81abC8b3F2aaC1b30c72038f3C65",
   "yalDistributorAbi": [
     {
       "inputs": [],
@@ -1989,6 +1989,58 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0x581e09ea"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_memberAddress",
+          "type": "address"
+        }
+      ],
+      "name": "getMemberByAddress",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bool",
+          "name": "active",
+          "type": "bool"
+        },
+        {
+          "internalType": "address",
+          "name": "addr",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "createdAt",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "lastEnabledAt",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "lastDisabledAt",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "totalClaimed",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x3dd9899f"
     }
   ]
 }

@@ -92,6 +92,10 @@ describe.skip('YALDistribution Integration Tests', () => {
         await assertRevert(dist.claimFunds({ from: bob, useGSN: false }), 'Contract not initiated yet');
         await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
 
+        const member = await dist.getMemberByAddress(bob);
+        assert.equal(member.id, memberId1);
+        assert.equal(member.addr, bob);
+
         await increaseTime(21);
 
         // period #0

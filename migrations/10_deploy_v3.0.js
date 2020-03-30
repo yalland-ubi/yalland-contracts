@@ -34,7 +34,7 @@ module.exports = async function (truffle, network, accounts) {
         const periodLength = 7 * 24 * 60 * 60;
         // 00:00 30 Mar 2020 UTC+2
         const genesisTimestamp = 1585519200;
-        // 250_000 YAL
+        // 275_000 YAL
         const periodVolume = ether(275 * 1000);
         // 10%
         const verifierRewardShare = ether(10);
