@@ -68,8 +68,9 @@ contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Deta
     _;
   }
 
-  function _canExecuteRelayedCall(address _caller) internal view returns (bool) {
-    return balanceOf(_caller) > 0;
+  function _handleRelayedCall(bytes memory _encodedFunction, address _caller)
+    internal view returns (GSNRecipientSignatureErrorCodes) {
+    return GSNRecipientSignatureErrorCodes.OK;
   }
 
   // MANAGER INTERFACE

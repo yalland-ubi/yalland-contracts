@@ -8,7 +8,9 @@ contract GSNRecipientSigned is GSNRecipient {
   using ECDSA for bytes32;
 
   enum GSNRecipientSignatureErrorCodes {
-    INVALID_SIGNER
+    OK,
+    DENIED,
+    METHOD_NOT_SUPPORTED
   }
 
   constructor() public {}
@@ -42,14 +44,25 @@ contract GSNRecipientSigned is GSNRecipient {
       getHubAddr(), // Prevents replays in multiple RelayHubs
       address(this) // Prevents replays in multiple recipients
     );
-    if (_canExecuteRelayedCall(keccak256(blob).toEthSignedMessageHash().recover(approvalData)) == true) {
+    address signer = keccak256(blob).toEthSignedMessageHash().recover(approvalData);
+
+    GSNRecipientSignatureErrorCodes code = _handleRelayedCall(encodedFunction, signer);
+
+    if (code == GSNRecipientSignatureErrorCodes.OK) {
       return _approveRelayedCall();
     } else {
-      return _rejectRelayedCall(uint256(GSNRecipientSignatureErrorCodes.INVALID_SIGNER));
+      return _rejectRelayedCall(uint256(code));
     }
   }
 
-  function _canExecuteRelayedCall(address _caller) internal view returns (bool);
+  function _handleRelayedCall(bytes memory _encodedFunction, address _caller)
+    internal view returns (GSNRecipientSignatureErrorCodes);
+
+  function getDataSignature(bytes memory _encodedFunction) public view returns (bytes4 signature){
+    assembly {
+      signature := mload(add(_encodedFunction, 0x20))
+    }
+  }
 
   function _preRelayedCall(bytes memory) internal returns (bytes32) {
     // solhint-disable-previous-line no-empty-blocks

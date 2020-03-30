@@ -765,10 +765,10 @@ describe('YALDistributor Unit tests', () => {
                 assertErc20BalanceChanged(charlieBalanceBefore, charlieBalanceAfter, ether(75 * 1000));
             });
 
-            it.skip('should allow claiming reward for an active member using GSN', async function() {
+            it('should allow claiming reward for an active member using GSN', async function() {
                 const charlieBalanceBefore = await coinToken.balanceOf(charlie);
-                const { receipt } = await dist.claimFunds({ from: charlie, useGSN: true });
-                assertRelayedCall(receipt);
+                const res = await dist.claimFunds({ from: charlie, useGSN: true });
+                assertRelayedCall(res);
                 const charlieBalanceAfter = await coinToken.balanceOf(charlie);
 
                 assertErc20BalanceChanged(charlieBalanceBefore, charlieBalanceAfter, ether(75 * 1000));
@@ -945,5 +945,12 @@ describe('YALDistributor Unit tests', () => {
                 assert.equal(await dist.isPeriodClaimedByAddress(bob, 1), true);
             });
         });
+
+        describe('#getDataSignature', async function() {
+            it('should return correct values', async function() {
+                const data = dist.contract.methods.setVerifier(alice).encodeABI();
+                assert.equal(await dist.getDataSignature(data), '0x5437988d');
+            });
+        })
     })
 });

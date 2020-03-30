@@ -13,6 +13,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
 import "./interfaces/ICoinToken.sol";
+import "./GSNRecipientSigned.sol";
 
 
 /**
@@ -20,7 +21,7 @@ import "./interfaces/ICoinToken.sol";
  * @author Galt Project
  * @notice Mints YAL tokens on request according pre-configured formula
  **/
-contract YALDistributor is OwnableAndInitializable {
+contract YALDistributor is OwnableAndInitializable, GSNRecipientSigned {
   using SafeMath for uint256;
   using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -151,8 +152,24 @@ contract YALDistributor is OwnableAndInitializable {
     genesisTimestamp = _genesisTimestamp;
   }
 
-  function _canExecuteRelayedCall(address _caller) internal view returns (bool) {
-    return member[memberAddress2Id[_caller]].active;
+  function _handleRelayedCall(
+    bytes memory _encodedFunction,
+    address _caller
+  )
+    internal
+    view
+    returns (GSNRecipientSignatureErrorCodes)
+  {
+    bytes4 signature = getDataSignature(_encodedFunction);
+    if (signature == YALDistributor(0).claimFunds.selector) {
+      if (member[memberAddress2Id[_caller]].active == true) {
+        return GSNRecipientSignatureErrorCodes.OK;
+      } else {
+        return GSNRecipientSignatureErrorCodes.DENIED;
+      }
+    } else {
+      return GSNRecipientSignatureErrorCodes.METHOD_NOT_SUPPORTED;
+    }
   }
 
   // OWNER INTERFACE

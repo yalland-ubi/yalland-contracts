@@ -25,7 +25,7 @@ const { approveFunction } = require('./helpers')(web3);
 
 const keccak256 = web3.utils.soliditySha3;
 
-describe.skip('YALDistribution Integration Tests', () => {
+describe('YALDistribution Integration Tests', () => {
     const [verifier, alice, bob, charlie, dan, eve, anyone] = accounts;
 
     // 7 days
@@ -85,12 +85,13 @@ describe.skip('YALDistribution Integration Tests', () => {
     });
 
     it('should allow single member claiming his funds', async function() {
-        await assertGsnReject(
+        await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
+
+        await assertRevert(
             dist.claimFunds({ from: bob, useGSN: true }),
-            'Contract not initiated yet'
+            'Contract not initiated yet',
         );
         await assertRevert(dist.claimFunds({ from: bob, useGSN: false }), 'Contract not initiated yet');
-        await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
 
         const member = await dist.getMemberByAddress(bob);
         assert.equal(member.id, memberId1);
