@@ -27,6 +27,14 @@ export default class CoinTokenContract extends EthContract {
             });
     }
 
+    async roleAddedEvents(){
+        return (await this.contractInstance.getPastEvents('RoleAdded', {fromBlock: 0})).map(i => i.returnValues);
+    }
+
+    async roleRemovedEvents(){
+        return (await this.contractInstance.getPastEvents('RoleRemoved', {fromBlock: 0})).map(i => i.returnValues);
+    }
+
     async transferFee(){
         return this.massCallMethod("transferFee")
             .then(async (feeInWei) => {

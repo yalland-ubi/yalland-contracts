@@ -287,6 +287,15 @@ export default class CityContract extends EthContract {
             address);
     }
 
+    async roleAddedEvents(){
+        return (await this.contractInstance.getPastEvents('RoleAdded', {fromBlock: 0})).map(i => i.returnValues);
+    }
+
+    async roleRemovedEvents(){
+        return (await this.contractInstance.getPastEvents('RoleRemoved', {fromBlock: 0})).map(i => i.returnValues);
+    }
+
+
     //
     // async exchangeGaltToEth(sendOptions, galtAmount) {
     //     return this.sendMethod(sendOptions, 'exchangeGaltToEth', GaltData.etherToWei(galtAmount));

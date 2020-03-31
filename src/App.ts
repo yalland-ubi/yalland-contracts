@@ -343,6 +343,11 @@ export default {
                         })
                     }
                 }
+
+                console.log('token roleAddedEvents', await this.$coinTokenContract.roleAddedEvents());
+                console.log('token roleRemovedEvents', await this.$coinTokenContract.roleRemovedEvents());
+                console.log('city roleAddedEvents', await this.$cityContract.roleAddedEvents());
+                console.log('events has role', await this.$coinTokenContract.hasRole('0xf0430bbb78C3c359c22d4913484081A563B86170', 'role_manager'))
             });
         },
 
