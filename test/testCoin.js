@@ -15,31 +15,85 @@ const {
 } = require('@openzeppelin/gsn-helpers');
 
 const CoinToken = contract.fromArtifact('CoinToken');
+const YALDistributor = contract.fromArtifact('YALDistributor');
 
 CoinToken.numberFormat = 'String';
 
-const { ether, assertRevert, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
+const { ether, assertRevert, now, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
 const { approveFunction, assertRelayedCall } = require('./helpers')(web3);
 
+const keccak256 = web3.utils.soliditySha3;
 
-describe('Coin', () => {
-    const [pauser, alice, bob, charlie] = accounts;
+
+describe.only('Coin', () => {
+    const [pauser, alice, bob, charlie, dan, eve, verifier] = accounts;
     const deployer = defaultSender;
 
+    let coinToken;
+    let dist;
+    const periodLength = 7 * 24 * 60 * 60;
+    const periodVolume = ether(250 * 1000);
+    const verifierRewardShare = ether(10);
     const baseAliceBalance = 10000000;
     const feePercent = 0.02;
-    let coinToken;
+    const startAfter = 10;
+    const memberId1 = keccak256('bob');
+    let genesisTimestamp;
 
     beforeEach(async function () {
-        coinToken = await CoinToken.new("Coin token", "COIN", 18, {from: deployer});
+        coinToken = await CoinToken.new(alice, "Coin token", "COIN", 18, {from: deployer});
+        dist = await YALDistributor.new();
+        genesisTimestamp = parseInt(await now(), 10) + startAfter;
 
+        await dist.initialize(
+            periodVolume,
+            verifier,
+            verifierRewardShare,
+
+            coinToken.address,
+            periodLength,
+            genesisTimestamp
+        );
+
+        await coinToken.setDistributor(dist.address);
         await coinToken.mint(alice, ether(baseAliceBalance), {from: deployer});
-        await coinToken.setTransferFee(web3.utils.toWei(feePercent.toString(), 'szabo'), {from: deployer});
+        await coinToken.setTransferFee(ether(feePercent), {from: deployer});
 
-        coinToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
+        await dist.addMembersBeforeGenesis(
+            [keccak256('foo'), keccak256('bar'), keccak256('bazz')],
+            [alice, bob, charlie],
+            { from: verifier }
+            );
+        // coinToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
 
-        await deployRelayHub(web3);
-        await fundRecipient(web3, { recipient: coinToken.address, amount: ether(1) });
+        // await deployRelayHub(web3);
+        // await fundRecipient(web3, { recipient: coinToken.address, amount: ether(1) });
+    });
+
+    describe('#getFeeForAmount()', () => {
+        it('should calculate fees correctly', async function() {
+            await coinToken.setTransferFee(ether(0.02));
+            assert.equal(await coinToken.getFeeForAmount(ether(1)), ether(0.0002));
+
+            await coinToken.setTransferFee(ether(30));
+            assert.equal(await coinToken.getFeeForAmount(ether(1)), ether(0.3));
+        })
+
+        it('should calculate negligible fees correctly', async function() {
+            await coinToken.setTransferFee(ether(20));
+
+            assert.equal(await coinToken.getFeeForAmount(10), 2);
+            assert.equal(await coinToken.getFeeForAmount(8), 1);
+            assert.equal(await coinToken.getFeeForAmount(5), 1);
+            assert.equal(await coinToken.getFeeForAmount(4), 0);
+            assert.equal(await coinToken.getFeeForAmount(1), 0);
+        })
+
+        it('should return 0 for 0 fee', async function() {
+            await coinToken.setTransferFee(0);
+            assert.equal(await coinToken.getFeeForAmount(ether(250)), 0);
+            assert.equal(await coinToken.getFeeForAmount(0), 0);
+        })
     });
 
     describe('Pausable', () => {
@@ -95,6 +149,13 @@ describe('Coin', () => {
             assertErc20BalanceChanged(deployerBalanceBefore, deployerBalanceAfter, ether(transferCoinAmount / 100 * feePercent));
         });
 
+        describe('transfer restrictions', () => {
+            // TODO: define YALDistributor
+            it('should deny transferring if a from field is not active', async function() {
+
+            });
+        });
+
         it('should correct transfer with fee', async function () {
             const transferCoinAmount = 1000;
 
@@ -116,8 +177,8 @@ describe('Coin', () => {
             const contractBalanceAfter = await coinToken.balanceOf(coinToken.address);
 
             assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanaceAfter, ether(-transferCoinAmount));
-            assertErc20BalanceChanged(bobBalanceBefore, bobBalanceAfter, ether(transferCoinAmount - (transferCoinAmount / 100 * feePercent)));
-            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(transferCoinAmount / 100 * feePercent));
+            assertErc20BalanceChanged(bobBalanceBefore, bobBalanceAfter, ether(transferCoinAmount - (transferCoinAmount * feePercent / 100)));
+            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(transferCoinAmount * feePercent / 100 ));
 
             const deployerBalanceBefore = await coinToken.balanceOf(deployer);
             await coinToken.withdrawFee({from: deployer});
@@ -128,7 +189,7 @@ describe('Coin', () => {
     });
 
     describe('#transfer()', () => {
-        it('should correct transfer with fee using GSN', async function () {
+        it.skip('should correct transfer with fee using GSN', async function () {
             const transferCoinAmount = 1000;
 
             const aliceBalanaceBefore = await coinToken.balanceOf(alice);
@@ -167,8 +228,8 @@ describe('Coin', () => {
             const contractBalanceAfter = await coinToken.balanceOf(coinToken.address);
 
             assertErc20BalanceChanged(aliceBalanaceBefore, aliceBalanaceAfter, ether(-transferCoinAmount));
-            assertErc20BalanceChanged(bobBalanaceBefore, bobBalanaceAfter, ether(transferCoinAmount - (transferCoinAmount / 100 * feePercent)));
-            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(transferCoinAmount / 100 * feePercent));
+            assertErc20BalanceChanged(bobBalanaceBefore, bobBalanaceAfter, ether(transferCoinAmount - transferCoinAmount * feePercent / 100));
+            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(transferCoinAmount * feePercent / 100));
 
             const deployerBalanceBefore = await coinToken.balanceOf(deployer);
             await coinToken.withdrawFee({from: deployer});
