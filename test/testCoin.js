@@ -15,31 +15,92 @@ const {
 } = require('@openzeppelin/gsn-helpers');
 
 const CoinToken = contract.fromArtifact('CoinToken');
+const YALDistributor = contract.fromArtifact('YALDistributor');
 
 CoinToken.numberFormat = 'String';
 
-const { ether, assertRevert, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
+const { ether, increaseTime, assertRevert, now, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
 const { approveFunction, assertRelayedCall } = require('./helpers')(web3);
+
+const keccak256 = web3.utils.soliditySha3;
 
 
 describe('Coin', () => {
-    const [pauser, alice, bob, charlie] = accounts;
+    const [pauser, alice, bob, charlie, dan, eve, verifier, transfer_wl_manager] = accounts;
     const deployer = defaultSender;
 
+    let coinToken;
+    let dist;
+    const periodLength = 7 * 24 * 60 * 60;
+    const periodVolume = ether(250 * 1000);
+    const verifierRewardShare = ether(10);
     const baseAliceBalance = 10000000;
     const feePercent = 0.02;
-    let coinToken;
+    const startAfter = 10;
+    const memberId1 = keccak256('bob');
+    let genesisTimestamp;
 
-    beforeEach(async function () {
-        coinToken = await CoinToken.new("Coin token", "COIN", 18, {from: deployer});
-
-        await coinToken.mint(alice, ether(baseAliceBalance), {from: deployer});
-        await coinToken.setTransferFee(web3.utils.toWei(feePercent.toString(), 'szabo'), {from: deployer});
-
-        coinToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
+    before(async function() {
+        dist = await YALDistributor.new();
+        dist.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
 
         await deployRelayHub(web3);
+    });
+
+    beforeEach(async function () {
+        coinToken = await CoinToken.new(alice, "Coin token", "COIN", 18, {from: deployer});
+        dist = await YALDistributor.new();
+        genesisTimestamp = parseInt(await now(), 10) + startAfter;
+
+        await dist.initialize(
+            periodVolume,
+            verifier,
+            verifierRewardShare,
+
+            coinToken.address,
+            periodLength,
+            genesisTimestamp
+        );
+
+        await coinToken.setDistributor(dist.address);
+        await coinToken.mint(alice, ether(baseAliceBalance), {from: deployer});
+        await coinToken.setTransferFee(ether(feePercent), {from: deployer});
+        await coinToken.addRoleTo(transfer_wl_manager, 'transfer_wl_manager');
+
+        await dist.addMembersBeforeGenesis(
+            [keccak256('foo'), keccak256('bar'), keccak256('bazz')],
+            [alice, bob, charlie],
+            { from: verifier }
+            );
+        await increaseTime(20);
+
         await fundRecipient(web3, { recipient: coinToken.address, amount: ether(1) });
+    });
+
+    describe('#getFeeForAmount()', () => {
+        it('should calculate fees correctly', async function() {
+            await coinToken.setTransferFee(ether(0.02));
+            assert.equal(await coinToken.getFeeForAmount(ether(1)), ether(0.0002));
+
+            await coinToken.setTransferFee(ether(30));
+            assert.equal(await coinToken.getFeeForAmount(ether(1)), ether(0.3));
+        })
+
+        it('should calculate negligible fees correctly', async function() {
+            await coinToken.setTransferFee(ether(20));
+
+            assert.equal(await coinToken.getFeeForAmount(10), 2);
+            assert.equal(await coinToken.getFeeForAmount(8), 1);
+            assert.equal(await coinToken.getFeeForAmount(5), 1);
+            assert.equal(await coinToken.getFeeForAmount(4), 0);
+            assert.equal(await coinToken.getFeeForAmount(1), 0);
+        })
+
+        it('should return 0 for 0 fee', async function() {
+            await coinToken.setTransferFee(0);
+            assert.equal(await coinToken.getFeeForAmount(ether(250)), 0);
+            assert.equal(await coinToken.getFeeForAmount(0), 0);
+        })
     });
 
     describe('Pausable', () => {
@@ -50,16 +111,100 @@ describe('Coin', () => {
 
             // approve before paused
             await coinToken.approve(bob, ether(10), { from: alice });
+
             await coinToken.pause({ from: pauser });
+
             await assertRevert(coinToken.transfer(bob, ether(1), { from: alice }), 'paused');
+            await assertRevert(coinToken.transferWithMemo(bob, ether(1), 'hey', { from: alice }), 'paused');
             await assertRevert(coinToken.transferFrom(alice, charlie, ether(1), { from: bob }), 'paused');
+            await assertRevert(coinToken.approve(alice, ether(1), { from: bob }), 'paused');
+
             await coinToken.unpause({ from: pauser });
+
             await coinToken.transfer(bob, ether(1), { from: alice });
+            await coinToken.transferWithMemo(bob, ether(1), 'hey', { from: alice });
             await coinToken.transferFrom(alice, charlie, ether(1), { from: bob });
+            await coinToken.approve(bob, ether(10), { from: alice });
+        });
+    });
+
+    describe('#isMemberValid()', () => {
+        it('should return false for inactive member', async function() {
+            assert.equal(await coinToken.isMemberValid(dan), false);
+        });
+
+        it('should return true if the address is inside YALDistributor active list', async function() {
+            await dist.addMember(keccak256('dan'), dan, { from: verifier });
+            assert.equal(await coinToken.isMemberValid(dan), true);
+        });
+
+        it('should return true if the address is inside coin token whitelist', async function() {
+            await coinToken.setWhitelistAddress(dan, true, { from: transfer_wl_manager });
+            assert.equal(await coinToken.isMemberValid(dan), true);
+        });
+    });
+
+    describe('#SetWhitelistAddress()', () => {
+        it('should deny non wl manager calling the method', async function() {
+            await assertRevert(
+                coinToken.setWhitelistAddress(dan, true, { from: defaultSender }),
+                'Only transfer_wl_manager allowed.'
+            );
+        });
+
+        it('should change wl value', async function() {
+            assert.equal(await coinToken.opsWhitelist(dan), false);
+            await coinToken.setWhitelistAddress(dan, true, { from: transfer_wl_manager });
+            assert.equal(await coinToken.opsWhitelist(dan), true);
+            await coinToken.setWhitelistAddress(dan, false, { from: transfer_wl_manager });
+            assert.equal(await coinToken.opsWhitelist(dan), false);
+        });
+    });
+
+    describe('#approve()', () => {
+        describe('approve restrictions', () => {
+            it('should deny approving if the approver is inactive', async function() {
+                await dist.disableMembers([alice], { from: verifier });
+                await assertRevert(coinToken.approve(bob, ether(1), { from: alice }), 'Member is invalid');
+            });
+
+            it('should deny approving if the receiver is inactive', async function() {
+                await dist.disableMembers([bob], { from: verifier });
+                await assertRevert(coinToken.approve(bob, ether(1), { from: alice }), 'Member is invalid');
+            });
+
+            it('should allow approving when both approver and receiver are active', async function() {
+                await coinToken.approve(charlie, ether(1), { from: alice });
+            });
         });
     });
 
     describe('#transferFrom()', () => {
+        describe('transfer restrictions', () => {
+            it('should deny transferring if a from address is not active', async function() {
+                await coinToken.approve(charlie, ether(1), { from: alice });
+                await dist.disableMembers([alice], { from: verifier });
+                await assertRevert(coinToken.transferFrom(alice, bob, ether(1), { from: charlie }), 'Member is invalid');
+            });
+
+            it('should deny transferring if a to address is not active', async function() {
+                await coinToken.approve(charlie, ether(1), { from: alice });
+                await dist.disableMembers([bob], { from: verifier });
+                await assertRevert(coinToken.transferFrom(alice, bob, ether(1), { from: charlie }), 'Member is invalid');
+            });
+
+            it('should deny transferring if a tx sender is not active', async function() {
+                await coinToken.approve(charlie, ether(1), { from: alice });
+                await dist.disableMembers([charlie], { from: verifier });
+                await assertRevert(coinToken.transferFrom(alice, bob, ether(1), { from: charlie }), 'Member is invalid');
+            });
+
+            it('should allow transferring all from, to and tx sender are active', async function() {
+                await coinToken.approve(charlie, ether(1), { from: alice });
+                await coinToken.transferFrom(alice, bob, ether(1), { from: charlie });
+            });
+        });
+
         it.skip('should correct transfer with fee using GSN', async function () {
             const transferCoinAmount = 1000;
 
@@ -116,8 +261,8 @@ describe('Coin', () => {
             const contractBalanceAfter = await coinToken.balanceOf(coinToken.address);
 
             assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanaceAfter, ether(-transferCoinAmount));
-            assertErc20BalanceChanged(bobBalanceBefore, bobBalanceAfter, ether(transferCoinAmount - (transferCoinAmount / 100 * feePercent)));
-            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(transferCoinAmount / 100 * feePercent));
+            assertErc20BalanceChanged(bobBalanceBefore, bobBalanceAfter, ether(transferCoinAmount - (transferCoinAmount * feePercent / 100)));
+            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(transferCoinAmount * feePercent / 100 ));
 
             const deployerBalanceBefore = await coinToken.balanceOf(deployer);
             await coinToken.withdrawFee({from: deployer});
@@ -128,7 +273,22 @@ describe('Coin', () => {
     });
 
     describe('#transfer()', () => {
-        it('should correct transfer with fee using GSN', async function () {
+        describe('transfer restrictions', () => {
+            it('should deny transfer if the sender is inactive', async function() {
+                await dist.disableMembers([alice], { from: verifier });
+                await assertRevert(coinToken.transfer(bob, ether(1), { from: alice }), 'Member is invalid');
+            });
+            it('should deny transfer if the receiver is inactive', async function() {
+                await dist.disableMembers([bob], { from: verifier });
+                await assertRevert(coinToken.transfer(bob, ether(1), { from: alice }), 'Member is invalid');
+            });
+
+            it('should allow transfer when both sender and receiver are active', async function() {
+                await coinToken.transfer(charlie, ether(1), { from: alice });
+            });
+        });
+
+        it.skip('should correct transfer with fee using GSN', async function () {
             const transferCoinAmount = 1000;
 
             const aliceBalanaceBefore = await coinToken.balanceOf(alice);
@@ -167,8 +327,8 @@ describe('Coin', () => {
             const contractBalanceAfter = await coinToken.balanceOf(coinToken.address);
 
             assertErc20BalanceChanged(aliceBalanaceBefore, aliceBalanaceAfter, ether(-transferCoinAmount));
-            assertErc20BalanceChanged(bobBalanaceBefore, bobBalanaceAfter, ether(transferCoinAmount - (transferCoinAmount / 100 * feePercent)));
-            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(transferCoinAmount / 100 * feePercent));
+            assertErc20BalanceChanged(bobBalanaceBefore, bobBalanaceAfter, ether(transferCoinAmount - transferCoinAmount * feePercent / 100));
+            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(transferCoinAmount * feePercent / 100));
 
             const deployerBalanceBefore = await coinToken.balanceOf(deployer);
             await coinToken.withdrawFee({from: deployer});

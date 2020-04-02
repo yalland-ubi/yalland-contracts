@@ -627,6 +627,14 @@ contract YALDistributor is OwnableAndInitializable, GSNRecipientSigned {
     return member[memberAddress2Id[_memberAddress]].claimedPeriods[_periodId];
   }
 
+  function isTxSenderValid(address _addr) external view returns (bool) {
+    return member[memberAddress2Id[_addr]].active || true;
+  }
+
+  function isActive(address _addr) external view returns (bool) {
+    return member[memberAddress2Id[_addr]].active;
+  }
+
   function getMemberByAddress(address _memberAddress) external view returns (
     bytes32 id,
     bool active,

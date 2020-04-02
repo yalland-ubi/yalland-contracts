@@ -16,21 +16,43 @@ import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "@galtproject/libs/contracts/traits/Permissionable.sol";
 import "./interfaces/ICoinToken.sol";
 import "./GSNRecipientSigned.sol";
+import "./Checkpointable.sol";
+import "./YALDistributor.sol";
 
 
-contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Detailed, Permissionable, GSNRecipientSigned {
+contract CoinToken is
+  ICoinToken,
+  ERC20,
+  ERC20Pausable,
+  ERC20Burnable,
+  ERC20Detailed,
+  Checkpointable,
+  Permissionable,
+  GSNRecipientSigned
+{
   uint256 public constant INITIAL_SUPPLY = 0;
 
   string public constant MINTER_ROLE = "minter";
   string public constant BURNER_ROLE = "burner";
   string public constant PAUSER_ROLE = "pauser";
   string public constant FEE_MANAGER_ROLE = "fee_manager";
+  string public constant TRANSFER_WL_MANAGER_ROLE = "transfer_wl_manager";
 
-  uint256 public constant feePrecision = 1 szabo;
-  // in percents
+  uint256 public constant HUNDRED_PCT = 100 ether;
+
+  event SetTransferFee(address indexed feeManager, uint256 value);
+  event SetDistributor(uint256 newDistributor);
+  event SetWhitelistAddress(address addr, bool isActive);
+  event TransferWithMemo(address indexed from, address indexed to, uint256 value, string memo);
+
+  // 100 % == 100 eth
   uint256 public transferFee = 0;
+  YALDistributor public yalDistributor;
+
+  mapping(address => bool) public opsWhitelist;
 
   constructor(
+    address _yalDistributorAddress,
     string memory _name,
     string memory _symbol,
     uint8 _decimals
@@ -39,6 +61,8 @@ contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Deta
     ERC20Detailed(_name, _symbol, _decimals)
     Permissionable()
   {
+    yalDistributor = YALDistributor(_yalDistributorAddress);
+
     _addRoleTo(msg.sender, MINTER_ROLE);
     _addRoleTo(msg.sender, BURNER_ROLE);
     _addRoleTo(msg.sender, PAUSER_ROLE);
@@ -46,18 +70,28 @@ contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Deta
     // ROLE_MANAGER is assigned to the msg.sender in Permissionable()
   }
 
-  modifier hasMintPermission() {
+  modifier onlyMinter() {
     require(hasRole(_msgSender(), MINTER_ROLE), "Only minter allowed");
     _;
   }
   
-  modifier hasBurnPermission() {
+  modifier onlyBurner() {
     require(hasRole(_msgSender(), BURNER_ROLE), "Only burner allowed");
     _;
   }
 
-  modifier hasFeeManagerPermission() {
+  modifier onlyFeeManager() {
     require(hasRole(_msgSender(), FEE_MANAGER_ROLE), "Only fee manager allowed");
+    _;
+  }
+
+  modifier onlyTransferWLManager() {
+    require(hasRole(_msgSender(), TRANSFER_WL_MANAGER_ROLE), "Only transfer_wl_manager allowed");
+    _;
+  }
+
+  modifier onlyRoleManager() {
+    require(hasRole(_msgSender(), ROLE_ROLE_MANAGER), "Only role manager allowed");
     _;
   }
 
@@ -75,33 +109,110 @@ contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Deta
 
   // MANAGER INTERFACE
 
-  function mint(address account, uint256 amount) public hasMintPermission returns (bool) {
-    _mint(account, amount);
+  function mint(address _account, uint256 _amount) public whenNotPaused onlyMinter returns (bool) {
+    _mint(_account, _amount);
+    _updateAccountCache(_account);
+
     return true;
   }
 
-  function burn(address account, uint256 amount) public hasBurnPermission {
-    _burn(account, amount);
+  function burn(address _account, uint256 _amount) public whenNotPaused onlyBurner {
+    _burn(_account, _amount);
+    _updateAccountCache(_account);
+  }
+
+  function setWhitelistAddress(address _addr, bool _isActive) public onlyTransferWLManager {
+    opsWhitelist[_addr] = _isActive;
+
+    emit SetWhitelistAddress(_addr, _isActive);
+  }
+
+  function setDistributor(uint256 _yalDistributor) public onlyRoleManager {
+    yalDistributor = YALDistributor(_yalDistributor);
+
+    emit SetDistributor(_yalDistributor);
+  }
+
+  function setTransferFee(uint256 _transferFee) public onlyFeeManager {
+    require(_transferFee < HUNDRED_PCT, "Invalid fee value");
+
+    transferFee = _transferFee;
+
+    emit SetTransferFee(msg.sender, _transferFee);
+  }
+
+  function withdrawFee() public onlyFeeManager {
+    address _this = address(this);
+    uint256 _payout = balanceOf(_this);
+
+    require(_payout > 0, "Nothing to withdraw");
+
+    _transfer(_this, _msgSender(), _payout);
+
+    _updateValueAtNow(_cachedBalances[address(this)], balanceOf(address(this)));
+    _updateValueAtNow(_cachedBalances[_msgSender()], balanceOf(_msgSender()));
+    _updateValueAtNow(_cachedTotalSupply, totalSupply());
   }
 
   // USER INTERFACE
 
+  function approve(address _spender, uint256 _amount) public returns (bool) {
+    _requireMemberIsValid(_msgSender());
+    _requireMemberIsValid(_spender);
+
+    return super.approve(_spender, _amount);
+  }
+
   function transfer(address _to, uint256 _value) public returns (bool) {
-    uint256 newValue = takeFee(_msgSender(), _value);
-    return super.transfer(_to, newValue);
+    _requireMemberIsValid(_to);
+    _requireMemberIsValid(_msgSender());
+
+    uint256 newValue = _takeFee(_msgSender(), _value);
+    bool result = super.transfer(_to, newValue);
+
+    _updateTransferCache(_msgSender(), _to);
+
+    return result;
+  }
+
+  function transferWithMemo(address _to, uint256 _value, string calldata _memo) external returns (bool) {
+    emit TransferWithMemo(_msgSender(), _to, _value, _memo);
+    return transfer(_to, _value);
   }
 
   function transferFrom(address _from, address _to, uint256 _value) public whenNotPaused returns (bool) {
-    uint256 newValue = takeFee(_from, _value);
+    _requireMemberIsValid(_from);
+    _requireMemberIsValid(_to);
+    _requireMemberIsValid(_msgSender());
+
+    uint256 newValue = _takeFee(_from, _value);
 
     _transfer(_from, _to, newValue);
     _approve(_from, _msgSender(), allowance(_from, _msgSender()).sub(_value, "ERC20: transfer amount exceeds allowance"));
+
+    _updateTransferCache(_from, _to);
+
     return true;
   }
 
   // INTERNAL
+  function _requireMemberIsValid(address _member) internal {
+    require(isMemberValid(_member), "Member is invalid");
+  }
 
-  function takeFee(address from, uint256 _value) private returns(uint256) {
+  function _updateAccountCache(address _account) internal {
+    _updateValueAtNow(_cachedBalances[_account], balanceOf(_account));
+    _updateValueAtNow(_cachedTotalSupply, totalSupply());
+  }
+
+  function _updateTransferCache(address _from, address _to) internal {
+    _updateValueAtNow(_cachedBalances[_from], balanceOf(_from));
+    _updateValueAtNow(_cachedBalances[_to], balanceOf(_to));
+    _updateValueAtNow(_cachedBalances[address(this)], balanceOf(address(this)));
+    _updateValueAtNow(_cachedTotalSupply, totalSupply());
+  }
+
+  function _takeFee(address from, uint256 _value) private returns(uint256) {
     uint256 _fee = getFeeForAmount(_value);
 
     if (_fee > 0) {
@@ -115,24 +226,13 @@ contract CoinToken is ICoinToken, ERC20, ERC20Pausable, ERC20Burnable, ERC20Deta
   
   function getFeeForAmount(uint256 amount) public view returns(uint256) {
     if (transferFee > 0) {
-      return amount.div(100).mul(transferFee).div(feePrecision);
+      return amount.mul(transferFee) / HUNDRED_PCT;
     } else {
       return 0;
     }
   }
 
-  // OWNER INTERFACES
-
-  function setTransferFee(uint256 _transferFee) public hasFeeManagerPermission {
-    transferFee = _transferFee;
-  }
-
-  function withdrawFee() public hasFeeManagerPermission {
-    address _this = address(this);
-    uint256 _payout = balanceOf(_this);
-
-    require(_payout > 0, "Nothing to withdraw");
-
-    _transfer(_this, _msgSender(), _payout);
+  function isMemberValid(address _member) public view returns(bool) {
+    return yalDistributor.isActive(_member) || opsWhitelist[_member] == true;
   }
 }
