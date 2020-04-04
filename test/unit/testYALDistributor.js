@@ -45,7 +45,7 @@ describe('YALDistributor Unit tests', () => {
 
     beforeEach(async function () {
         genesisTimestamp = parseInt(await now(), 10) + startAfter;
-        coinToken = await CoinToken.new("Coin token", "COIN", 18);
+        coinToken = await CoinToken.new(alice, "Coin token", "COIN", 18);
         dist = await YALDistributor.new();
         await dist.initialize(
             periodVolume,
@@ -57,6 +57,7 @@ describe('YALDistributor Unit tests', () => {
             genesisTimestamp
         );
 
+        await coinToken.setDistributor(dist.address);
         await coinToken.mint(alice, ether(baseAliceBalance));
         await coinToken.setTransferFee(web3.utils.toWei(feePercent.toString(), 'szabo'));
         await coinToken.addRoleTo(dist.address, "minter");

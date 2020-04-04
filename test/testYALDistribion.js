@@ -46,7 +46,7 @@ describe('YALDistribution Integration Tests', () => {
 
     beforeEach(async function () {
         genesisTimestamp = parseInt(await now(), 10) + startAfter;
-        coinToken = await CoinToken.new("Coin token", "COIN", 18);
+        coinToken = await CoinToken.new(alice, "Coin token", "COIN", 18);
         dist = await YALDistributor.new();
         await dist.initialize(
             periodVolume,
@@ -59,8 +59,9 @@ describe('YALDistribution Integration Tests', () => {
         );
 
         await coinToken.mint(alice, ether(baseAliceBalance));
-        await coinToken.setTransferFee(web3.utils.toWei(feePercent.toString(), 'szabo'));
+        await coinToken.setTransferFee(ether(10));
         await coinToken.addRoleTo(dist.address, "minter");
+        await coinToken.setDistributor(dist.address);
 
         // this will affect on dist provider too
         coinToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;

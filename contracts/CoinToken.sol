@@ -40,13 +40,16 @@ contract CoinToken is
 
   uint256 public constant HUNDRED_PCT = 100 ether;
 
-  event SetTransferFee(address indexed feeManager, uint256 value);
+  event SetTransferFee(address indexed feeManager, uint256 share);
+  event SetOpsFee(address indexed feeManager, uint256 value);
   event SetDistributor(uint256 newDistributor);
   event SetWhitelistAddress(address addr, bool isActive);
   event TransferWithMemo(address indexed from, address indexed to, uint256 value, string memo);
 
-  // 100 % == 100 eth
+  // in 100 % == 100 eth
   uint256 public transferFee = 0;
+  // in YAL wei
+  uint256 public opsFee = 0;
   YALDistributor public yalDistributor;
 
   mapping(address => bool) public opsWhitelist;
@@ -60,9 +63,11 @@ contract CoinToken is
     public
     ERC20Detailed(_name, _symbol, _decimals)
     Permissionable()
+    GSNRecipientSigned()
   {
     yalDistributor = YALDistributor(_yalDistributorAddress);
 
+    // TODO: setup each role explicitly
     _addRoleTo(msg.sender, MINTER_ROLE);
     _addRoleTo(msg.sender, BURNER_ROLE);
     _addRoleTo(msg.sender, PAUSER_ROLE);
@@ -71,40 +76,71 @@ contract CoinToken is
   }
 
   modifier onlyMinter() {
-    require(hasRole(_msgSender(), MINTER_ROLE), "Only minter allowed");
+    require(hasRole(msg.sender, MINTER_ROLE), "Only minter allowed");
     _;
   }
   
   modifier onlyBurner() {
-    require(hasRole(_msgSender(), BURNER_ROLE), "Only burner allowed");
+    require(hasRole(msg.sender, BURNER_ROLE), "Only burner allowed");
     _;
   }
 
   modifier onlyFeeManager() {
-    require(hasRole(_msgSender(), FEE_MANAGER_ROLE), "Only fee manager allowed");
+    require(hasRole(msg.sender, FEE_MANAGER_ROLE), "Only fee manager allowed");
     _;
   }
 
   modifier onlyTransferWLManager() {
-    require(hasRole(_msgSender(), TRANSFER_WL_MANAGER_ROLE), "Only transfer_wl_manager allowed");
+    require(hasRole(msg.sender, TRANSFER_WL_MANAGER_ROLE), "Only transfer_wl_manager allowed");
     _;
   }
 
   modifier onlyRoleManager() {
-    require(hasRole(_msgSender(), ROLE_ROLE_MANAGER), "Only role manager allowed");
+    require(hasRole(msg.sender, ROLE_ROLE_MANAGER), "Only role manager allowed");
     _;
   }
 
   // Uses Permissionable PAUSER_ROLE instead of PauserRole from OZ since
   // the last one has no explicit removeRole method.
   modifier onlyPauser() {
-    require(hasRole(_msgSender(), PAUSER_ROLE), "Only pauser allowed");
+    require(hasRole(msg.sender, PAUSER_ROLE), "Only pauser allowed");
     _;
   }
 
-  function _handleRelayedCall(bytes memory _encodedFunction, address _caller)
-    internal view returns (GSNRecipientSignatureErrorCodes) {
-    return GSNRecipientSignatureErrorCodes.OK;
+  function _handleRelayedCall(
+    bytes memory _encodedFunction,
+    address _caller
+  )
+    internal
+    view
+    returns (GSNRecipientSignatureErrorCodes)
+  {
+    bytes4 signature = getDataSignature(_encodedFunction);
+
+    address payer;
+
+    if (
+      signature == CoinToken(0).transfer.selector
+      || signature == CoinToken(0).transferFrom.selector
+      || signature == CoinToken(0).approve.selector
+      || signature == CoinToken(0).transferWithMemo.selector
+    ) {
+      payer = _caller;
+    } else {
+      return GSNRecipientSignatureErrorCodes.METHOD_NOT_SUPPORTED;
+    }
+
+    if (canPayForGsnCall(payer)) {
+      return GSNRecipientSignatureErrorCodes.OK;
+    } else {
+      return GSNRecipientSignatureErrorCodes.INSUFFICIENT_BALANCE;
+    }
+  }
+
+  function _preRelayedCall(bytes memory _context) internal returns (bytes32) {
+    address from = abi.decode(_context, (address));
+
+    _transfer(from, address(this), opsFee);
   }
 
   // MANAGER INTERFACE
@@ -141,6 +177,12 @@ contract CoinToken is
     emit SetTransferFee(msg.sender, _transferFee);
   }
 
+  function setOpsFee(uint256 _opsFee) public onlyFeeManager {
+    opsFee = _opsFee;
+
+    emit SetOpsFee(msg.sender, _opsFee);
+  }
+
   function withdrawFee() public onlyFeeManager {
     address _this = address(this);
     uint256 _payout = balanceOf(_this);
@@ -151,7 +193,6 @@ contract CoinToken is
 
     _updateValueAtNow(_cachedBalances[address(this)], balanceOf(address(this)));
     _updateValueAtNow(_cachedBalances[_msgSender()], balanceOf(_msgSender()));
-    _updateValueAtNow(_cachedTotalSupply, totalSupply());
   }
 
   // USER INTERFACE
@@ -159,6 +200,11 @@ contract CoinToken is
   function approve(address _spender, uint256 _amount) public returns (bool) {
     _requireMemberIsValid(_msgSender());
     _requireMemberIsValid(_spender);
+
+    if (msg.sender == getHubAddr()) {
+      _updateValueAtNow(_cachedBalances[address(this)], balanceOf(address(this)));
+      _updateValueAtNow(_cachedBalances[_msgSender()], balanceOf(_msgSender()));
+    }
 
     return super.approve(_spender, _amount);
   }
@@ -209,7 +255,6 @@ contract CoinToken is
     _updateValueAtNow(_cachedBalances[_from], balanceOf(_from));
     _updateValueAtNow(_cachedBalances[_to], balanceOf(_to));
     _updateValueAtNow(_cachedBalances[address(this)], balanceOf(address(this)));
-    _updateValueAtNow(_cachedTotalSupply, totalSupply());
   }
 
   function _takeFee(address from, uint256 _value) private returns(uint256) {
@@ -234,5 +279,9 @@ contract CoinToken is
 
   function isMemberValid(address _member) public view returns(bool) {
     return yalDistributor.isActive(_member) || opsWhitelist[_member] == true;
+  }
+
+  function canPayForGsnCall(address _addr) public view returns (bool) {
+    return balanceOf(_addr) >= opsFee;
   }
 }

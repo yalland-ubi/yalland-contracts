@@ -8,9 +8,10 @@ contract GSNRecipientSigned is GSNRecipient {
   using ECDSA for bytes32;
 
   enum GSNRecipientSignatureErrorCodes {
+    METHOD_NOT_SUPPORTED,
     OK,
     DENIED,
-    METHOD_NOT_SUPPORTED
+    INSUFFICIENT_BALANCE
   }
 
   constructor() public {}
@@ -49,7 +50,7 @@ contract GSNRecipientSigned is GSNRecipient {
     GSNRecipientSignatureErrorCodes code = _handleRelayedCall(encodedFunction, signer);
 
     if (code == GSNRecipientSignatureErrorCodes.OK) {
-      return _approveRelayedCall();
+      return _approveRelayedCall(abi.encode(signer));
     } else {
       return _rejectRelayedCall(uint256(code));
     }

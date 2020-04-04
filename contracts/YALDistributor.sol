@@ -125,7 +125,7 @@ contract YALDistributor is OwnableAndInitializable, GSNRecipientSigned {
     _;
   }
 
-  constructor() public {
+  constructor() public GSNRecipientSigned() {
   }
 
   // @dev The Owner role will be assigned to tx.origin
