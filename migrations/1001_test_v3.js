@@ -31,14 +31,13 @@ module.exports = async function (truffle, network, accounts) {
     // User3 address: 3333331e386a009d9538e759a92ddb37f8da4852
 
 
-
     const beneficiary = '0x699224Cc2b2D2DDF8bc7852582541cF4DdC4F77f';
     truffle.then(async () => {
         const deployer = truffle.networks.kovan.from;
         console.log('deployer address:', deployer);
 
         console.log('Create contract instances...');
-        const coinToken = await truffle.deploy(CoinToken, "Yalland Test", "YALT", 18);
+        const coinToken = await truffle.deploy(CoinToken, deployer, "Yalland Test", "YALT", 18);
         const dist = await truffle.deploy(YALDistributor);
 
         // 5 min
@@ -46,7 +45,7 @@ module.exports = async function (truffle, network, accounts) {
         const periodVolume = ether(250 * 1000);
         const verifierRewardShare = ether(10);
         // 10 min
-        const startAfter = 10 * 60;
+        const startAfter = 3 * 60;
         const genesisTimestamp = parseInt(await now(), 10) + startAfter;
 
         await dist.initialize(
@@ -61,8 +60,12 @@ module.exports = async function (truffle, network, accounts) {
         );
 
         await Promise.all([
-            coinToken.setTransferFee(web3.utils.toWei('0.02', 'szabo')),
+            coinToken.setTransferFee(ether('0.02')),
+            coinToken.setOpsFee(ether(7)),
+
             coinToken.addRoleTo(dist.address, "minter"),
+            coinToken.setDistributor(dist.address),
+
             dist.addMembersBeforeGenesis(
                 [
                     keccak256('user1'),
