@@ -49,7 +49,7 @@ contract CoinToken is
   // in 100 % == 100 eth
   uint256 public transferFee = 0;
   // in YAL wei
-  uint256 public opsFee = 0;
+  uint256 public gsnFee = 0;
   YALDistributor public yalDistributor;
 
   mapping(address => bool) public opsWhitelist;
@@ -67,11 +67,6 @@ contract CoinToken is
   {
     yalDistributor = YALDistributor(_yalDistributorAddress);
 
-    // TODO: setup each role explicitly
-    _addRoleTo(msg.sender, MINTER_ROLE);
-    _addRoleTo(msg.sender, BURNER_ROLE);
-    _addRoleTo(msg.sender, PAUSER_ROLE);
-    _addRoleTo(msg.sender, FEE_MANAGER_ROLE);
     // ROLE_MANAGER is assigned to the msg.sender in Permissionable()
   }
 
@@ -140,7 +135,7 @@ contract CoinToken is
   function _preRelayedCall(bytes memory _context) internal returns (bytes32) {
     address from = abi.decode(_context, (address));
 
-    _transfer(from, address(this), opsFee);
+    _transfer(from, address(this), gsnFee);
   }
 
   // MANAGER INTERFACE
@@ -177,10 +172,10 @@ contract CoinToken is
     emit SetTransferFee(msg.sender, _transferFee);
   }
 
-  function setOpsFee(uint256 _opsFee) public onlyFeeManager {
-    opsFee = _opsFee;
+  function setGsnFee(uint256 _gsnFee) public onlyFeeManager {
+    gsnFee = _gsnFee;
 
-    emit SetOpsFee(msg.sender, _opsFee);
+    emit SetOpsFee(msg.sender, _gsnFee);
   }
 
   function withdrawFee() public onlyFeeManager {
@@ -213,8 +208,8 @@ contract CoinToken is
     _requireMemberIsValid(_to);
     _requireMemberIsValid(_msgSender());
 
-    uint256 newValue = _takeFee(_msgSender(), _value);
-    bool result = super.transfer(_to, newValue);
+    _chargeTransferFee(_msgSender(), _value);
+    bool result = super.transfer(_to, _value);
 
     _updateTransferCache(_msgSender(), _to);
 
@@ -231,12 +226,12 @@ contract CoinToken is
     _requireMemberIsValid(_to);
     _requireMemberIsValid(_msgSender());
 
-    uint256 newValue = _takeFee(_from, _value);
+    _chargeTransferFee(_msgSender(), _value);
 
-    _transfer(_from, _to, newValue);
-    _approve(_from, _msgSender(), allowance(_from, _msgSender()).sub(_value, "ERC20: transfer amount exceeds allowance"));
+    bool result = super.transferFrom(_from, _to, _value);
 
     _updateTransferCache(_from, _to);
+    _updateValueAtNow(_cachedBalances[_msgSender()], balanceOf(_msgSender()));
 
     return true;
   }
@@ -257,14 +252,12 @@ contract CoinToken is
     _updateValueAtNow(_cachedBalances[address(this)], balanceOf(address(this)));
   }
 
-  function _takeFee(address from, uint256 _value) private returns(uint256) {
+function _chargeTransferFee(address from, uint256 _value) private {
     uint256 _fee = getFeeForAmount(_value);
 
     if (_fee > 0) {
       _transfer(from, address(this), _fee);
     }
-
-    return _value.sub(_fee);
   }
 
   // GETTERS
@@ -282,6 +275,14 @@ contract CoinToken is
   }
 
   function canPayForGsnCall(address _addr) public view returns (bool) {
-    return balanceOf(_addr) >= opsFee;
+    return balanceOf(_addr) >= gsnFee;
+  }
+
+  function balanceOfAt(address _address, uint256 _blockNumber) external view returns (uint256) {
+    return _balanceOfAt(_address, _blockNumber);
+  }
+
+  function totalSupplyAt(uint256 _blockNumber) external view returns (uint256) {
+    return _totalSupplyAt(_blockNumber);
   }
 }

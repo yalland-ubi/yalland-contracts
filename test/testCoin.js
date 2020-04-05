@@ -17,17 +17,18 @@ const {
 
 const CoinToken = contract.fromArtifact('CoinToken');
 const YALDistributor = contract.fromArtifact('YALDistributor');
+const zero = new BigNumber(0);
 
 CoinToken.numberFormat = 'String';
 
-const { ether, increaseTime, assertRevert, now, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
+const { ether, increaseTime, evmMineBlock, assertRevert, now, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
 const { approveFunction, assertRelayedCall } = require('./helpers')(web3);
 
 const keccak256 = web3.utils.soliditySha3;
 
 
 describe('Coin', () => {
-    const [pauser, alice, bob, charlie, dan, eve, verifier, transfer_wl_manager] = accounts;
+    const [pauser, alice, bob, charlie, dan, minter, verifier, feeManager, transferWlManager] = accounts;
     const deployer = defaultSender;
 
     let coinToken;
@@ -35,9 +36,9 @@ describe('Coin', () => {
     const periodLength = 7 * 24 * 60 * 60;
     const periodVolume = ether(250 * 1000);
     const verifierRewardShare = ether(10);
-    const baseAliceBalance = 10000000;
+    const baseAliceBalance = new BigNumber(100000000);
     const feePercent = 0.02;
-    const opsFee = new BigNumber(0.7);
+    const gsnFee = new BigNumber(0.7);
     const startAfter = 10;
     const memberId1 = keccak256('bob');
     let genesisTimestamp;
@@ -64,13 +65,15 @@ describe('Coin', () => {
         );
 
         await coinToken.addRoleTo(dist.address, 'minter');
-        await coinToken.addRoleTo(transfer_wl_manager, 'transfer_wl_manager');
+        await coinToken.addRoleTo(minter, 'minter');
+        await coinToken.addRoleTo(feeManager, 'fee_manager');
+        await coinToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
         // await coinToken.addRoleTo(feeManager, 'fee_manager');
 
         await coinToken.setDistributor(dist.address);
-        await coinToken.mint(alice, ether(baseAliceBalance), {from: deployer});
-        await coinToken.setTransferFee(ether(feePercent), {from: deployer});
-        await coinToken.setOpsFee(ether(opsFee), {from: deployer});
+        await coinToken.mint(alice, ether(baseAliceBalance), {from: minter});
+        await coinToken.setTransferFee(ether(feePercent), {from: feeManager});
+        await coinToken.setGsnFee(ether(gsnFee), {from: feeManager});
 
         await dist.addMembersBeforeGenesis(
             [keccak256('foo'), keccak256('bar'), keccak256('bazz')],
@@ -88,15 +91,15 @@ describe('Coin', () => {
 
     describe('#getFeeForAmount()', () => {
         it('should calculate fees correctly', async function() {
-            await coinToken.setTransferFee(ether(0.02));
+            await coinToken.setTransferFee(ether(0.02), { from: feeManager });
             assert.equal(await coinToken.getFeeForAmount(ether(1)), ether(0.0002));
 
-            await coinToken.setTransferFee(ether(30));
+            await coinToken.setTransferFee(ether(30), { from: feeManager });
             assert.equal(await coinToken.getFeeForAmount(ether(1)), ether(0.3));
         })
 
         it('should calculate negligible fees correctly', async function() {
-            await coinToken.setTransferFee(ether(20));
+            await coinToken.setTransferFee(ether(20), { from: feeManager });
 
             assert.equal(await coinToken.getFeeForAmount(10), 2);
             assert.equal(await coinToken.getFeeForAmount(8), 1);
@@ -106,7 +109,7 @@ describe('Coin', () => {
         })
 
         it('should return 0 for 0 fee', async function() {
-            await coinToken.setTransferFee(0);
+            await coinToken.setTransferFee(0, { from: feeManager });
             assert.equal(await coinToken.getFeeForAmount(ether(250)), 0);
             assert.equal(await coinToken.getFeeForAmount(0), 0);
         })
@@ -115,7 +118,6 @@ describe('Coin', () => {
     describe('Pausable', () => {
         it('should deny transferring when paused', async function() {
             await coinToken.addRoleTo(pauser, await coinToken.PAUSER_ROLE(), { from: deployer });
-            await coinToken.removeRoleFrom(deployer, await coinToken.PAUSER_ROLE(), { from: deployer });
             await assertRevert(coinToken.pause({ from: deployer }), 'Only pauser allowed');
 
             // approve before paused
@@ -148,12 +150,12 @@ describe('Coin', () => {
         });
 
         it('should return true if the address is inside coin token whitelist', async function() {
-            await coinToken.setWhitelistAddress(dan, true, { from: transfer_wl_manager });
+            await coinToken.setWhitelistAddress(dan, true, { from: transferWlManager });
             assert.equal(await coinToken.isMemberValid(dan), true);
         });
     });
 
-    describe('#SetWhitelistAddress()', () => {
+    describe('#setWhitelistAddress()', () => {
         it('should deny non wl manager calling the method', async function() {
             await assertRevert(
                 coinToken.setWhitelistAddress(dan, true, { from: defaultSender }),
@@ -163,9 +165,9 @@ describe('Coin', () => {
 
         it('should change wl value', async function() {
             assert.equal(await coinToken.opsWhitelist(dan), false);
-            await coinToken.setWhitelistAddress(dan, true, { from: transfer_wl_manager });
+            await coinToken.setWhitelistAddress(dan, true, { from: transferWlManager });
             assert.equal(await coinToken.opsWhitelist(dan), true);
-            await coinToken.setWhitelistAddress(dan, false, { from: transfer_wl_manager });
+            await coinToken.setWhitelistAddress(dan, false, { from: transferWlManager });
             assert.equal(await coinToken.opsWhitelist(dan), false);
         });
     });
@@ -201,29 +203,78 @@ describe('Coin', () => {
             const bobBalanceAfter = await coinToken.balanceOf(bob);
             const contractBalanceAfter = await coinToken.balanceOf(coinToken.address);
 
-            assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanaceAfter, ether(-opsFee));
+            assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanaceAfter, ether(-gsnFee));
             assertErc20BalanceChanged(bobBalanceBefore, bobBalanceAfter, '0');
-            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(opsFee));
+            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(gsnFee));
         });
 
         it('should charge on each approval which uses GSN', async function () {
             const transferCoinAmount = 1000;
+            const totalSupply = await coinToken.totalSupply();
 
             const aliceBalanceBefore = await coinToken.balanceOf(alice);
             const bobBalanceBefore = await coinToken.balanceOf(bob);
             const contractBalanceBefore = await coinToken.balanceOf(coinToken.address);
 
-            await coinToken.approve(charlie, ether(transferCoinAmount), { from: alice, useGSN: true });
-            await coinToken.approve(charlie, ether(2 * transferCoinAmount), { from: alice, useGSN: true });
-            await coinToken.approve(charlie, ether(0), { from: alice, useGSN: true });
+            assert.equal(aliceBalanceBefore, ether(baseAliceBalance));
+            assert.equal(bobBalanceBefore, ether(0));
+            assert.equal(contractBalanceBefore, ether(0));
 
-            const aliceBalanaceAfter = await coinToken.balanceOf(alice);
+            // just to increment and get the current block
+            let res = await coinToken.addRoleTo(alice, 'foo');
+            const zeroBlock = res.receipt.blockNumber;
+
+            await evmMineBlock();
+
+            res = await coinToken.approve(charlie, ether(transferCoinAmount), { from: alice, useGSN: true });
+            const firstBlock = res.receipt.blockNumber;
+            await evmMineBlock();
+
+            res = await coinToken.approve(charlie, ether(2 * transferCoinAmount), { from: alice, useGSN: true });
+            const secondBlock = res.receipt.blockNumber;
+            await evmMineBlock();
+
+            res = await coinToken.approve(charlie, ether(0), { from: alice, useGSN: true });
+            const thirdBlock = res.receipt.blockNumber;
+            await evmMineBlock();
+
+            const aliceBalanceAfter = await coinToken.balanceOf(alice);
             const bobBalanceAfter = await coinToken.balanceOf(bob);
             const contractBalanceAfter = await coinToken.balanceOf(coinToken.address);
 
-            assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanaceAfter, ether(- (opsFee.multipliedBy(3))));
+            assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanceAfter, ether(- (gsnFee.multipliedBy(3))));
             assertErc20BalanceChanged(bobBalanceBefore, bobBalanceAfter, '0');
-            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(opsFee.multipliedBy(3)));
+            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(gsnFee.multipliedBy(3)));
+
+            // 0th block
+            assert.equal(await coinToken.balanceOfAt(alice, zeroBlock), ether(baseAliceBalance));
+            assert.equal(await coinToken.balanceOfAt(bob, zeroBlock), ether(0));
+            assert.equal(await coinToken.balanceOfAt(coinToken.address, zeroBlock), ether(0));
+            assert.equal(await coinToken.totalSupplyAt(zeroBlock), totalSupply);
+
+            // 1st block
+            assert.equal(await coinToken.balanceOfAt(alice, firstBlock), ether(baseAliceBalance - gsnFee));
+            assert.equal(await coinToken.balanceOfAt(bob, firstBlock), ether(0));
+            assert.equal(await coinToken.balanceOfAt(coinToken.address, firstBlock), ether(gsnFee));
+            assert.equal(await coinToken.totalSupplyAt(firstBlock), totalSupply);
+
+            // 2nd block
+            assert.equal(await coinToken.balanceOfAt(alice, secondBlock), ether(baseAliceBalance - gsnFee.multipliedBy(2)));
+            assert.equal(await coinToken.balanceOfAt(bob, secondBlock), ether(0));
+            assert.equal(await coinToken.balanceOfAt(coinToken.address, secondBlock), ether(gsnFee.multipliedBy(2)));
+            assert.equal(await coinToken.totalSupplyAt(secondBlock), totalSupply);
+
+            // 3rd block
+            assert.equal(await coinToken.balanceOfAt(alice, thirdBlock), ether(baseAliceBalance - gsnFee.multipliedBy(3)));
+            assert.equal(await coinToken.balanceOfAt(bob, thirdBlock), ether(0));
+            assert.equal(await coinToken.balanceOfAt(coinToken.address, thirdBlock), ether(gsnFee.multipliedBy(3)));
+            assert.equal(await coinToken.totalSupplyAt(thirdBlock), totalSupply);
+
+            // final values
+            assert.equal(await coinToken.balanceOf(alice), ether(baseAliceBalance - gsnFee.multipliedBy(3)));
+            assert.equal(await coinToken.balanceOf(bob), ether(0));
+            assert.equal(await coinToken.balanceOf(coinToken.address), ether(gsnFee.multipliedBy(3)));
+            assert.equal(await coinToken.totalSupply(), totalSupply);
         });
     });
 
@@ -248,31 +299,69 @@ describe('Coin', () => {
             });
 
             it('should allow transferring all from, to and tx sender are active', async function() {
+                await coinToken.mint(charlie, ether(baseAliceBalance), {from: minter});
                 await coinToken.approve(charlie, ether(1), { from: alice });
                 await coinToken.transferFrom(alice, bob, ether(1), { from: charlie });
             });
         });
 
         it('should correct transfer with fee using GSN', async function () {
-            await coinToken.mint(charlie, ether(baseAliceBalance), {from: deployer});
-            const transferCoinAmount = 1000;
+            const ten = new BigNumber(10);
+            await coinToken.mint(charlie, ether(ten), {from: minter});
+            const transferCoinAmount = new BigNumber('2.7');
+            const totalSupply = await coinToken.totalSupply();
 
             const aliceBalanceBefore = await coinToken.balanceOf(alice);
             const bobBalanceBefore = await coinToken.balanceOf(bob);
             const charlieBalanceBefore = await coinToken.balanceOf(charlie);
             const contractBalanceBefore = await coinToken.balanceOf(coinToken.address);
 
+            assert.equal(await coinToken.balanceOf(charlie), ether(ten));
+
+            // just to increment and get the current block
+            let res = await coinToken.addRoleTo(alice, 'foo');
+            const zeroBlock = res.receipt.blockNumber;
+
+            await evmMineBlock();
+
+            // 1st transfer
             await coinToken.approve(charlie, ether(transferCoinAmount), { from: alice });
-            let res = await coinToken.transferFrom(alice, bob, ether(transferCoinAmount / 2), {from: charlie, useGSN: true});
+            res = await coinToken.transferFrom(
+                alice,
+                bob,
+                ether(transferCoinAmount.dividedBy(2)),
+                {from: charlie, useGSN: true}
+                );
             assertRelayedCall(res);
+            const firstBlock = res.receipt.blockNumber;
+            await evmMineBlock();
 
-            assert.equal(await coinToken.allowance(alice, charlie), ether(transferCoinAmount / 2));
+            assert.equal(
+                await coinToken.allowance(alice, charlie),
+                ether(transferCoinAmount.dividedBy(2))
+            );
 
-            res = await coinToken.transferFrom(alice, bob, ether(transferCoinAmount / 4), {from: charlie, useGSN: true});
+            // 2nd transfer
+            res = await coinToken.transferFrom(
+                alice,
+                bob,
+                ether(transferCoinAmount.dividedBy(4)),
+                {from: charlie, useGSN: true}
+            );
             assertRelayedCall(res);
+            const secondBlock = res.receipt.blockNumber;
+            await evmMineBlock();
 
-            res = await coinToken.transferFrom(alice, bob, ether(transferCoinAmount / 4), {from: charlie, useGSN: true});
+            // 3rd transfer
+            res = await coinToken.transferFrom(
+                alice,
+                bob,
+                ether(transferCoinAmount.dividedBy(4)),
+                {from: charlie, useGSN: true}
+            );
             assertRelayedCall(res);
+            const thirdBlock = res.receipt.blockNumber;
+            await evmMineBlock();
 
             assert.equal(await coinToken.allowance(alice, charlie), 0);
 
@@ -281,49 +370,156 @@ describe('Coin', () => {
             const charlieBalanceAfter = await coinToken.balanceOf(charlie);
             const contractBalanceAfter = await coinToken.balanceOf(coinToken.address);
 
-            const bothFees = opsFee.multipliedBy(3).plus(transferCoinAmount * feePercent / 100);
+            const transferFee = transferCoinAmount.multipliedBy(feePercent).dividedBy(100);
+            const totalFees = gsnFee.multipliedBy(3).plus(transferFee);
 
-            assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanaceAfter, ether(-transferCoinAmount));
-            assertErc20BalanceChanged(bobBalanceBefore, bobBalanceAfter, ether(transferCoinAmount - (transferCoinAmount / 100 * feePercent)));
-            assertErc20BalanceChanged(charlieBalanceBefore, charlieBalanceAfter, ether(-opsFee.multipliedBy(3)));
-            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(bothFees));
+            assertErc20BalanceChanged(
+                aliceBalanceBefore,
+                aliceBalanaceAfter,
+                ether(zero.minus(transferCoinAmount))
+            );
+            assertErc20BalanceChanged(bobBalanceBefore, bobBalanceAfter, ether(transferCoinAmount));
+            assertErc20BalanceChanged(
+                charlieBalanceBefore,
+                charlieBalanceAfter,
+                ether(zero.minus(totalFees))
+            );
+            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(totalFees));
 
-            const deployerBalanceBefore = await coinToken.balanceOf(deployer);
-            await coinToken.withdrawFee({ from: deployer });
-            const deployerBalanceAfter = await coinToken.balanceOf(deployer);
+            const feeManagerBalanceBefore = await coinToken.balanceOf(feeManager);
+            await coinToken.withdrawFee({ from: feeManager });
+            const feeManagerBalanceAfter = await coinToken.balanceOf(feeManager);
 
-            assertErc20BalanceChanged(deployerBalanceBefore, deployerBalanceAfter, ether(bothFees));
+            assertErc20BalanceChanged(feeManagerBalanceBefore, feeManagerBalanceAfter, ether(totalFees));
+
+            // 0th block
+            assert.equal(await coinToken.balanceOfAt(alice, zeroBlock), ether(baseAliceBalance));
+            assert.equal(await coinToken.balanceOfAt(bob, zeroBlock), ether(0));
+            assert.equal(await coinToken.balanceOfAt(charlie, zeroBlock), ether(ten));
+            assert.equal(await coinToken.balanceOfAt(coinToken.address, zeroBlock), ether(0));
+            assert.equal(await coinToken.totalSupplyAt(zeroBlock), totalSupply);
+
+            // 1st block fee 0.02% + 0.7 YAL
+            assert.equal(
+                await coinToken.balanceOfAt(alice, firstBlock),
+                ether(baseAliceBalance.minus(transferCoinAmount.dividedBy(2)))
+            );
+            assert.equal(await coinToken.balanceOfAt(bob, firstBlock), ether(transferCoinAmount.dividedBy(2)));
+            assert.equal(
+                await coinToken.balanceOfAt(charlie, firstBlock),
+                ether(ten.minus(gsnFee).minus(transferFee.dividedBy(2)))
+            );
+            assert.equal(
+                await coinToken.balanceOfAt(coinToken.address, firstBlock),
+                ether(gsnFee.plus(transferFee.dividedBy(2)))
+            );
+            assert.equal(await coinToken.totalSupplyAt(firstBlock), totalSupply);
+
+            // 2nd block fee 0.02% + 0.7 YAL
+            assert.equal(
+                await coinToken.balanceOfAt(alice, secondBlock),
+                ether(baseAliceBalance.minus(transferCoinAmount.multipliedBy(3).dividedBy(4)))
+            );
+            assert.equal(
+                await coinToken.balanceOfAt(bob, secondBlock),
+                ether(transferCoinAmount.multipliedBy(3).dividedBy(4))
+            );
+            assert.equal(
+                await coinToken.balanceOfAt(charlie, secondBlock),
+                ether(ten
+                    .minus(gsnFee.multipliedBy(2))
+                    .minus(transferFee.multipliedBy(3).dividedBy(4))
+                )
+            );
+            assert.equal(
+                await coinToken.balanceOfAt(coinToken.address, secondBlock),
+                ether(gsnFee.multipliedBy(2).plus(transferFee.multipliedBy(3).dividedBy(4)))
+            );
+            assert.equal(await coinToken.totalSupplyAt(secondBlock), totalSupply);
+
+            // 3rd block fee 0.02% + 0.7 YAL
+            assert.equal(
+                await coinToken.balanceOfAt(alice, thirdBlock),
+                ether(baseAliceBalance.minus(transferCoinAmount))
+            );
+            assert.equal(await coinToken.balanceOfAt(bob, thirdBlock), ether(transferCoinAmount));
+            assert.equal(
+                await coinToken.balanceOfAt(charlie, thirdBlock),
+                ether(ten
+                    .minus(gsnFee.multipliedBy(3))
+                    .minus(transferFee)
+                )
+            );
+            assert.equal(
+                await coinToken.balanceOfAt(coinToken.address, thirdBlock),
+                ether(totalFees)
+            );
+            assert.equal(await coinToken.balanceOfAt(feeManager, thirdBlock), ether(0));
+            assert.equal(await coinToken.totalSupplyAt(thirdBlock), totalSupply);
+
+            // final values
+            assert.equal(
+                await coinToken.balanceOf(alice),
+                ether(baseAliceBalance.minus(transferCoinAmount))
+            );
+            assert.equal(await coinToken.balanceOf(bob), ether(transferCoinAmount));
+            assert.equal(
+                await coinToken.balanceOf(charlie),
+                ether(ten
+                    .minus(gsnFee.multipliedBy(3))
+                    .minus(transferFee)
+                )
+            );
+            assert.equal(await coinToken.balanceOf(coinToken.address), ether(0));
+            assert.equal(await coinToken.balanceOf(feeManager), ether(totalFees));
+            assert.equal(await coinToken.totalSupply(), totalSupply);
+
         });
 
         it('should correct transfer with fee', async function () {
-            const transferCoinAmount = 1000;
+            await coinToken.mint(bob, ether(baseAliceBalance), {from: minter});
+            const transferCoinAmount = new BigNumber(1000);
 
             const aliceBalanceBefore = await coinToken.balanceOf(alice);
             const bobBalanceBefore = await coinToken.balanceOf(bob);
             const contractBalanceBefore = await coinToken.balanceOf(coinToken.address);
 
-            await coinToken.approve(charlie, ether(transferCoinAmount), { from: alice });
-            await coinToken.transferFrom(alice, bob, ether(transferCoinAmount / 2), {from: charlie});
+            await coinToken.approve(bob, ether(transferCoinAmount), { from: alice });
+            await coinToken.transferFrom(alice, bob, ether(transferCoinAmount / 2), {from: bob});
 
-            assert.equal(await coinToken.allowance(alice, charlie), ether(transferCoinAmount / 2));
+            assert.equal(await coinToken.allowance(alice, bob), ether(transferCoinAmount / 2));
 
-            await coinToken.transferFrom(alice, bob, ether(transferCoinAmount / 2), {from: charlie});
+            await coinToken.transferFrom(alice, bob, ether(transferCoinAmount / 2), {from: bob});
 
-            assert.equal(await coinToken.allowance(alice, charlie), 0);
+            assert.equal(await coinToken.allowance(alice, bob), 0);
+
+            const transferFee = transferCoinAmount.multipliedBy(feePercent).dividedBy(100);
 
             const aliceBalanaceAfter = await coinToken.balanceOf(alice);
             const bobBalanceAfter = await coinToken.balanceOf(bob);
             const contractBalanceAfter = await coinToken.balanceOf(coinToken.address);
 
-            assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanaceAfter, ether(-transferCoinAmount));
-            assertErc20BalanceChanged(bobBalanceBefore, bobBalanceAfter, ether(transferCoinAmount - (transferCoinAmount * feePercent / 100)));
-            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(transferCoinAmount * feePercent / 100 ));
+            assertErc20BalanceChanged(
+                aliceBalanceBefore,
+                aliceBalanaceAfter,
+                ether(-transferCoinAmount)
+            );
+            assertErc20BalanceChanged(
+                bobBalanceBefore,
+                bobBalanceAfter,
+                ether(transferCoinAmount.minus(transferFee))
+            );
+            assertErc20BalanceChanged(
+                contractBalanceBefore,
+                contractBalanceAfter,
+                ether(transferFee )
+            );
 
-            const deployerBalanceBefore = await coinToken.balanceOf(deployer);
-            await coinToken.withdrawFee({from: deployer});
-            const deployerBalanceAfter = await coinToken.balanceOf(deployer);
+            const feeManagerBalanceBefore = await coinToken.balanceOf(feeManager);
+            await coinToken.withdrawFee({from: feeManager});
+            const feeManagerBalanceAfter = await coinToken.balanceOf(feeManager);
 
-            assertErc20BalanceChanged(deployerBalanceBefore, deployerBalanceAfter, ether(transferCoinAmount / 100 * feePercent));
+            assertErc20BalanceChanged(feeManagerBalanceBefore, feeManagerBalanceAfter, ether(transferCoinAmount / 100 * feePercent));
         });
     });
 
@@ -344,34 +540,124 @@ describe('Coin', () => {
         });
 
         it('should correct transfer with fee using GSN', async function () {
-            const transferCoinAmount = 1000;
+            const transferCoinAmount = new BigNumber('2.7');
+            const totalSupply = await coinToken.totalSupply();
 
             const aliceBalanaceBefore = await coinToken.balanceOf(alice);
             const bobBalanaceBefore = await coinToken.balanceOf(bob);
             const contractBalanceBefore = await coinToken.balanceOf(coinToken.address);
 
-            const res = await coinToken.transfer(bob, ether(transferCoinAmount), {from: alice, useGSN: true});
+            // just to increment and get the current block
+            let res = await coinToken.addRoleTo(alice, 'foo');
+            const zeroBlock = res.receipt.blockNumber;
+
+            await evmMineBlock();
+
+            // 1st transfer
+            res = await coinToken.transfer(bob, ether(transferCoinAmount.dividedBy(2)), {from: alice, useGSN: true});
             assertRelayedCall(res);
+            const firstBlock = res.receipt.blockNumber;
+            await evmMineBlock();
+
+            // 2nd transfer
+            res = await coinToken.transfer(bob, ether(transferCoinAmount.dividedBy(4)), {from: alice, useGSN: true});
+            assertRelayedCall(res);
+            const secondBlock = res.receipt.blockNumber;
+            await evmMineBlock();
+
+            // 3rd transfer
+            res = await coinToken.transfer(bob, ether(transferCoinAmount.dividedBy(4)), {from: alice, useGSN: true});
+            assertRelayedCall(res);
+            const thirdBlock = res.receipt.blockNumber;
+            await evmMineBlock();
 
             const aliceBalanaceAfter = await coinToken.balanceOf(alice);
             const bobBalanaceAfter = await coinToken.balanceOf(bob);
             const contractBalanceAfter = await coinToken.balanceOf(coinToken.address);
 
-            const transferFee = (transferCoinAmount * feePercent / 100);
-            const bothFees = opsFee.plus(new BigNumber(transferFee));
+            const transferFee = transferCoinAmount.multipliedBy(feePercent).dividedBy(100);
+            const totalFees = gsnFee.multipliedBy(3).plus(transferFee);
 
-            assertErc20BalanceChanged(aliceBalanaceBefore, aliceBalanaceAfter, ether(-transferCoinAmount - opsFee));
-            assertErc20BalanceChanged(bobBalanaceBefore, bobBalanaceAfter, ether(transferCoinAmount - (transferCoinAmount / 100 * feePercent)));
-            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(bothFees));
+            assertErc20BalanceChanged(aliceBalanaceBefore, aliceBalanaceAfter, ether(zero.minus(transferCoinAmount).minus(totalFees)));
+            assertErc20BalanceChanged(bobBalanaceBefore, bobBalanaceAfter, ether(transferCoinAmount));
+            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(totalFees));
 
-            const deployerBalanceBefore = await coinToken.balanceOf(deployer);
-            await coinToken.withdrawFee({from: deployer});
-            const deployerBalanceAfter = await coinToken.balanceOf(deployer);
+            const feeManagerBalanceBefore = await coinToken.balanceOf(feeManager);
+            res = await coinToken.withdrawFee({from: feeManager});
+            const fourthBlock = res.receipt.blockNumber;
+            await evmMineBlock();
+            const feeManagerBalanceAfter = await coinToken.balanceOf(feeManager);
 
-            assertErc20BalanceChanged(deployerBalanceBefore, deployerBalanceAfter, ether(bothFees));
+            assertErc20BalanceChanged(feeManagerBalanceBefore, feeManagerBalanceAfter, ether(totalFees));
+
+            // 0th block
+            assert.equal(await coinToken.balanceOfAt(alice, zeroBlock), ether(baseAliceBalance));
+            assert.equal(await coinToken.balanceOfAt(bob, zeroBlock), ether(0));
+            assert.equal(await coinToken.balanceOfAt(coinToken.address, zeroBlock), ether(0));
+            assert.equal(await coinToken.totalSupplyAt(zeroBlock), totalSupply);
+
+            // 1st block fee 0.02% + 0.7 YAL
+            assert.equal(
+                await coinToken.balanceOfAt(alice, firstBlock),
+                ether(baseAliceBalance.minus(transferCoinAmount.dividedBy(2)).minus(gsnFee).minus(transferFee.dividedBy(2)))
+            );
+            assert.equal(await coinToken.balanceOfAt(bob, firstBlock), ether(transferCoinAmount.dividedBy(2)));
+            assert.equal(
+                await coinToken.balanceOfAt(coinToken.address, firstBlock),
+                ether(gsnFee.plus(transferFee.dividedBy(2)))
+            );
+            assert.equal(await coinToken.totalSupplyAt(firstBlock), totalSupply);
+
+            // 2nd block fee 0.02% + 0.7 YAL
+            assert.equal(
+                await coinToken.balanceOfAt(alice, secondBlock),
+                ether(baseAliceBalance
+                    .minus(transferCoinAmount.multipliedBy(3).dividedBy(4))
+                    .minus(gsnFee.multipliedBy(2))
+                    .minus(transferFee.multipliedBy(3).dividedBy(4)))
+            );
+            assert.equal(await coinToken.balanceOfAt(bob, secondBlock), ether(transferCoinAmount.multipliedBy(3).dividedBy(4)));
+            assert.equal(
+                await coinToken.balanceOfAt(coinToken.address, secondBlock),
+                ether(gsnFee.multipliedBy(2).plus(transferFee.multipliedBy(3).dividedBy(4)))
+            );
+            assert.equal(await coinToken.totalSupplyAt(secondBlock), totalSupply);
+
+            // 3rd block fee 0.02% + 0.7 YAL
+            assert.equal(
+                await coinToken.balanceOfAt(alice, thirdBlock),
+                ether(baseAliceBalance.minus(transferCoinAmount).minus(totalFees))
+            );
+            assert.equal(await coinToken.balanceOfAt(bob, thirdBlock), ether(transferCoinAmount));
+            assert.equal(
+                await coinToken.balanceOfAt(coinToken.address, thirdBlock),
+                ether(totalFees)
+            );
+            assert.equal(await coinToken.balanceOfAt(feeManager, thirdBlock), ether(0));
+            assert.equal(await coinToken.totalSupplyAt(thirdBlock), totalSupply);
+
+            // 4rd block fee withdrawal
+            assert.equal(
+                await coinToken.balanceOfAt(alice, thirdBlock),
+                ether(baseAliceBalance.minus(transferCoinAmount).minus(totalFees))
+            );
+            assert.equal(await coinToken.balanceOfAt(bob, fourthBlock), ether(transferCoinAmount));
+            assert.equal(await coinToken.balanceOfAt(coinToken.address, fourthBlock), ether(0));
+            assert.equal(await coinToken.balanceOfAt(feeManager, fourthBlock), ether(totalFees));
+            assert.equal(await coinToken.totalSupplyAt(fourthBlock), totalSupply);
+
+            // final values
+            assert.equal(
+                await coinToken.balanceOf(alice),
+                ether(baseAliceBalance.minus(transferCoinAmount).minus(totalFees))
+            );
+            assert.equal(await coinToken.balanceOf(bob), ether(transferCoinAmount));
+            assert.equal(await coinToken.balanceOf(coinToken.address), ether(0));
+            assert.equal(await coinToken.balanceOf(feeManager), ether(totalFees));
+            assert.equal(await coinToken.totalSupply(), totalSupply);
         });
 
-        it('should correct transfer with fee', async function () {
+        it('should correct transfer with transfer fee only', async function () {
             const transferCoinAmount = 1000;
 
             const aliceBalanaceBefore = await coinToken.balanceOf(alice);
@@ -384,15 +670,15 @@ describe('Coin', () => {
             const bobBalanaceAfter = await coinToken.balanceOf(bob);
             const contractBalanceAfter = await coinToken.balanceOf(coinToken.address);
 
-            assertErc20BalanceChanged(aliceBalanaceBefore, aliceBalanaceAfter, ether(-transferCoinAmount));
-            assertErc20BalanceChanged(bobBalanaceBefore, bobBalanaceAfter, ether(transferCoinAmount - transferCoinAmount * feePercent / 100));
+            assertErc20BalanceChanged(aliceBalanaceBefore, aliceBalanaceAfter, ether(zero.minus(transferCoinAmount).minus(transferCoinAmount * feePercent / 100)));
+            assertErc20BalanceChanged(bobBalanaceBefore, bobBalanaceAfter, ether(transferCoinAmount));
             assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(transferCoinAmount * feePercent / 100));
 
-            const deployerBalanceBefore = await coinToken.balanceOf(deployer);
-            await coinToken.withdrawFee({from: deployer});
-            const deployerBalanceAfter = await coinToken.balanceOf(deployer);
+            const feeManagerBalanceBefore = await coinToken.balanceOf(feeManager);
+            await coinToken.withdrawFee({from: feeManager});
+            const feeManagerBalanceAfter = await coinToken.balanceOf(feeManager);
 
-            assertErc20BalanceChanged(deployerBalanceBefore, deployerBalanceAfter, ether(transferCoinAmount / 100 * feePercent));
+            assertErc20BalanceChanged(feeManagerBalanceBefore, feeManagerBalanceAfter, ether(transferCoinAmount / 100 * feePercent));
         });
     });
 });
