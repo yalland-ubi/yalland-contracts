@@ -103,9 +103,8 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     _;
   }
 
-  // TODO: make permissionless method
   // Mints tokens, assigns the verifier reward and caches reward per member
-  modifier handlePeriodTransitionIfRequired() {
+  modifier triggerTransition() {
     uint256 currentPeriodId = getCurrentPeriodId();
 
     Period storage currentPeriod = period[currentPeriodId];
@@ -288,7 +287,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     address[] calldata _memberAddresses
   )
     external
-    handlePeriodTransitionIfRequired
+    triggerTransition
     onlyVerifier
   {
     _addMembers(_memberIds, _memberAddresses);
@@ -304,7 +303,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     address _memberAddress
   )
     external
-    handlePeriodTransitionIfRequired
+    triggerTransition
     onlyVerifier
   {
     _addMember(_memberId, _memberAddress);
@@ -320,7 +319,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     address[] calldata _memberAddresses
   )
     external
-    handlePeriodTransitionIfRequired
+    triggerTransition
     onlyVerifier
   {
     uint256 len = _memberAddresses.length;
@@ -353,7 +352,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     address[] calldata _memberAddresses
   )
     external
-    handlePeriodTransitionIfRequired
+    triggerTransition
     onlyVerifier
   {
     uint256 len = _memberAddresses.length;
@@ -411,7 +410,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     address _to
   )
     external
-    handlePeriodTransitionIfRequired
+    triggerTransition
     whenNotPaused
     onlyVerifier
   {
@@ -507,7 +506,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     address[] calldata _memberAddresses
   )
     external
-    handlePeriodTransitionIfRequired
+    triggerTransition
     whenNotPaused
     onlyVerifier
   {
@@ -531,7 +530,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
    * @dev Claims member funds
    * @params _memberAddress to claim funds for
    */
-  function claimFunds() external handlePeriodTransitionIfRequired whenNotPaused {
+  function claimFunds() external triggerTransition whenNotPaused {
     uint256 currentPeriodId = getCurrentPeriodId();
 
     _claimFunds(
@@ -598,6 +597,15 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     _changeMemberAddress(_msgSender(), _to);
 
     emit ChangeMyAddress(memberId, _msgSender(), _to);
+  }
+
+  // PERMISSIONLESS METHODS
+
+  /*
+   * @dev Anyone can trigger period transition
+   */
+  function handlePeriodTransitionIfRequired() external triggerTransition {
+    // solhint-disable-previous-line no-empty-blocks
   }
 
   // VIEW METHODS
