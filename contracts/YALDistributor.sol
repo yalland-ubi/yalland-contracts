@@ -112,10 +112,11 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     if (currentPeriod.rewardPerMember == 0 && activeMemberCount > 0) {
       currentPeriod.verifierReward = periodVolume.mul(verifierRewardShare) / HUNDRED_PCT;
 
-      // TODO: fix math
       // imbalance will be left at the contract
       // uint256 currentPeriodRewardPerMember = (periodVolume * (100 ether - verifierRewardShare)) / (activeMemberCount * 100 ether);
-      uint256 currentPeriodRewardPerMember = (periodVolume.mul(HUNDRED_PCT.sub(verifierRewardShare))) / (activeMemberCount * HUNDRED_PCT);
+      uint256 currentPeriodRewardPerMember = (periodVolume.mul(HUNDRED_PCT.sub(verifierRewardShare)))
+        .div(activeMemberCount.mul(HUNDRED_PCT));
+
       assert(currentPeriodRewardPerMember > 0);
       currentPeriod.rewardPerMember = currentPeriodRewardPerMember;
 

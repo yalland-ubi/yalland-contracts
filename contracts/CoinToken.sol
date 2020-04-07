@@ -41,6 +41,8 @@ contract CoinToken is
   event SetDistributor(uint256 newDistributor);
   event SetWhitelistAddress(address addr, bool isActive);
   event TransferWithMemo(address indexed from, address indexed to, uint256 value, string memo);
+  event Mint(address indexed minter, address indexed to, uint256 value);
+  event Burn(address indexed burner, address indexed from, uint256 value);
 
   // in 100 % == 100 eth
   uint256 public transferFee = 0;
@@ -136,15 +138,18 @@ contract CoinToken is
 
   // MANAGER INTERFACE
 
-  // TODO: add mint/burn events
   function mint(address _account, uint256 _amount) public whenNotPaused onlyMinter returns (bool) {
     _mint(_account, _amount);
+
+    emit Mint(msg.sender, _account, _amount);
 
     return true;
   }
 
   function burn(address _account, uint256 _amount) public whenNotPaused onlyBurner {
     _burn(_account, _amount);
+
+    emit Burn(msg.sender, _account, _amount);
   }
 
   function setWhitelistAddress(address _addr, bool _isActive) public onlyTransferWLManager {
