@@ -16,12 +16,12 @@ const {
 
 const CoinToken = contract.fromArtifact('CoinToken');
 const YALDistributor = contract.fromArtifact('YALDistributor');
-const { approveFunction, assertRelayedCall } = require('../helpers')(web3);
+const { approveFunction, assertRelayedCall, GSNRecipientSignatureErrorCodes } = require('../helpers')(web3);
 
 CoinToken.numberFormat = 'String';
 YALDistributor.numberFormat = 'String';
 
-const { ether, now, int, increaseTime, assertRevert, zeroAddress, getResTimestamp, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
+const { ether, now, int, increaseTime, assertRevert, assertGsnReject, zeroAddress, getResTimestamp, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
 
 const keccak256 = web3.utils.soliditySha3;
 
@@ -67,6 +67,9 @@ describe('YALDistributor Unit tests', () => {
         await coinToken.setDistributor(dist.address);
         await coinToken.mint(alice, ether(baseAliceBalance), { from: minter });
         await coinToken.setTransferFee(ether('0.02'), { from: feeManager });
+        await coinToken.setGsnFee(ether('1.7'), { from: feeManager });
+
+        await dist.setGsnFee(ether('4.2'));
 
         // this will affect on dist provider too
         coinToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
@@ -669,15 +672,19 @@ describe('YALDistributor Unit tests', () => {
 
                 await coinToken.setWhitelistAddress(dist.address, true, { from: transferWlManager });
 
+                await coinToken.mint(dist.address, ether(12), { from: minter });
                 await coinToken.mint(bob, ether(12), { from: minter });
+                await coinToken.mint(charlie, ether(12), { from: minter });
+                await coinToken.transfer(charlie, ether(1), { from: charlie });
+
                 assert.equal(await coinToken.balanceOf(alice), ether(baseAliceBalance));
                 assert.equal(await coinToken.balanceOf(bob), ether(12));
 
-                await coinToken.approve(dist.address, await ether(1000), { from: bob });
-                const res = await dist.changeMyAddress(alice, { from: bob, gasLimit: 9000000, useGSN:true });
+                await coinToken.approve(dist.address, await ether(4.2), { from: bob });
+                const res = await dist.changeMyAddress(alice, { from: bob, gasLimit: 9000000, useGSN: true });
                 assertRelayedCall(res);
 
-                assert.equal(await coinToken.balanceOf(alice), ether(baseAliceBalance + 12));
+                assert.equal(await coinToken.balanceOf(alice), ether(baseAliceBalance + 12 - 4.2));
                 assert.equal(await coinToken.balanceOf(bob), ether(0));
 
                 const details = await dist.member(memberId1);
@@ -690,6 +697,44 @@ describe('YALDistributor Unit tests', () => {
                     '0x0000000000000000000000000000000000000000000000000000000000000000'
                 );
             });
+
+            describe('GSN reject', () => {
+                beforeEach(async function() {
+                    await coinToken.mint(bob, ether(12), { from: minter });
+                    assert.equal(await coinToken.balanceOf(alice), ether(baseAliceBalance));
+                    assert.equal(await coinToken.balanceOf(bob), ether(12));
+                    assert.equal(await dist.gsnFee(), ether('4.2'));
+                    await coinToken.setWhitelistAddress(dist.address, true, { from: transferWlManager });
+                })
+
+                it('should deny changing address without sufficient pre-approved funds using GSN', async function() {
+                    assert.equal(await coinToken.allowance(bob, dist.address), 0);
+
+                    await assertGsnReject(
+                        dist.changeMyAddress(alice, { from: bob, gasLimit: 9000000, useGSN: true }),
+                        GSNRecipientSignatureErrorCodes.INSUFFICIENT_BALANCE
+                    );
+
+                    assert.equal(await coinToken.balanceOf(alice), ether(baseAliceBalance));
+                    assert.equal(await coinToken.balanceOf(bob), ether(12));
+                });
+
+                it('should deny changing address without sufficient funds using GSN', async function() {
+                    await coinToken.approve(dist.address, ether('4.2'), { from: bob });
+                    await coinToken.burn(bob, ether(11), { from: burner });
+                    assert.equal(await coinToken.balanceOf(bob), ether(1));
+                    assert.equal(await coinToken.allowance(bob, dist.address), ether('4.2'));
+
+                    await assertGsnReject(
+                        dist.changeMyAddress(alice, { from: bob, gasLimit: 9000000, useGSN: true }),
+                        GSNRecipientSignatureErrorCodes.INSUFFICIENT_BALANCE
+                    );
+
+                    assert.equal(await coinToken.balanceOf(alice), ether(baseAliceBalance));
+                    assert.equal(await coinToken.balanceOf(bob), ether(1));
+                });
+
+            })
 
             it('should allow inactive member changing his address', async function() {
                 await dist.disableMembers([bob], { from: verifier });
@@ -793,6 +838,19 @@ describe('YALDistributor Unit tests', () => {
                 const charlieBalanceBefore = await coinToken.balanceOf(charlie);
                 const res = await dist.claimFunds({ from: charlie, useGSN: true });
                 assertRelayedCall(res);
+                const charlieBalanceAfter = await coinToken.balanceOf(charlie);
+
+                assertErc20BalanceChanged(charlieBalanceBefore, charlieBalanceAfter, ether(75 * 1000));
+            });
+
+            it('should deny claiming reward second time using GSN', async function() {
+                const charlieBalanceBefore = await coinToken.balanceOf(charlie);
+                await dist.claimFunds({ from: charlie, useGSN: false });
+                await assertGsnReject(
+                    dist.claimFunds({ from: charlie, useGSN: true }),
+                    GSNRecipientSignatureErrorCodes.DENIED,
+                    'Already claimed for the current period'
+                );
                 const charlieBalanceAfter = await coinToken.balanceOf(charlie);
 
                 assertErc20BalanceChanged(charlieBalanceBefore, charlieBalanceAfter, ether(75 * 1000));

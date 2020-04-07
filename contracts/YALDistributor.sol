@@ -170,8 +170,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     bytes4 signature = getDataSignature(_encodedFunction);
 
     if (signature == YALDistributor(0).claimFunds.selector) {
-      // TODO: check claim ability
-      if (member[memberAddress2Id[_caller]].active == true) {
+      if (isCurrentPeriodClaimedByAddress(_caller) == false) {
         return (GSNRecipientSignatureErrorCodes.OK, abi.encode(_caller, signature));
       } else {
         return (GSNRecipientSignatureErrorCodes.DENIED, "");
@@ -179,7 +178,6 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     } else if (signature == YALDistributor(0).changeMyAddress.selector) {
       IERC20 t = IERC20(address(token));
 
-      // TODO: cover cases with tests
       if (t.balanceOf(_caller) >= gsnFee && t.allowance(_caller, address(this)) >= gsnFee) {
         return (GSNRecipientSignatureErrorCodes.OK, abi.encode(_caller, signature));
       } else {
@@ -651,7 +649,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     return member[_memberId].claimedPeriods[getCurrentPeriodId()];
   }
 
-  function isCurrentPeriodClaimedByAddress(address _memberAddress) external view returns (bool) {
+  function isCurrentPeriodClaimedByAddress(address _memberAddress) public view returns (bool) {
     return member[memberAddress2Id[_memberAddress]].claimedPeriods[getCurrentPeriodId()];
   }
 
@@ -661,10 +659,6 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
 
   function isPeriodClaimedByAddress(address _memberAddress, uint256 _periodId) external view returns (bool) {
     return member[memberAddress2Id[_memberAddress]].claimedPeriods[_periodId];
-  }
-
-  function isTxSenderValid(address _addr) external view returns (bool) {
-    return member[memberAddress2Id[_addr]].active || true;
   }
 
   function isActive(address _addr) external view returns (bool) {

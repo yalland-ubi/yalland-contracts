@@ -21,7 +21,7 @@ CoinToken.numberFormat = 'String';
 YALDistributor.numberFormat = 'String';
 
 const { ether, now, getEventArg, increaseTime, assertRevert, assertGsnReject } = require('@galtproject/solidity-test-chest')(web3);
-const { approveFunction } = require('./helpers')(web3);
+const { approveFunction, GSNRecipientSignatureErrorCodes } = require('./helpers')(web3);
 
 const keccak256 = web3.utils.soliditySha3;
 
@@ -118,7 +118,11 @@ describe('YALDistribution Integration Tests', () => {
         await increaseTime(11 + periodLength);
 
         await dist.claimFunds({ from: bob });
-        await assertRevert(dist.claimFunds({ from: bob, useGSN: true }), 'Already claimed for the current period');
+        await assertGsnReject(
+            dist.claimFunds({ from: bob, useGSN: true }),
+            GSNRecipientSignatureErrorCodes.DENIED,
+            'Already claimed for the current period'
+        );
 
         res = await dist.period(1);
         assert.equal(res.verifierReward, ether(25 * 1000));

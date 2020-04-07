@@ -40,8 +40,6 @@ interface IYALDistributor {
 
   function isPeriodClaimedByAddress(address _memberAddress, uint256 _periodId) external view returns (bool);
 
-  function isTxSenderValid(address _addr) external view returns (bool);
-
   function isActive(address _addr) external view returns (bool);
 
   function getMemberByAddress(address _memberAddress) external view returns (
