@@ -9,10 +9,12 @@
 
 pragma solidity ^0.5.13;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
 import "./interfaces/ICoinToken.sol";
+import "./interfaces/IYALDistributor.sol";
 import "./GSNRecipientSigned.sol";
 
 
@@ -21,7 +23,7 @@ import "./GSNRecipientSigned.sol";
  * @author Galt Project
  * @notice Mints YAL tokens on request according pre-configured formula
  **/
-contract YALDistributor is OwnableAndInitializable, GSNRecipientSigned {
+contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipientSigned {
   using SafeMath for uint256;
   using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -44,6 +46,7 @@ contract YALDistributor is OwnableAndInitializable, GSNRecipientSigned {
   );
   event Pause();
   event Unpause();
+  event SetGsnFee(uint256 value);
   event SetPeriodVolume(uint256 oldPeriodVolume, uint256 newPeriodVolume);
   event SetVerifier(address verifier);
   event SetVerifierRewardShare(uint256 rewardShare);
@@ -76,6 +79,8 @@ contract YALDistributor is OwnableAndInitializable, GSNRecipientSigned {
   address public verifier;
   // 100% == 100 ether
   uint256 public verifierRewardShare;
+  // in YAL wei
+  uint256 public gsnFee = 0;
 
   // credentialsHash => memberDetails
   mapping(bytes32 => Member) public member;
@@ -98,6 +103,7 @@ contract YALDistributor is OwnableAndInitializable, GSNRecipientSigned {
     _;
   }
 
+  // TODO: make permissionless method
   // Mints tokens, assigns the verifier reward and caches reward per member
   modifier handlePeriodTransitionIfRequired() {
     uint256 currentPeriodId = getCurrentPeriodId();
@@ -107,6 +113,7 @@ contract YALDistributor is OwnableAndInitializable, GSNRecipientSigned {
     if (currentPeriod.rewardPerMember == 0 && activeMemberCount > 0) {
       currentPeriod.verifierReward = periodVolume.mul(verifierRewardShare) / HUNDRED_PCT;
 
+      // TODO: fix math
       // imbalance will be left at the contract
       // uint256 currentPeriodRewardPerMember = (periodVolume * (100 ether - verifierRewardShare)) / (activeMemberCount * 100 ether);
       uint256 currentPeriodRewardPerMember = (periodVolume.mul(HUNDRED_PCT.sub(verifierRewardShare))) / (activeMemberCount * HUNDRED_PCT);
@@ -158,17 +165,36 @@ contract YALDistributor is OwnableAndInitializable, GSNRecipientSigned {
   )
     internal
     view
-    returns (GSNRecipientSignatureErrorCodes)
+    returns (GSNRecipientSignatureErrorCodes, bytes memory)
   {
     bytes4 signature = getDataSignature(_encodedFunction);
+
     if (signature == YALDistributor(0).claimFunds.selector) {
+      // TODO: check claim ability
       if (member[memberAddress2Id[_caller]].active == true) {
-        return GSNRecipientSignatureErrorCodes.OK;
+        return (GSNRecipientSignatureErrorCodes.OK, abi.encode(_caller, signature));
       } else {
-        return GSNRecipientSignatureErrorCodes.DENIED;
+        return (GSNRecipientSignatureErrorCodes.DENIED, "");
+      }
+    } else if (signature == YALDistributor(0).changeMyAddress.selector) {
+      IERC20 t = IERC20(address(token));
+
+      // TODO: cover cases with tests
+      if (t.balanceOf(_caller) >= gsnFee && t.allowance(_caller, address(this)) >= gsnFee) {
+        return (GSNRecipientSignatureErrorCodes.OK, abi.encode(_caller, signature));
+      } else {
+        return (GSNRecipientSignatureErrorCodes.INSUFFICIENT_BALANCE, "");
       }
     } else {
-      return GSNRecipientSignatureErrorCodes.METHOD_NOT_SUPPORTED;
+      return (GSNRecipientSignatureErrorCodes.METHOD_NOT_SUPPORTED, "");
+    }
+  }
+
+  function _preRelayedCall(bytes memory _context) internal returns (bytes32) {
+    (address from, bytes4 signature) = abi.decode(_context, (address,bytes4));
+
+    if (signature == YALDistributor(0).changeMyAddress.selector) {
+      IERC20(address(token)).transferFrom(from, address(this), gsnFee);
     }
   }
 
@@ -207,6 +233,12 @@ contract YALDistributor is OwnableAndInitializable, GSNRecipientSigned {
     periodVolume = _periodVolume;
 
     emit SetPeriodVolume(oldPeriodVolume, _periodVolume);
+  }
+
+  function setGsnFee(uint256 _gsnFee) public onlyOwner {
+    gsnFee = _gsnFee;
+
+    emit SetGsnFee(_gsnFee);
   }
 
   /*
@@ -425,14 +457,14 @@ contract YALDistributor is OwnableAndInitializable, GSNRecipientSigned {
     emit AddMember(_memberId, _memberAddress);
   }
 
-  function _changeMemberAddress(address _memberAddress, address _to) internal {
-    bytes32 memberId = memberAddress2Id[_memberAddress];
+  function _changeMemberAddress(address _from, address _to) internal {
+    bytes32 memberId = memberAddress2Id[_from];
     Member storage m = member[memberId];
     address from = m.addr;
 
     require(m.createdAt != 0, "Member doesn't exist");
     require(memberAddress2Id[_to] == bytes32(0), "Address is already taken by another member");
-    require(_memberAddress != _to, "Can't migrate to the same address");
+    require(_from != _to, "Can't migrate to the same address");
 
     m.addr = _to;
 
@@ -441,6 +473,12 @@ contract YALDistributor is OwnableAndInitializable, GSNRecipientSigned {
 
     activeAddressesCache.remove(from);
     activeAddressesCache.add(_to);
+
+    uint256 memberBalance = IERC20(address(token)).balanceOf(from);
+    if (memberBalance > 0) {
+      token.burn(_from, memberBalance);
+      token.mint(_to, memberBalance);
+    }
 
     emit ChangeMemberAddress(memberId, from, _to);
   }
@@ -553,24 +591,13 @@ contract YALDistributor is OwnableAndInitializable, GSNRecipientSigned {
    * @param _to address to change to
    */
   function changeMyAddress(address _to) external whenNotPaused {
-    address from = _msgSender();
-    bytes32 memberId = memberAddress2Id[from];
+    bytes32 memberId = memberAddress2Id[_msgSender()];
     Member storage m = member[memberId];
-
     require(m.addr == _msgSender(), "Only the member allowed");
-    require(m.createdAt != 0, "Member doesn't exist");
-    require(memberAddress2Id[_to] == bytes32(0), "Address is already taken by another member");
-    require(_msgSender() != _to, "Can't migrate to the same address");
 
-    m.addr = _to;
+    _changeMemberAddress(_msgSender(), _to);
 
-    memberAddress2Id[from] = bytes32(0);
-    memberAddress2Id[_to] = memberId;
-
-    activeAddressesCache.remove(from);
-    activeAddressesCache.add(_to);
-
-    emit ChangeMyAddress(memberId, from, _to);
+    emit ChangeMyAddress(memberId, _msgSender(), _to);
   }
 
   // VIEW METHODS

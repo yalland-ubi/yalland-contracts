@@ -47,17 +47,17 @@ contract GSNRecipientSigned is GSNRecipient {
     );
     address signer = keccak256(blob).toEthSignedMessageHash().recover(approvalData);
 
-    GSNRecipientSignatureErrorCodes code = _handleRelayedCall(encodedFunction, signer);
+    (GSNRecipientSignatureErrorCodes code, bytes memory context) = _handleRelayedCall(encodedFunction, signer);
 
     if (code == GSNRecipientSignatureErrorCodes.OK) {
-      return _approveRelayedCall(abi.encode(signer));
+      return _approveRelayedCall(context);
     } else {
       return _rejectRelayedCall(uint256(code));
     }
   }
 
   function _handleRelayedCall(bytes memory _encodedFunction, address _caller)
-    internal view returns (GSNRecipientSignatureErrorCodes);
+    internal view returns (GSNRecipientSignatureErrorCodes, bytes memory);
 
   function getDataSignature(bytes memory _encodedFunction) public view returns (bytes4 signature){
     assembly {

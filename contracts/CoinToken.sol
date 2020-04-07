@@ -24,7 +24,7 @@ contract CoinToken is
   ICoinToken,
   ERC20,
   ERC20Pausable,
-  ERC20Burnable,
+//  ERC20Burnable,
   ERC20Detailed,
   Checkpointable,
   Permissionable,
@@ -41,7 +41,7 @@ contract CoinToken is
   uint256 public constant HUNDRED_PCT = 100 ether;
 
   event SetTransferFee(address indexed feeManager, uint256 share);
-  event SetOpsFee(address indexed feeManager, uint256 value);
+  event SetGsnFee(address indexed feeManager, uint256 value);
   event SetDistributor(uint256 newDistributor);
   event SetWhitelistAddress(address addr, bool isActive);
   event TransferWithMemo(address indexed from, address indexed to, uint256 value, string memo);
@@ -108,7 +108,7 @@ contract CoinToken is
   )
     internal
     view
-    returns (GSNRecipientSignatureErrorCodes)
+    returns (GSNRecipientSignatureErrorCodes, bytes memory)
   {
     bytes4 signature = getDataSignature(_encodedFunction);
 
@@ -122,13 +122,13 @@ contract CoinToken is
     ) {
       payer = _caller;
     } else {
-      return GSNRecipientSignatureErrorCodes.METHOD_NOT_SUPPORTED;
+      return (GSNRecipientSignatureErrorCodes.METHOD_NOT_SUPPORTED, "");
     }
 
     if (canPayForGsnCall(payer)) {
-      return GSNRecipientSignatureErrorCodes.OK;
+      return (GSNRecipientSignatureErrorCodes.OK, abi.encode(_caller));
     } else {
-      return GSNRecipientSignatureErrorCodes.INSUFFICIENT_BALANCE;
+      return (GSNRecipientSignatureErrorCodes.INSUFFICIENT_BALANCE, "");
     }
   }
 
@@ -138,8 +138,22 @@ contract CoinToken is
     _transfer(from, address(this), gsnFee);
   }
 
+  function _postRelayedCall(bytes memory _context, bool, uint256, bytes32) internal {
+//    address from = abi.decode(_context, (address));
+//    address that = address(this);
+//
+//    if (balanceOf(from) != _balanceOfAt(from, block.number)) {
+//      _updateValueAtNow(_cachedBalances[from], balanceOf(from));
+//    }
+//
+//    if (balanceOf(that) != _balanceOfAt(that, block.number)) {
+//      _updateValueAtNow(_cachedBalances[that], balanceOf(that));
+//    }
+  }
+
   // MANAGER INTERFACE
 
+  // TODO: add mint/burn events
   function mint(address _account, uint256 _amount) public whenNotPaused onlyMinter returns (bool) {
     _mint(_account, _amount);
     _updateAccountCache(_account);
@@ -175,7 +189,7 @@ contract CoinToken is
   function setGsnFee(uint256 _gsnFee) public onlyFeeManager {
     gsnFee = _gsnFee;
 
-    emit SetOpsFee(msg.sender, _gsnFee);
+    emit SetGsnFee(msg.sender, _gsnFee);
   }
 
   function withdrawFee() public onlyFeeManager {
@@ -230,8 +244,8 @@ contract CoinToken is
 
     bool result = super.transferFrom(_from, _to, _value);
 
-    _updateTransferCache(_from, _to);
-    _updateValueAtNow(_cachedBalances[_msgSender()], balanceOf(_msgSender()));
+//    _updateTransferCache(_from, _to);
+//    _updateValueAtNow(_cachedBalances[_msgSender()], balanceOf(_msgSender()));
 
     return true;
   }
@@ -252,8 +266,8 @@ contract CoinToken is
     _updateValueAtNow(_cachedBalances[address(this)], balanceOf(address(this)));
   }
 
-function _chargeTransferFee(address from, uint256 _value) private {
-    uint256 _fee = getFeeForAmount(_value);
+  function _chargeTransferFee(address from, uint256 _value) private {
+    uint256 _fee = getTransferFee(_value);
 
     if (_fee > 0) {
       _transfer(from, address(this), _fee);
@@ -262,7 +276,7 @@ function _chargeTransferFee(address from, uint256 _value) private {
 
   // GETTERS
   
-  function getFeeForAmount(uint256 amount) public view returns(uint256) {
+  function getTransferFee(uint256 amount) public view returns(uint256) {
     if (transferFee > 0) {
       return amount.mul(transferFee) / HUNDRED_PCT;
     } else {

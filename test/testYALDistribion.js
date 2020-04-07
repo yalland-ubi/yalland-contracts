@@ -26,7 +26,7 @@ const { approveFunction } = require('./helpers')(web3);
 const keccak256 = web3.utils.soliditySha3;
 
 describe('YALDistribution Integration Tests', () => {
-    const [verifier, alice, bob, charlie, dan, eve, anyone] = accounts;
+    const [verifier, alice, bob, charlie, dan, eve, minter, feeManager] = accounts;
 
     // 7 days
     const periodLength = 7 * 24 * 60 * 60;
@@ -58,10 +58,14 @@ describe('YALDistribution Integration Tests', () => {
             genesisTimestamp
         );
 
-        await coinToken.mint(alice, ether(baseAliceBalance));
-        await coinToken.setTransferFee(ether(10));
         await coinToken.addRoleTo(dist.address, "minter");
+        await coinToken.addRoleTo(minter, 'minter');
+        await coinToken.addRoleTo(feeManager, 'fee_manager');
+        // await coinToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
         await coinToken.setDistributor(dist.address);
+
+        await coinToken.setTransferFee(ether(10), { from: feeManager });
+        await coinToken.mint(alice, ether(baseAliceBalance), { from: minter });
 
         // this will affect on dist provider too
         coinToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;

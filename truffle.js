@@ -76,10 +76,10 @@ module.exports = {
             settings: {
                 optimizer: {
                     enabled: true,
-                    runs: 20000
+                    runs: 200
                 }
             },
-            evmVersion: 'petersburg'
+            evmVersion: 'istanbul'
         }
     }
 };

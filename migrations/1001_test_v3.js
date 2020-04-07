@@ -61,7 +61,7 @@ module.exports = async function (truffle, network, accounts) {
 
         await Promise.all([
             coinToken.setTransferFee(ether('0.02')),
-            coinToken.setOpsFee(ether(7)),
+            coinToken.setOpsFee(ether('0.7')),
 
             coinToken.addRoleTo(dist.address, "minter"),
             coinToken.setDistributor(dist.address),

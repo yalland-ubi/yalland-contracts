@@ -89,29 +89,29 @@ describe('Coin', () => {
         await fundRecipient(web3, { recipient: coinToken.address, amount: ether(1) });
     });
 
-    describe('#getFeeForAmount()', () => {
+    describe('#getTransferFee()', () => {
         it('should calculate fees correctly', async function() {
             await coinToken.setTransferFee(ether(0.02), { from: feeManager });
-            assert.equal(await coinToken.getFeeForAmount(ether(1)), ether(0.0002));
+            assert.equal(await coinToken.getTransferFee(ether(1)), ether(0.0002));
 
             await coinToken.setTransferFee(ether(30), { from: feeManager });
-            assert.equal(await coinToken.getFeeForAmount(ether(1)), ether(0.3));
+            assert.equal(await coinToken.getTransferFee(ether(1)), ether(0.3));
         })
 
         it('should calculate negligible fees correctly', async function() {
             await coinToken.setTransferFee(ether(20), { from: feeManager });
 
-            assert.equal(await coinToken.getFeeForAmount(10), 2);
-            assert.equal(await coinToken.getFeeForAmount(8), 1);
-            assert.equal(await coinToken.getFeeForAmount(5), 1);
-            assert.equal(await coinToken.getFeeForAmount(4), 0);
-            assert.equal(await coinToken.getFeeForAmount(1), 0);
+            assert.equal(await coinToken.getTransferFee(10), 2);
+            assert.equal(await coinToken.getTransferFee(8), 1);
+            assert.equal(await coinToken.getTransferFee(5), 1);
+            assert.equal(await coinToken.getTransferFee(4), 0);
+            assert.equal(await coinToken.getTransferFee(1), 0);
         })
 
         it('should return 0 for 0 fee', async function() {
             await coinToken.setTransferFee(0, { from: feeManager });
-            assert.equal(await coinToken.getFeeForAmount(ether(250)), 0);
-            assert.equal(await coinToken.getFeeForAmount(0), 0);
+            assert.equal(await coinToken.getTransferFee(ether(250)), 0);
+            assert.equal(await coinToken.getTransferFee(0), 0);
         })
     });
 
