@@ -10,13 +10,11 @@
 pragma solidity ^0.5.13;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "@galtproject/libs/contracts/traits/Permissionable.sol";
 import "./interfaces/ICoinToken.sol";
 import "./GSNRecipientSigned.sol";
-import "./Checkpointable.sol";
 import "./YALDistributor.sol";
 
 
@@ -24,9 +22,7 @@ contract CoinToken is
   ICoinToken,
   ERC20,
   ERC20Pausable,
-//  ERC20Burnable,
   ERC20Detailed,
-  Checkpointable,
   Permissionable,
   GSNRecipientSigned
 {
@@ -138,32 +134,17 @@ contract CoinToken is
     _transfer(from, address(this), gsnFee);
   }
 
-  function _postRelayedCall(bytes memory _context, bool, uint256, bytes32) internal {
-//    address from = abi.decode(_context, (address));
-//    address that = address(this);
-//
-//    if (balanceOf(from) != _balanceOfAt(from, block.number)) {
-//      _updateValueAtNow(_cachedBalances[from], balanceOf(from));
-//    }
-//
-//    if (balanceOf(that) != _balanceOfAt(that, block.number)) {
-//      _updateValueAtNow(_cachedBalances[that], balanceOf(that));
-//    }
-  }
-
   // MANAGER INTERFACE
 
   // TODO: add mint/burn events
   function mint(address _account, uint256 _amount) public whenNotPaused onlyMinter returns (bool) {
     _mint(_account, _amount);
-    _updateAccountCache(_account);
 
     return true;
   }
 
   function burn(address _account, uint256 _amount) public whenNotPaused onlyBurner {
     _burn(_account, _amount);
-    _updateAccountCache(_account);
   }
 
   function setWhitelistAddress(address _addr, bool _isActive) public onlyTransferWLManager {
@@ -199,9 +180,6 @@ contract CoinToken is
     require(_payout > 0, "Nothing to withdraw");
 
     _transfer(_this, _msgSender(), _payout);
-
-    _updateValueAtNow(_cachedBalances[address(this)], balanceOf(address(this)));
-    _updateValueAtNow(_cachedBalances[_msgSender()], balanceOf(_msgSender()));
   }
 
   // USER INTERFACE
@@ -209,11 +187,6 @@ contract CoinToken is
   function approve(address _spender, uint256 _amount) public returns (bool) {
     _requireMemberIsValid(_msgSender());
     _requireMemberIsValid(_spender);
-
-    if (msg.sender == getHubAddr()) {
-      _updateValueAtNow(_cachedBalances[address(this)], balanceOf(address(this)));
-      _updateValueAtNow(_cachedBalances[_msgSender()], balanceOf(_msgSender()));
-    }
 
     return super.approve(_spender, _amount);
   }
@@ -224,8 +197,6 @@ contract CoinToken is
 
     _chargeTransferFee(_msgSender(), _value);
     bool result = super.transfer(_to, _value);
-
-    _updateTransferCache(_msgSender(), _to);
 
     return result;
   }
@@ -244,26 +215,12 @@ contract CoinToken is
 
     bool result = super.transferFrom(_from, _to, _value);
 
-//    _updateTransferCache(_from, _to);
-//    _updateValueAtNow(_cachedBalances[_msgSender()], balanceOf(_msgSender()));
-
     return true;
   }
 
   // INTERNAL
   function _requireMemberIsValid(address _member) internal {
     require(isMemberValid(_member), "Member is invalid");
-  }
-
-  function _updateAccountCache(address _account) internal {
-    _updateValueAtNow(_cachedBalances[_account], balanceOf(_account));
-    _updateValueAtNow(_cachedTotalSupply, totalSupply());
-  }
-
-  function _updateTransferCache(address _from, address _to) internal {
-    _updateValueAtNow(_cachedBalances[_from], balanceOf(_from));
-    _updateValueAtNow(_cachedBalances[_to], balanceOf(_to));
-    _updateValueAtNow(_cachedBalances[address(this)], balanceOf(address(this)));
   }
 
   function _chargeTransferFee(address from, uint256 _value) private {
@@ -290,13 +247,5 @@ contract CoinToken is
 
   function canPayForGsnCall(address _addr) public view returns (bool) {
     return balanceOf(_addr) >= gsnFee;
-  }
-
-  function balanceOfAt(address _address, uint256 _blockNumber) external view returns (uint256) {
-    return _balanceOfAt(_address, _blockNumber);
-  }
-
-  function totalSupplyAt(uint256 _blockNumber) external view returns (uint256) {
-    return _totalSupplyAt(_blockNumber);
   }
 }

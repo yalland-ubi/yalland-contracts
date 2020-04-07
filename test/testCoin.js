@@ -245,36 +245,6 @@ describe('Coin', () => {
             assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanceAfter, ether(- (gsnFee.multipliedBy(3))));
             assertErc20BalanceChanged(bobBalanceBefore, bobBalanceAfter, '0');
             assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(gsnFee.multipliedBy(3)));
-
-            // 0th block
-            assert.equal(await coinToken.balanceOfAt(alice, zeroBlock), ether(baseAliceBalance));
-            assert.equal(await coinToken.balanceOfAt(bob, zeroBlock), ether(0));
-            assert.equal(await coinToken.balanceOfAt(coinToken.address, zeroBlock), ether(0));
-            assert.equal(await coinToken.totalSupplyAt(zeroBlock), totalSupply);
-
-            // 1st block
-            assert.equal(await coinToken.balanceOfAt(alice, firstBlock), ether(baseAliceBalance - gsnFee));
-            assert.equal(await coinToken.balanceOfAt(bob, firstBlock), ether(0));
-            assert.equal(await coinToken.balanceOfAt(coinToken.address, firstBlock), ether(gsnFee));
-            assert.equal(await coinToken.totalSupplyAt(firstBlock), totalSupply);
-
-            // 2nd block
-            assert.equal(await coinToken.balanceOfAt(alice, secondBlock), ether(baseAliceBalance - gsnFee.multipliedBy(2)));
-            assert.equal(await coinToken.balanceOfAt(bob, secondBlock), ether(0));
-            assert.equal(await coinToken.balanceOfAt(coinToken.address, secondBlock), ether(gsnFee.multipliedBy(2)));
-            assert.equal(await coinToken.totalSupplyAt(secondBlock), totalSupply);
-
-            // 3rd block
-            assert.equal(await coinToken.balanceOfAt(alice, thirdBlock), ether(baseAliceBalance - gsnFee.multipliedBy(3)));
-            assert.equal(await coinToken.balanceOfAt(bob, thirdBlock), ether(0));
-            assert.equal(await coinToken.balanceOfAt(coinToken.address, thirdBlock), ether(gsnFee.multipliedBy(3)));
-            assert.equal(await coinToken.totalSupplyAt(thirdBlock), totalSupply);
-
-            // final values
-            assert.equal(await coinToken.balanceOf(alice), ether(baseAliceBalance - gsnFee.multipliedBy(3)));
-            assert.equal(await coinToken.balanceOf(bob), ether(0));
-            assert.equal(await coinToken.balanceOf(coinToken.address), ether(gsnFee.multipliedBy(3)));
-            assert.equal(await coinToken.totalSupply(), totalSupply);
         });
     });
 
@@ -391,71 +361,6 @@ describe('Coin', () => {
             const feeManagerBalanceAfter = await coinToken.balanceOf(feeManager);
 
             assertErc20BalanceChanged(feeManagerBalanceBefore, feeManagerBalanceAfter, ether(totalFees));
-
-            // 0th block
-            assert.equal(await coinToken.balanceOfAt(alice, zeroBlock), ether(baseAliceBalance));
-            assert.equal(await coinToken.balanceOfAt(bob, zeroBlock), ether(0));
-            assert.equal(await coinToken.balanceOfAt(charlie, zeroBlock), ether(ten));
-            assert.equal(await coinToken.balanceOfAt(coinToken.address, zeroBlock), ether(0));
-            assert.equal(await coinToken.totalSupplyAt(zeroBlock), totalSupply);
-
-            // 1st block fee 0.02% + 0.7 YAL
-            assert.equal(
-                await coinToken.balanceOfAt(alice, firstBlock),
-                ether(baseAliceBalance.minus(transferCoinAmount.dividedBy(2)))
-            );
-            assert.equal(await coinToken.balanceOfAt(bob, firstBlock), ether(transferCoinAmount.dividedBy(2)));
-            assert.equal(
-                await coinToken.balanceOfAt(charlie, firstBlock),
-                ether(ten.minus(gsnFee).minus(transferFee.dividedBy(2)))
-            );
-            assert.equal(
-                await coinToken.balanceOfAt(coinToken.address, firstBlock),
-                ether(gsnFee.plus(transferFee.dividedBy(2)))
-            );
-            assert.equal(await coinToken.totalSupplyAt(firstBlock), totalSupply);
-
-            // 2nd block fee 0.02% + 0.7 YAL
-            assert.equal(
-                await coinToken.balanceOfAt(alice, secondBlock),
-                ether(baseAliceBalance.minus(transferCoinAmount.multipliedBy(3).dividedBy(4)))
-            );
-            assert.equal(
-                await coinToken.balanceOfAt(bob, secondBlock),
-                ether(transferCoinAmount.multipliedBy(3).dividedBy(4))
-            );
-            assert.equal(
-                await coinToken.balanceOfAt(charlie, secondBlock),
-                ether(ten
-                    .minus(gsnFee.multipliedBy(2))
-                    .minus(transferFee.multipliedBy(3).dividedBy(4))
-                )
-            );
-            assert.equal(
-                await coinToken.balanceOfAt(coinToken.address, secondBlock),
-                ether(gsnFee.multipliedBy(2).plus(transferFee.multipliedBy(3).dividedBy(4)))
-            );
-            assert.equal(await coinToken.totalSupplyAt(secondBlock), totalSupply);
-
-            // 3rd block fee 0.02% + 0.7 YAL
-            assert.equal(
-                await coinToken.balanceOfAt(alice, thirdBlock),
-                ether(baseAliceBalance.minus(transferCoinAmount))
-            );
-            assert.equal(await coinToken.balanceOfAt(bob, thirdBlock), ether(transferCoinAmount));
-            assert.equal(
-                await coinToken.balanceOfAt(charlie, thirdBlock),
-                ether(ten
-                    .minus(gsnFee.multipliedBy(3))
-                    .minus(transferFee)
-                )
-            );
-            assert.equal(
-                await coinToken.balanceOfAt(coinToken.address, thirdBlock),
-                ether(totalFees)
-            );
-            assert.equal(await coinToken.balanceOfAt(feeManager, thirdBlock), ether(0));
-            assert.equal(await coinToken.totalSupplyAt(thirdBlock), totalSupply);
 
             // final values
             assert.equal(
@@ -589,62 +494,6 @@ describe('Coin', () => {
             const feeManagerBalanceAfter = await coinToken.balanceOf(feeManager);
 
             assertErc20BalanceChanged(feeManagerBalanceBefore, feeManagerBalanceAfter, ether(totalFees));
-
-            // 0th block
-            assert.equal(await coinToken.balanceOfAt(alice, zeroBlock), ether(baseAliceBalance));
-            assert.equal(await coinToken.balanceOfAt(bob, zeroBlock), ether(0));
-            assert.equal(await coinToken.balanceOfAt(coinToken.address, zeroBlock), ether(0));
-            assert.equal(await coinToken.totalSupplyAt(zeroBlock), totalSupply);
-
-            // 1st block fee 0.02% + 0.7 YAL
-            assert.equal(
-                await coinToken.balanceOfAt(alice, firstBlock),
-                ether(baseAliceBalance.minus(transferCoinAmount.dividedBy(2)).minus(gsnFee).minus(transferFee.dividedBy(2)))
-            );
-            assert.equal(await coinToken.balanceOfAt(bob, firstBlock), ether(transferCoinAmount.dividedBy(2)));
-            assert.equal(
-                await coinToken.balanceOfAt(coinToken.address, firstBlock),
-                ether(gsnFee.plus(transferFee.dividedBy(2)))
-            );
-            assert.equal(await coinToken.totalSupplyAt(firstBlock), totalSupply);
-
-            // 2nd block fee 0.02% + 0.7 YAL
-            assert.equal(
-                await coinToken.balanceOfAt(alice, secondBlock),
-                ether(baseAliceBalance
-                    .minus(transferCoinAmount.multipliedBy(3).dividedBy(4))
-                    .minus(gsnFee.multipliedBy(2))
-                    .minus(transferFee.multipliedBy(3).dividedBy(4)))
-            );
-            assert.equal(await coinToken.balanceOfAt(bob, secondBlock), ether(transferCoinAmount.multipliedBy(3).dividedBy(4)));
-            assert.equal(
-                await coinToken.balanceOfAt(coinToken.address, secondBlock),
-                ether(gsnFee.multipliedBy(2).plus(transferFee.multipliedBy(3).dividedBy(4)))
-            );
-            assert.equal(await coinToken.totalSupplyAt(secondBlock), totalSupply);
-
-            // 3rd block fee 0.02% + 0.7 YAL
-            assert.equal(
-                await coinToken.balanceOfAt(alice, thirdBlock),
-                ether(baseAliceBalance.minus(transferCoinAmount).minus(totalFees))
-            );
-            assert.equal(await coinToken.balanceOfAt(bob, thirdBlock), ether(transferCoinAmount));
-            assert.equal(
-                await coinToken.balanceOfAt(coinToken.address, thirdBlock),
-                ether(totalFees)
-            );
-            assert.equal(await coinToken.balanceOfAt(feeManager, thirdBlock), ether(0));
-            assert.equal(await coinToken.totalSupplyAt(thirdBlock), totalSupply);
-
-            // 4rd block fee withdrawal
-            assert.equal(
-                await coinToken.balanceOfAt(alice, thirdBlock),
-                ether(baseAliceBalance.minus(transferCoinAmount).minus(totalFees))
-            );
-            assert.equal(await coinToken.balanceOfAt(bob, fourthBlock), ether(transferCoinAmount));
-            assert.equal(await coinToken.balanceOfAt(coinToken.address, fourthBlock), ether(0));
-            assert.equal(await coinToken.balanceOfAt(feeManager, fourthBlock), ether(totalFees));
-            assert.equal(await coinToken.totalSupplyAt(fourthBlock), totalSupply);
 
             // final values
             assert.equal(
