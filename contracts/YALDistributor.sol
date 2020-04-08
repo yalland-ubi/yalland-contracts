@@ -239,6 +239,15 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     emit SetGsnFee(_gsnFee);
   }
 
+  function withdrawFee() public onlyOwner {
+    address _this = address(this);
+    uint256 _payout = IERC20(address(token)).balanceOf(_this);
+
+    require(_payout > 0, "Nothing to withdraw");
+
+    IERC20(address(token)).transfer(msg.sender, _payout.sub(token.transferFee()));
+  }
+
   /*
    * @dev Pauses contract.
    */

@@ -7,7 +7,7 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-const { accounts, contract, web3 } = require('@openzeppelin/test-environment');
+const { accounts, contract, web3, defaultSender } = require('@openzeppelin/test-environment');
 const { assert } = require('chai');
 const {
     deployRelayHub,
@@ -608,6 +608,28 @@ describe('YALDistributor Unit tests', () => {
 
             it('should deny non-owner setting a new periodVolume', async function() {
                 await assertRevert(dist.setPeriodVolume(ether(123), { from: alice }), 'Ownable: caller is not the owner');
+            });
+        });
+
+        describe('#withdrawFee()', () => {
+            beforeEach(async function() {
+                await increaseTime(11);
+                await dist.addMembers([keccak256('bob')], [bob], { from: verifier })
+                await coinToken.setWhitelistAddress(dist.address, true, { from: transferWlManager });
+                await coinToken.setWhitelistAddress(defaultSender, true, { from: transferWlManager });
+                await dist.changeMyAddress(alice, { from: bob });
+
+                await coinToken.transfer(dist.address, ether(42), { from: alice })
+            })
+
+            it('should allow owner withdrawing fee', async function() {
+                assert.equal(await coinToken.balanceOf(defaultSender), 0);
+                await dist.withdrawFee();
+                assert.equal(await coinToken.balanceOf(defaultSender), ether('41.98'));
+            });
+
+            it('should deny non-owner withdrawing fee', async function() {
+                await assertRevert(dist.withdrawFee({ from: alice }), 'Ownable: caller is not the owner');
             });
         });
 
