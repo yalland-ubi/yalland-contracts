@@ -28,8 +28,10 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
   event CloseOrder(uint256 indexed orderId, address operator);
   event CancelOrder(uint256 indexed orderId, address operator, string reason);
   event CreateOrder(uint256 indexed orderId, bytes32 indexed memberId, uint256 yalAmount, uint256 buyAmount);
-  event SetDefaultExchangeRate(address indexed fundManager, uint256 memberExchangeRate);
+  event SetDefaultExchangeRate(address indexed fundManager, uint256 defaultExchangeRate);
   event SetMemberExchangeRate(address indexed fundManager, bytes32 indexed memberId, uint256 memberExchangeRate);
+  event SetDefaultPeriodLimit(address indexed fundManager, uint256 defaultPeriodLimit);
+  event SetMemberPeriodLimit(address indexed fundManager, bytes32 indexed memberId, uint256 memberPeriodLimit);
   event VoidOrder(uint256 indexed orderId, address operator);
 
   enum OrderStatus {
@@ -54,6 +56,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
     uint256 totalExchanged;
     uint256 totalVoided;
     uint256 totalOpen;
+    uint256 periodLimit;
 
     // periodId => yal exchanged
     mapping(uint256 => uint256) yalExchangedByPeriod;
@@ -70,6 +73,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
   IYALDistributor public yalDistributor;
 
   uint256 public defaultExchangeRate;
+  uint256 public defaultPeriodLimit;
 
   // Caches
   uint256 public totalExchangedYal;
@@ -130,6 +134,28 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
     emit SetMemberExchangeRate(msg.sender, _memberId, _memberExchangeRate);
   }
 
+  // set to 0 for no limits
+  function setDefaultPeriodLimit(uint256 _defaultPeriodLimit) external onlyFundManager {
+    defaultPeriodLimit = _defaultPeriodLimit;
+
+    emit SetDefaultPeriodLimit(msg.sender, _defaultPeriodLimit);
+  }
+
+  function withdrawYALs() public onlyFundManager {
+    uint256 _payout = yalToken.balanceOf(address(this));
+
+    require(_payout > 0, "Nothing to withdraw");
+
+    yalToken.transfer(msg.sender, _payout);
+  }
+
+  // set to 0 to disable custom per member limit and use the default
+  function setMemberPeriodLimit(bytes32 _memberId, uint256 _memberPeriodLimit) external onlyFundManager {
+    members[_memberId].periodLimit = _memberPeriodLimit;
+
+    emit SetMemberPeriodLimit(msg.sender, _memberId, _memberPeriodLimit);
+  }
+
   // OPERATOR INTERFACE
 
   function closeOrder(uint256 _orderId, string calldata _paymentDetails) external onlyOperator {
@@ -138,16 +164,28 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
 
     require(o.status == OrderStatus.OPEN, "Order should be open");
 
+    uint256 currentPeriod = yalDistributor.getCurrentPeriodId();
+
+    uint256 limit = m.periodLimit;
+    if (limit == 0) {
+      limit = defaultPeriodLimit;
+    }
+
+    if (limit > 0) {
+      require(
+        m.yalExchangedByPeriod[currentPeriod].add(o.yalAmount) <= limit,
+        "Exchange amount exceeds the period limit"
+      );
+    }
+
+    m.yalExchangedByPeriod[currentPeriod] = m.yalExchangedByPeriod[currentPeriod].add(o.yalAmount);
+
     o.status = OrderStatus.OPEN;
     o.paymentDetails = _paymentDetails;
 
     totalExchangedYal = totalExchangedYal.add(o.yalAmount);
     m.totalExchanged = m.totalExchanged.add(o.yalAmount);
     m.totalOpen = m.totalOpen.sub(o.yalAmount);
-
-    uint256 currentPeriod = yalDistributor.getCurrentPeriodId();
-
-    m.yalExchangedByPeriod[currentPeriod] = m.yalExchangedByPeriod[currentPeriod].add(o.yalAmount);
 
     emit CloseOrder(_orderId, msg.sender);
 
