@@ -9,10 +9,13 @@
 
 pragma solidity ^0.5.13;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
 import "./interfaces/ICoinToken.sol";
+import "./interfaces/IYALDistributor.sol";
+import "./GSNRecipientSigned.sol";
 
 
 /**
@@ -20,7 +23,7 @@ import "./interfaces/ICoinToken.sol";
  * @author Galt Project
  * @notice Mints YAL tokens on request according pre-configured formula
  **/
-contract YALDistributor is OwnableAndInitializable {
+contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipientSigned {
   using SafeMath for uint256;
   using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -43,6 +46,7 @@ contract YALDistributor is OwnableAndInitializable {
   );
   event Pause();
   event Unpause();
+  event SetGsnFee(uint256 value);
   event SetPeriodVolume(uint256 oldPeriodVolume, uint256 newPeriodVolume);
   event SetVerifier(address verifier);
   event SetVerifierRewardShare(uint256 rewardShare);
@@ -75,6 +79,8 @@ contract YALDistributor is OwnableAndInitializable {
   address public verifier;
   // 100% == 100 ether
   uint256 public verifierRewardShare;
+  // in YAL wei
+  uint256 public gsnFee = 0;
 
   // credentialsHash => memberDetails
   mapping(bytes32 => Member) public member;
@@ -98,7 +104,7 @@ contract YALDistributor is OwnableAndInitializable {
   }
 
   // Mints tokens, assigns the verifier reward and caches reward per member
-  modifier handlePeriodTransitionIfRequired() {
+  modifier triggerTransition() {
     uint256 currentPeriodId = getCurrentPeriodId();
 
     Period storage currentPeriod = period[currentPeriodId];
@@ -108,7 +114,9 @@ contract YALDistributor is OwnableAndInitializable {
 
       // imbalance will be left at the contract
       // uint256 currentPeriodRewardPerMember = (periodVolume * (100 ether - verifierRewardShare)) / (activeMemberCount * 100 ether);
-      uint256 currentPeriodRewardPerMember = (periodVolume.mul(HUNDRED_PCT.sub(verifierRewardShare))) / (activeMemberCount * HUNDRED_PCT);
+      uint256 currentPeriodRewardPerMember = (periodVolume.mul(HUNDRED_PCT.sub(verifierRewardShare)))
+        .div(activeMemberCount.mul(HUNDRED_PCT));
+
       assert(currentPeriodRewardPerMember > 0);
       currentPeriod.rewardPerMember = currentPeriodRewardPerMember;
 
@@ -124,7 +132,7 @@ contract YALDistributor is OwnableAndInitializable {
     _;
   }
 
-  constructor() public {
+  constructor() public GSNRecipientSigned() {
   }
 
   // @dev The Owner role will be assigned to tx.origin
@@ -151,8 +159,41 @@ contract YALDistributor is OwnableAndInitializable {
     genesisTimestamp = _genesisTimestamp;
   }
 
-  function _canExecuteRelayedCall(address _caller) internal view returns (bool) {
-    return member[memberAddress2Id[_caller]].active;
+  function _handleRelayedCall(
+    bytes memory _encodedFunction,
+    address _caller
+  )
+    internal
+    view
+    returns (GSNRecipientSignatureErrorCodes, bytes memory)
+  {
+    bytes4 signature = getDataSignature(_encodedFunction);
+
+    if (signature == YALDistributor(0).claimFunds.selector) {
+      if (isCurrentPeriodClaimedByAddress(_caller) == false) {
+        return (GSNRecipientSignatureErrorCodes.OK, abi.encode(_caller, signature));
+      } else {
+        return (GSNRecipientSignatureErrorCodes.DENIED, "");
+      }
+    } else if (signature == YALDistributor(0).changeMyAddress.selector) {
+      IERC20 t = IERC20(address(token));
+
+      if (t.balanceOf(_caller) >= gsnFee && t.allowance(_caller, address(this)) >= gsnFee) {
+        return (GSNRecipientSignatureErrorCodes.OK, abi.encode(_caller, signature));
+      } else {
+        return (GSNRecipientSignatureErrorCodes.INSUFFICIENT_BALANCE, "");
+      }
+    } else {
+      return (GSNRecipientSignatureErrorCodes.METHOD_NOT_SUPPORTED, "");
+    }
+  }
+
+  function _preRelayedCall(bytes memory _context) internal returns (bytes32) {
+    (address from, bytes4 signature) = abi.decode(_context, (address,bytes4));
+
+    if (signature == YALDistributor(0).changeMyAddress.selector) {
+      IERC20(address(token)).transferFrom(from, address(this), gsnFee);
+    }
   }
 
   // OWNER INTERFACE
@@ -190,6 +231,21 @@ contract YALDistributor is OwnableAndInitializable {
     periodVolume = _periodVolume;
 
     emit SetPeriodVolume(oldPeriodVolume, _periodVolume);
+  }
+
+  function setGsnFee(uint256 _gsnFee) public onlyOwner {
+    gsnFee = _gsnFee;
+
+    emit SetGsnFee(_gsnFee);
+  }
+
+  function withdrawFee() public onlyOwner {
+    address _this = address(this);
+    uint256 _payout = IERC20(address(token)).balanceOf(_this);
+
+    require(_payout > 0, "Nothing to withdraw");
+
+    IERC20(address(token)).transfer(msg.sender, _payout.sub(token.transferFee()));
   }
 
   /*
@@ -239,7 +295,7 @@ contract YALDistributor is OwnableAndInitializable {
     address[] calldata _memberAddresses
   )
     external
-    handlePeriodTransitionIfRequired
+    triggerTransition
     onlyVerifier
   {
     _addMembers(_memberIds, _memberAddresses);
@@ -255,7 +311,7 @@ contract YALDistributor is OwnableAndInitializable {
     address _memberAddress
   )
     external
-    handlePeriodTransitionIfRequired
+    triggerTransition
     onlyVerifier
   {
     _addMember(_memberId, _memberAddress);
@@ -271,7 +327,7 @@ contract YALDistributor is OwnableAndInitializable {
     address[] calldata _memberAddresses
   )
     external
-    handlePeriodTransitionIfRequired
+    triggerTransition
     onlyVerifier
   {
     uint256 len = _memberAddresses.length;
@@ -304,7 +360,7 @@ contract YALDistributor is OwnableAndInitializable {
     address[] calldata _memberAddresses
   )
     external
-    handlePeriodTransitionIfRequired
+    triggerTransition
     onlyVerifier
   {
     uint256 len = _memberAddresses.length;
@@ -362,7 +418,7 @@ contract YALDistributor is OwnableAndInitializable {
     address _to
   )
     external
-    handlePeriodTransitionIfRequired
+    triggerTransition
     whenNotPaused
     onlyVerifier
   {
@@ -408,14 +464,14 @@ contract YALDistributor is OwnableAndInitializable {
     emit AddMember(_memberId, _memberAddress);
   }
 
-  function _changeMemberAddress(address _memberAddress, address _to) internal {
-    bytes32 memberId = memberAddress2Id[_memberAddress];
+  function _changeMemberAddress(address _from, address _to) internal {
+    bytes32 memberId = memberAddress2Id[_from];
     Member storage m = member[memberId];
     address from = m.addr;
 
     require(m.createdAt != 0, "Member doesn't exist");
     require(memberAddress2Id[_to] == bytes32(0), "Address is already taken by another member");
-    require(_memberAddress != _to, "Can't migrate to the same address");
+    require(_from != _to, "Can't migrate to the same address");
 
     m.addr = _to;
 
@@ -424,6 +480,12 @@ contract YALDistributor is OwnableAndInitializable {
 
     activeAddressesCache.remove(from);
     activeAddressesCache.add(_to);
+
+    uint256 memberBalance = IERC20(address(token)).balanceOf(from);
+    if (memberBalance > 0) {
+      token.burn(_from, memberBalance);
+      token.mint(_to, memberBalance);
+    }
 
     emit ChangeMemberAddress(memberId, from, _to);
   }
@@ -452,7 +514,7 @@ contract YALDistributor is OwnableAndInitializable {
     address[] calldata _memberAddresses
   )
     external
-    handlePeriodTransitionIfRequired
+    triggerTransition
     whenNotPaused
     onlyVerifier
   {
@@ -476,7 +538,7 @@ contract YALDistributor is OwnableAndInitializable {
    * @dev Claims member funds
    * @params _memberAddress to claim funds for
    */
-  function claimFunds() external handlePeriodTransitionIfRequired whenNotPaused {
+  function claimFunds() external triggerTransition whenNotPaused {
     uint256 currentPeriodId = getCurrentPeriodId();
 
     _claimFunds(
@@ -536,24 +598,22 @@ contract YALDistributor is OwnableAndInitializable {
    * @param _to address to change to
    */
   function changeMyAddress(address _to) external whenNotPaused {
-    address from = _msgSender();
-    bytes32 memberId = memberAddress2Id[from];
+    bytes32 memberId = memberAddress2Id[_msgSender()];
     Member storage m = member[memberId];
-
     require(m.addr == _msgSender(), "Only the member allowed");
-    require(m.createdAt != 0, "Member doesn't exist");
-    require(memberAddress2Id[_to] == bytes32(0), "Address is already taken by another member");
-    require(_msgSender() != _to, "Can't migrate to the same address");
 
-    m.addr = _to;
+    _changeMemberAddress(_msgSender(), _to);
 
-    memberAddress2Id[from] = bytes32(0);
-    memberAddress2Id[_to] = memberId;
+    emit ChangeMyAddress(memberId, _msgSender(), _to);
+  }
 
-    activeAddressesCache.remove(from);
-    activeAddressesCache.add(_to);
+  // PERMISSIONLESS METHODS
 
-    emit ChangeMyAddress(memberId, from, _to);
+  /*
+   * @dev Anyone can trigger period transition
+   */
+  function handlePeriodTransitionIfRequired() external triggerTransition {
+    // solhint-disable-previous-line no-empty-blocks
   }
 
   // VIEW METHODS
@@ -598,7 +658,7 @@ contract YALDistributor is OwnableAndInitializable {
     return member[_memberId].claimedPeriods[getCurrentPeriodId()];
   }
 
-  function isCurrentPeriodClaimedByAddress(address _memberAddress) external view returns (bool) {
+  function isCurrentPeriodClaimedByAddress(address _memberAddress) public view returns (bool) {
     return member[memberAddress2Id[_memberAddress]].claimedPeriods[getCurrentPeriodId()];
   }
 
@@ -608,6 +668,10 @@ contract YALDistributor is OwnableAndInitializable {
 
   function isPeriodClaimedByAddress(address _memberAddress, uint256 _periodId) external view returns (bool) {
     return member[memberAddress2Id[_memberAddress]].claimedPeriods[_periodId];
+  }
+
+  function isActive(address _addr) external view returns (bool) {
+    return member[memberAddress2Id[_addr]].active;
   }
 
   function getMemberByAddress(address _memberAddress) external view returns (
