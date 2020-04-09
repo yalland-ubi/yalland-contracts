@@ -674,6 +674,14 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     return member[memberAddress2Id[_addr]].active;
   }
 
+  function getTotalClaimed(bytes32 _memberId) external view returns (uint256) {
+    return member[_memberId].totalClaimed;
+  }
+
+  function getMemberAddress(bytes32 _memberId) external view returns (address) {
+    return member[_memberId].addr;
+  }
+
   function getMemberByAddress(address _memberAddress) external view returns (
     bytes32 id,
     bool active,
