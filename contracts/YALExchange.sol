@@ -89,19 +89,19 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
   mapping(uint256 => Order) public orders;
 
   modifier onlyFundManager() {
-    require(hasRole(msg.sender, FUND_MANAGER_ROLE), "Only fund manager role allowed");
+    require(hasRole(msg.sender, FUND_MANAGER_ROLE), "YALExchange: Only fund manager role allowed");
 
     _;
   }
 
   modifier onlyOperator() {
-    require(hasRole(msg.sender, OPERATOR_ROLE), "Only operator role allowed");
+    require(hasRole(msg.sender, OPERATOR_ROLE), "YALExchange: Only operator role allowed");
 
     _;
   }
 
   modifier onlySuperOperator() {
-    require(hasRole(msg.sender, SUPER_OPERATOR_ROLE), "Only super operator role allowed");
+    require(hasRole(msg.sender, SUPER_OPERATOR_ROLE), "YALExchange: Only super operator role allowed");
 
     _;
   }
@@ -118,9 +118,9 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
     initializeWithOwner(_initialOwner)
     external
   {
-    require(_defaultExchangeRate > 0, "Default rate can't be 0");
-    require(_yalDistributor != address(0), "YALDistributor address can't be 0");
-    require(_yalToken != address(0), "YALToken address can't be 0");
+    require(_defaultExchangeRate > 0, "YALExchange: Default rate can't be 0");
+    require(_yalDistributor != address(0), "YALExchange: YALDistributor address can't be 0");
+    require(_yalToken != address(0), "YALExchange: YALToken address can't be 0");
 
     yalDistributor = IYALDistributor(_yalDistributor);
     yalToken = IERC20(_yalToken);
@@ -150,7 +150,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
    * @param _defaultExchangeRate 100% == 100 ETH
    */
   function setDefaultExchangeRate(uint256 _defaultExchangeRate) external onlyFundManager {
-    require(_defaultExchangeRate > 0, "Default rate can't be 0");
+    require(_defaultExchangeRate > 0, "YALExchange: Default rate can't be 0");
 
     defaultExchangeRate = _defaultExchangeRate;
 
@@ -206,7 +206,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
   function withdrawYALs() public onlyFundManager {
     uint256 _payout = yalToken.balanceOf(address(this));
 
-    require(_payout > 0, "Nothing to withdraw");
+    require(_payout > 0, "YALExchange: Nothing to withdraw");
 
     // NOTICE: will keep a small amount of YAL tokens
     yalToken.transfer(msg.sender, _payout.sub(ICoinToken(address(yalToken)).transferFee()));
@@ -218,7 +218,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
     Order storage o = orders[_orderId];
     Member storage m = members[o.memberId];
 
-    require(o.status == OrderStatus.OPEN, "Order should be open");
+    require(o.status == OrderStatus.OPEN, "YALExchange: Order should be open");
 
     uint256 currentPeriod = yalDistributor.getCurrentPeriodId();
 
@@ -230,13 +230,13 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
     if (limit > 0) {
       require(
         m.yalExchangedByPeriod[currentPeriod].add(o.yalAmount) <= limit,
-        "Exchange amount exceeds the period limit"
+        "YALExchange: Exchange amount exceeds the period limit"
       );
     }
 
     m.yalExchangedByPeriod[currentPeriod] = m.yalExchangedByPeriod[currentPeriod].add(o.yalAmount);
 
-    o.status = OrderStatus.OPEN;
+    o.status = OrderStatus.CLOSED;
     o.paymentDetails = _paymentDetails;
 
     totalExchangedYal = totalExchangedYal.add(o.yalAmount);
@@ -252,7 +252,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
     Order storage o = orders[_orderId];
     Member storage m = members[o.memberId];
 
-    require(o.status == OrderStatus.OPEN, "Order should be open");
+    require(o.status == OrderStatus.OPEN, "YALExchange: Order should be open");
 
     o.status = OrderStatus.CANCELLED;
 
@@ -270,7 +270,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
     address memberAddress = yalDistributor.getMemberAddress(o.memberId);
     uint256 yalAmount = o.yalAmount;
 
-    require(o.status == OrderStatus.CLOSED, "Order should be closed");
+    require(o.status == OrderStatus.CLOSED, "YALExchange: Order should be closed");
 
     totalExchangedYal = totalExchangedYal.sub(yalAmount);
     members[o.memberId].totalExchanged = members[o.memberId].totalExchanged.sub(yalAmount);
@@ -284,15 +284,15 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
   // USER INTERFACE
 
   function createOrder(uint256 _yalAmount) external {
-    require(_yalAmount > 0, "YAL amount can't be 0");
+    require(_yalAmount > 0, "YALExchange: YAL amount can't be 0");
 
     address memberAddress = _msgSender();
 
-    require(yalDistributor.isActive(memberAddress));
+    require(yalDistributor.isActive(memberAddress), "YALExchange: Member in't active");
 
     bytes32 memberId = yalDistributor.memberAddress2Id(memberAddress);
 
-    require(_yalAmount <= calculateMaxYalToSell(memberId), "YAL amount exceeds the limit");
+    require(_yalAmount <= calculateMaxYalToSell(memberId), "YALExchange: YAL amount exceeds Limit #1");
 
     uint256 rate = members[memberId].customExchangeRate;
 
@@ -306,7 +306,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
     Order storage o = orders[orderId];
     Member storage m = members[o.memberId];
 
-    require(o.status == OrderStatus.NULL, "Invalid status");
+    require(o.status == OrderStatus.NULL, "YALExchange: Invalid status");
 
     o.memberId = memberId;
     o.status = OrderStatus.OPEN;

@@ -200,8 +200,9 @@ contract CoinToken is
     _requireMemberIsValid(_to);
     _requireMemberIsValid(_msgSender());
 
-    _chargeTransferFee(_msgSender(), _value);
     bool result = super.transfer(_to, _value);
+
+    _chargeTransferFee(_msgSender(), _value);
 
     return result;
   }
@@ -216,22 +217,23 @@ contract CoinToken is
     _requireMemberIsValid(_to);
     _requireMemberIsValid(_msgSender());
 
-    _chargeTransferFee(_msgSender(), _value);
-
     bool result = super.transferFrom(_from, _to, _value);
+
+    _chargeTransferFee(_msgSender(), _value);
 
     return true;
   }
 
   // INTERNAL
   function _requireMemberIsValid(address _member) internal {
-    require(isMemberValid(_member), "Member is invalid");
+    require(isMemberValid(_member), "YALToken: Member is invalid");
   }
 
   function _chargeTransferFee(address from, uint256 _value) private {
     uint256 _fee = getTransferFee(_value);
 
     if (_fee > 0) {
+      require(balanceOf(from) >= _fee, "YALToken: insufficient balance for paying a fee");
       _transfer(from, address(this), _fee);
     }
   }

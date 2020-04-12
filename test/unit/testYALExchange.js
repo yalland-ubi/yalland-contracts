@@ -96,7 +96,7 @@ describe('YALExchange Unit tests', () => {
         await fundRecipient(web3, { recipient: dist.address, amount: ether(1) });
     });
 
-    describe.only('FundManager Interface', () => {
+    describe('FundManager Interface', () => {
         describe('#setDefaultExchangeRate()', () => {
             it('should allow a fund manager setting the default exchange rate', async function() {
                 await exchange.setDefaultExchangeRate(ether(123), { from: fundManager });
