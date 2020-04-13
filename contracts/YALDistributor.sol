@@ -560,8 +560,8 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     bytes32 memberId = memberAddress2Id[_memberAddress];
     Member storage m = member[memberId];
 
-    require(m.addr == _memberAddress, "Address doesn't match");
     require(m.active == true, "Not active member");
+    require(m.addr == _memberAddress, "Address doesn't match");
 
     require(m.createdAt < _currentPeriodStart, "Can't assign rewards for the creation period");
     require(m.claimedPeriods[_currentPeriodId] == false, "Already claimed for the current period");

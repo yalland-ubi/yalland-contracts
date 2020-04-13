@@ -88,6 +88,9 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
   // orderId => details
   mapping(uint256 => Order) public orders;
 
+  // periodId => totalExchanged
+  mapping(uint256 => uint256) public yalExchangedByPeriod;
+
   modifier onlyFundManager() {
     require(hasRole(msg.sender, FUND_MANAGER_ROLE), "YALExchange: Only fund manager role allowed");
 
@@ -288,23 +291,22 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
 
     address memberAddress = _msgSender();
 
-    require(yalDistributor.isActive(memberAddress), "YALExchange: Member in't active");
+    require(yalDistributor.isActive(memberAddress), "YALExchange: Member isn't active");
 
     bytes32 memberId = yalDistributor.memberAddress2Id(memberAddress);
 
+    // Limit #1 check
     require(_yalAmount <= calculateMaxYalToSell(memberId), "YALExchange: YAL amount exceeds Limit #1");
 
-    uint256 rate = members[memberId].customExchangeRate;
+    // Limit #2 checks
+    requireLimit2NotReached(memberId, _yalAmount);
 
-    if (rate == 0) {
-      rate = defaultExchangeRate;
-    }
-
-    uint256 buyAmount = _yalAmount.mul(rate).div(RATE_DIVIDER);
+    uint256 buyAmount = calculateBuyAmount(memberId, _yalAmount);
+    uint256 currentPeriod = yalDistributor.getCurrentPeriodId();
 
     uint256 orderId = nextId();
     Order storage o = orders[orderId];
-    Member storage m = members[o.memberId];
+    Member storage m = members[memberId];
 
     require(o.status == OrderStatus.NULL, "YALExchange: Invalid status");
 
@@ -312,12 +314,34 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
     o.status = OrderStatus.OPEN;
     o.createdAt = now;
     o.buyAmount = buyAmount;
+    o.yalAmount = _yalAmount;
 
     m.totalOpen = m.totalOpen.add(_yalAmount);
+    m.totalExchanged = m.totalExchanged.add(_yalAmount);
+    m.yalExchangedByPeriod[currentPeriod] = m.yalExchangedByPeriod[currentPeriod].add(_yalAmount);
+
+    yalExchangedByPeriod[currentPeriod] = yalExchangedByPeriod[currentPeriod].add(_yalAmount);
+    totalExchangedYal = totalExchangedYal.add(_yalAmount);
 
     emit CreateOrder(orderId, memberId, _yalAmount, buyAmount);
 
     yalToken.transferFrom(msg.sender, address(this), _yalAmount);
+  }
+
+  function calculateBuyAmount(bytes32 _memberId, uint256 _yalAmount) public returns(uint256) {
+    return _yalAmount
+      .mul(calculateMemberExchangeRate(_memberId, _yalAmount))
+      .div(RATE_DIVIDER);
+  }
+
+  function calculateMemberExchangeRate(bytes32 _memberId, uint256 _yalAmount) public returns(uint256) {
+    uint256 rate = members[_memberId].customExchangeRate;
+
+    if (rate == 0) {
+      return defaultExchangeRate;
+    }
+
+    return rate;
   }
 
   // INTERNAL
@@ -345,5 +369,13 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
 
   function getCustomPeriodLimit(bytes32 _memberId) external view returns (uint256) {
     return members[_memberId].customPeriodLimit;
+  }
+
+  function getMemberYallExchangedInCurrentPeriod(bytes32 _memberId) external view returns (uint256) {
+    return members[_memberId].yalExchangedByPeriod[yalDistributor.getCurrentPeriodId()];
+  }
+
+  function getMemberYallExchangedByPeriod(bytes32 _memberId, uint256 _periodId) external view returns (uint256) {
+    return members[_memberId].yalExchangedByPeriod[_periodId];
   }
 }

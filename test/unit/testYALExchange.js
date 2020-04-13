@@ -22,12 +22,21 @@ const { approveFunction, assertRelayedCall, GSNRecipientSignatureErrorCodes } = 
 
 CoinToken.numberFormat = 'String';
 YALDistributor.numberFormat = 'String';
+YALExchange.numberFormat = 'String';
 
-const { ether, now, int, increaseTime, assertRevert, assertGsnReject, zeroAddress, getResTimestamp, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
+const { ether, now, int, increaseTime, assertRevert, assertGsnReject, getEventArg, getResTimestamp, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
 
 const keccak256 = web3.utils.soliditySha3;
 
-describe('YALExchange Unit tests', () => {
+const OrderStatus = {
+    NULL: 0,
+    OPEN: 1,
+    CLOSED: 2,
+    CANCELLED: 3,
+    VOIDED: 4
+};
+
+describe.only('YALExchange Unit tests', () => {
     const [verifier, alice, bob, charlie, dan, eve, minter, burner, fundManager, feeManager, transferWlManager] = accounts;
     const owner = defaultSender;
 
@@ -68,7 +77,7 @@ describe('YALExchange Unit tests', () => {
             dist.address,
             yalToken.address,
             // defaultExchangeRate numerator
-            ether(19)
+            ether(42)
         );
 
         await yalToken.addRoleTo(dist.address, "minter");
@@ -217,6 +226,122 @@ describe('YALExchange Unit tests', () => {
             it('should deny non-owner pausing/unpausing contract', async function() {
                 await assertRevert(dist.pause({ from: verifier }), 'Ownable: caller is not the owner');
                 await assertRevert(dist.unpause({ from: verifier }), 'Ownable: caller is not the owner');
+            });
+        });
+    });
+
+    describe('Member Interface', () => {
+        beforeEach(async function() {
+            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [bob, charlie, dan], { from: verifier });
+            await increaseTime(11);
+        });
+
+        describe('#createOrder()', () => {
+            it('should deny creating order with 0 amount of YALs', async function() {
+                await assertRevert(exchange.createOrder(0, { from: bob }), "YALExchange: YAL amount can't be 0");
+            });
+
+            it('should deny creating order for non-active member', async function() {
+                await dist.disableMembers([bob], { from: verifier });
+                await assertRevert(exchange.createOrder(1, { from: bob }), 'YALExchange: Member isn\'t active');
+            });
+
+            it('should deny creating an order if Limit #1 value isnt satisfied', async function() {
+                await yalToken.approve(exchange.address, 3, { from: bob });
+                await assertRevert(exchange.createOrder(1, { from: bob }), 'YALExchange: YAL amount exceeds Limit #1');
+            });
+
+            describe('with enough approval and satisfied limits', () => {
+                let orderId;
+                let createdAt;
+
+                beforeEach(async function() {
+                    await dist.claimFunds({ from: bob });
+                    await yalToken.approve(exchange.address, ether(12), { from: bob });
+                    let res = await exchange.createOrder(ether(12), { from: bob });
+
+                    orderId = getEventArg(res, 'CreateOrder', 'orderId');
+                    createdAt = await getResTimestamp(res);
+
+                    await yalToken.approve(exchange.address, ether(12), { from: bob });
+                })
+
+                it('should transfer corresponding amount to the contract balance', async function() {
+                    await yalToken.approve(exchange.address, 123, { from: bob });
+
+                    const exchangeBalanceBefore = await yalToken.balanceOf(exchange.address);
+                    await exchange.createOrder(123, { from: bob });
+                    const exchangeBalanceAfter = await yalToken.balanceOf(exchange.address);
+
+                    assertErc20BalanceChanged(exchangeBalanceBefore, exchangeBalanceAfter, '123');
+                });
+
+                it('should increment order id by 1 on each call', async function() {
+                    let res = await exchange.createOrder(1, { from: bob });
+                    assert.equal(getEventArg(res, 'CreateOrder', 'orderId'), 2);
+
+                    res = await exchange.createOrder(1, { from: bob });
+                    assert.equal(getEventArg(res, 'CreateOrder', 'orderId'), 3);
+
+                    res = await exchange.createOrder(1, { from: bob });
+                    assert.equal(getEventArg(res, 'CreateOrder', 'orderId'), 4);
+                });
+
+                it('should fill required fields after creation', async function() {
+                    let res = await exchange.orders(orderId);
+                    assert.equal(res.status, OrderStatus.OPEN);
+                    assert.equal(res.memberId, memberId1);
+                    assert.equal(res.yalAmount, ether(12));
+                    assert.equal(res.buyAmount, ether('5.04'));
+                    assert.equal(res.createdAt, createdAt);
+                    assert.equal(res.paymentDetails, '');
+                });
+
+                it('should update accumulators', async function() {
+                    await dist.claimFunds({ from: charlie });
+                    await yalToken.approve(exchange.address, ether(8), { from: bob });
+                    await yalToken.approve(exchange.address, ether(7), { from: charlie });
+
+                    const currentPeriod = await dist.getCurrentPeriodId();
+                    const assertChanged = assertErc20BalanceChanged;
+
+                    const totalExchangedYalBefore = await exchange.totalExchangedYal();
+                    const yalExchangedByPeriodBefore = await exchange.yalExchangedByPeriod(currentPeriod);
+
+                    const bobsYalExchangedByPeriodBefore = (await exchange.members(memberId1)).totalExchanged;
+                    const bobsTotalExchangedYalBefore = await exchange.getMemberYallExchangedInCurrentPeriod(memberId1);
+                    const bobsTotalOpenBefore = (await exchange.members(memberId1)).totalOpen;
+
+                    const charliesYalExchangedByPeriodBefore = (await exchange.members(memberId2)).totalExchanged;
+                    const charliesTotalExchangedYalBefore = await exchange.getMemberYallExchangedInCurrentPeriod(memberId2);
+                    const charliesTotalOpenBefore = (await exchange.members(memberId2)).totalOpen;
+
+                    await exchange.createOrder(ether(3), { from: bob });
+                    await exchange.createOrder(ether(5), { from: bob });
+                    await exchange.createOrder(ether(7), { from: charlie });
+
+                    const totalExchangedYalAfter = await exchange.totalExchangedYal();
+                    const yalExchangedByPeriodAfter = await exchange.yalExchangedByPeriod(currentPeriod);
+
+                    const bobsYalExchangedByPeriodAfter = (await exchange.members(memberId1)).totalExchanged;
+                    const bobsTotalExchangedYalAfter = await exchange.getMemberYallExchangedInCurrentPeriod(memberId1);
+                    const bobsTotalOpenAfter = (await exchange.members(memberId1)).totalOpen;
+
+                    const charliesYalExchangedByPeriodAfter = (await exchange.members(memberId2)).totalExchanged;
+                    const charliesTotalExchangedYalAfter = await exchange.getMemberYallExchangedInCurrentPeriod(memberId2);
+                    const charliesTotalOpenAfter = (await exchange.members(memberId2)).totalOpen;
+
+                    assertChanged(totalExchangedYalBefore, totalExchangedYalAfter, ether(15));
+                    assertChanged(yalExchangedByPeriodBefore, yalExchangedByPeriodAfter, ether(15));
+
+                    assertChanged(bobsYalExchangedByPeriodBefore, bobsYalExchangedByPeriodAfter, ether(8));
+                    assertChanged(bobsTotalExchangedYalBefore, bobsTotalExchangedYalAfter, ether(8));
+                    assertChanged(bobsTotalOpenBefore, bobsTotalOpenAfter, ether(8));
+
+                    assertChanged(charliesYalExchangedByPeriodBefore, charliesYalExchangedByPeriodAfter, ether(7));
+                    assertChanged(charliesTotalExchangedYalBefore, charliesTotalExchangedYalAfter, ether(7));
+                    assertChanged(charliesTotalOpenBefore, charliesTotalOpenAfter, ether(7));
+                });
             });
         });
     });
