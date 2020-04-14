@@ -262,6 +262,10 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
 
   // SUPER OPERATOR INTERFACE
 
+  /**
+   * @dev A super operator voids an already closed order and refunds deposited YALs
+   * @param _orderId to void
+   */
   function voidOrder(uint256 _orderId) external onlySuperOperator {
     Order storage o = orders[_orderId];
     address memberAddress = yalDistributor.getMemberAddress(o.memberId);

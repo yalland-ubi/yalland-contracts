@@ -94,6 +94,7 @@ describe('YALExchange Unit tests', () => {
         await yalToken.setWhitelistAddress(dist.address, true, { from: transferWlManager });
         await yalToken.setWhitelistAddress(exchange.address, true, { from: transferWlManager });
         await yalToken.setWhitelistAddress(operator, true, { from: transferWlManager });
+        await yalToken.setWhitelistAddress(superOperator, true, { from: transferWlManager });
 
         await dist.setGsnFee(ether('4.2'));
 
@@ -440,6 +441,88 @@ describe('YALExchange Unit tests', () => {
             it('should deny non-operator cancelling an order', async function() {
                 await assertRevert(exchange.cancelOrder(orderId, 'blah', { from: superOperator }), 'YALExchange: Only operator role allowed');
             });
+        });
+    });
+
+    describe('Super Operator Interface', () => {
+        let orderId;
+
+        beforeEach(async function() {
+            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [alice, bob, charlie], { from: verifier });
+            await increaseTime(12);
+
+            await dist.claimFunds({ from: bob });
+
+            await yalToken.approve(exchange.address, ether(12), { from: bob });
+            let res = await exchange.createOrder(ether(12), { from: bob });
+
+            orderId = getEventArg(res, 'CreateOrder', 'orderId');
+
+            // for erc20 fees
+            await yalToken.transfer(exchange.address, ether(1), { from: bob });
+            await yalToken.transfer(superOperator, ether(1), { from: bob });
+        });
+
+        describe('#voidOrder()', () => {
+            describe('for closed orders', () => {
+                beforeEach(async function() {
+                    await exchange.closeOrder(orderId, 'blah', { from: operator });
+
+                    // to refund the bobs order
+                    await dist.claimFunds({ from: alice });
+                    await yalToken.transfer(superOperator, ether(13), { from: alice });
+                });
+
+                it('should allow a super_operator role voiding an order', async function() {
+                    await yalToken.approve(exchange.address, ether(12), { from: superOperator });
+                    await exchange.voidOrder(orderId, { from: superOperator })
+
+                    const res = await exchange.orders(orderId);
+                    assert.equal(res.status, OrderStatus.VOIDED);
+                });
+
+                it('should transfer a refund from super operator to an order creator', async function() {
+                    const operatorBalanceBefore = await yalToken.balanceOf(superOperator);
+                    const bobsBalanceBefore = await yalToken.balanceOf(bob);
+
+                    await yalToken.approve(exchange.address, ether(12), { from: superOperator });
+                    await exchange.voidOrder(orderId, { from: superOperator })
+
+                    const operatorBalanceAfter = await yalToken.balanceOf(superOperator);
+                    const bobsBalanceAfter = await yalToken.balanceOf(bob);
+
+                    assertErc20BalanceChanged(operatorBalanceBefore, operatorBalanceAfter, ether(-12));
+                    assertErc20BalanceChanged(bobsBalanceBefore, bobsBalanceAfter, ether(12));
+                });
+
+                it('should transfer a refund from super operator to a changed member address', async function() {
+                    await dist.changeMyAddress(dan, { from: bob });
+
+                    const operatorBalanceBefore = await yalToken.balanceOf(superOperator);
+                    const bobsBalanceBefore = await yalToken.balanceOf(bob);
+                    const dansBalanceBefore = await yalToken.balanceOf(dan);
+
+                    await yalToken.approve(exchange.address, ether(12), { from: superOperator });
+                    await exchange.voidOrder(orderId, { from: superOperator })
+
+                    const operatorBalanceAfter = await yalToken.balanceOf(superOperator);
+                    const bobsBalanceAfter = await yalToken.balanceOf(bob);
+                    const dansBalanceAfter = await yalToken.balanceOf(dan);
+
+                    assertErc20BalanceChanged(operatorBalanceBefore, operatorBalanceAfter, ether(-12));
+                    assertErc20BalanceChanged(bobsBalanceBefore, bobsBalanceAfter, ether(0));
+                    assertErc20BalanceChanged(dansBalanceBefore, dansBalanceAfter, ether(12));
+                });
+
+                it('should deny non-superOperator voiding an order', async function() {
+                    await assertRevert(exchange.voidOrder(orderId, { from: operator }), 'YALExchange: Only super operator role allowed');
+                })
+            })
+
+            it('should deny voiding an order if its not closed', async function() {
+                await exchange.cancelOrder(orderId, 'blah', { from: operator });
+                await assertRevert(exchange.voidOrder(orderId, { from: superOperator }), 'YALExchange: Order should be closed');
+            })
         });
     });
 
