@@ -15,7 +15,8 @@ import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
 import "./interfaces/IYALDistributor.sol";
 import "./interfaces/ICoinToken.sol";
 import "./GSNRecipientSigned.sol";
-import "./OwnedAccessControl.sol";
+import "./traits/OwnedAccessControl.sol";
+import "./traits/PauserRole.sol";
 
 
 /**
@@ -23,7 +24,7 @@ import "./OwnedAccessControl.sol";
  * @author Galt Project
  * @notice Exchange YAL to another currency
  **/
-contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipientSigned {
+contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole, GSNRecipientSigned {
   using SafeMath for uint256;
 
   event CloseOrder(uint256 indexed orderId, address operator);
@@ -288,7 +289,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
    * @dev A user creates a new order with a specified amount to exchange
    * @param _yalAmount to exchange
    */
-  function createOrder(uint256 _yalAmount) external {
+  function createOrder(uint256 _yalAmount) external whenNotPaused {
     require(_yalAmount > 0, "YALExchange: YAL amount can't be 0");
 
     address memberAddress = _msgSender();

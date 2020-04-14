@@ -37,7 +37,7 @@ const OrderStatus = {
 };
 
 describe('YALExchange Unit tests', () => {
-    const [verifier, alice, bob, charlie, dan, superOperator, minter, operator, fundManager, feeManager, transferWlManager] = accounts;
+    const [verifier, alice, bob, charlie, dan, superOperator, pauser, minter, operator, fundManager, feeManager, transferWlManager] = accounts;
     const owner = defaultSender;
 
     // 7 days
@@ -101,6 +101,7 @@ describe('YALExchange Unit tests', () => {
         await exchange.addRoleTo(fundManager, 'fund_manager');
         await exchange.addRoleTo(operator, 'operator');
         await exchange.addRoleTo(superOperator, 'super_operator');
+        await exchange.addRoleTo(pauser, 'pauser');
 
         await exchange.setDefaultMemberPeriodLimit(ether(30), { from: fundManager });
         await exchange.setTotalPeriodLimit(ether(70), { from: fundManager });
@@ -221,18 +222,18 @@ describe('YALExchange Unit tests', () => {
             });
         });
 
-        describe.skip('#pause()/#unpause()', () => {
-            it('should allow the owner pausing/unpausing contract', async function() {
-                assert.equal(await dist.paused(), false);
-                await dist.pause();
-                assert.equal(await dist.paused(), true);
-                await dist.unpause();
-                assert.equal(await dist.paused(), false);
+        describe('#pause()/#unpause()', () => {
+            it('should allow a pauser pausing/unpausing contract', async function() {
+                assert.equal(await exchange.paused(), false);
+                await exchange.pause({ from: pauser });
+                assert.equal(await exchange.paused(), true);
+                await exchange.unpause({ from: pauser });
+                assert.equal(await exchange.paused(), false);
             });
 
             it('should deny non-owner pausing/unpausing contract', async function() {
-                await assertRevert(dist.pause({ from: verifier }), 'Ownable: caller is not the owner');
-                await assertRevert(dist.unpause({ from: verifier }), 'Ownable: caller is not the owner');
+                await assertRevert(exchange.pause({ from: verifier }), 'Pausable: not a pauser');
+                await assertRevert(exchange.unpause({ from: verifier }), 'Pausable: not a pauser');
             });
         });
     });
@@ -251,6 +252,11 @@ describe('YALExchange Unit tests', () => {
             it('should deny creating order for non-active member', async function() {
                 await dist.disableMembers([bob], { from: verifier });
                 await assertRevert(exchange.createOrder(1, { from: bob }), 'YALExchange: Member isn\'t active');
+            });
+
+            it('should deny creating an order if a contract is paused', async function() {
+                await exchange.pause({ from: pauser });
+                await assertRevert(exchange.createOrder(1, { from: bob }), 'Pausable: paused');
             });
 
             it('should deny creating an order if Limit #1 value isnt satisfied', async function() {
