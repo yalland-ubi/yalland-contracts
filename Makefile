@@ -16,6 +16,22 @@ test:
 	-npm test
 	-tput bel
 
+claim-funds:
+	DEPLOYMENT_KEY= NETWORK=sokol node ops/claimFunds
+	-tput bel
+
+migrate-sokol:
+	DEPLOYMENT_KEY= NETWORK=sokol ./node_modules/.bin/truffle migrate -f 1001 --network sokol --reset
+	-tput bel
+
+migrate-ganache:
+	./node_modules/.bin/truffle migrate -f 1001 --network ganache --reset
+	-tput bel
+
+migrate:
+	DEPLOYMENT_KEY= npm run migrate
+	-tput bel
+
 deploy:
 	-npm run deploy
 	-tput bel

@@ -12,10 +12,13 @@ const _ = require('lodash');
 
 const CoinToken = artifacts.require('./CoinToken');
 const YALDistributor = artifacts.require('./YALDistributor');
+const YALExchange = artifacts.require('./YALExchange');
+const Proxy = artifacts.require('./OwnedUpgradeabilityProxy');
 const { web3 } = YALDistributor;
 const { ether, now } = require('@galtproject/solidity-test-chest')(web3);
 const {
     fundRecipient,
+    deployRelayHub
 } = require('@openzeppelin/gsn-helpers');
 const keccak256 = web3.utils.soliditySha3;
 
@@ -45,26 +48,50 @@ module.exports = async function (truffle, network, accounts) {
 
     const superuser = 'fffff2b5e1b308331b8548960347f9d874824f40';
     truffle.then(async () => {
-        const deployer = truffle.networks.sokol.from;
+        const networkName = process.env.NETWORK || 'ganache';
+        console.log('network name:', networkName);
+
+        let deployer;
+        if (network === 'ganache') {
+            deployer = (await web3.eth.getAccounts())[0]
+        } else {
+            deployer = truffle.networks[networkName].from;
+        }
         console.log('deployer address:', deployer);
 
-        console.log('Create contract instances...');
-        const coinToken = await truffle.deploy(CoinToken, deployer, "Yalland Test", "YALT", 18);
-        await fundRecipient(web3, { recipient: coinToken.address, amount: ether(1) });
+        await deployRelayHub(web3);
 
-        const dist = await truffle.deploy(YALDistributor);
-        await fundRecipient(web3, { recipient: dist.address, amount: ether(1) });
+        console.log('Deploying CoinToken contract...');
+        const coinToken = await truffle.deploy(CoinToken, deployer, "Yalland Test", "YALT", 18);
+
+        console.log('Deploying YALDistributor/YALExchange proxy instances...');
+        const distProxy = await Proxy.new();
+        const exchangeProxy = await Proxy.new();
+
+        console.log('Deploying YALDistributor/YALExchange contract implementations...');
+        const distImplementation = await truffle.deploy(YALDistributor);
+        const exchangeImplementation = await truffle.deploy(YALExchange);
 
         // 5 min
         const periodLength = 5 * 60;
-        const periodVolume = ether(250 * 1000);
+        const periodVolume = ether(275 * 1000);
         const verifierRewardShare = ether(10);
         // 10 min
         const startAfter = 3 * 60;
         const genesisTimestamp = parseInt(await now(), 10) + startAfter;
+        const defaultExchangeRateNumerator = ether(42);
 
-        console.log('Initializing YALDistributor...');
-        await dist.initialize(
+        // limits
+        const defaultMemberPeriodLimit = ether(30 * 1000);
+        const totalPeriodLimit = ether(70 * 1000);
+
+        // fees
+        // in YAL
+        const gsnFee = ether('0.87');
+        // 0.0002%
+        const erc20TransferFeeShare = ether('0.02');
+
+        const distInitTx = distImplementation.contract.methods.initialize(
             periodVolume,
             // verifierAddress
             deployer,
@@ -73,10 +100,37 @@ module.exports = async function (truffle, network, accounts) {
             coinToken.address,
             periodLength,
             genesisTimestamp
-        );
+        ).encodeABI();
+
+        const exchangeInitTx = exchangeImplementation.contract.methods.initialize(
+            // owner
+            deployer,
+            distProxy.address,
+            coinToken.address,
+            defaultExchangeRateNumerator
+        ).encodeABI();
+
+        console.log('Initializing proxies...');
+        await Promise.all([
+            distProxy.upgradeToAndCall(distImplementation.address, distInitTx),
+            exchangeProxy.upgradeToAndCall(exchangeImplementation.address, exchangeInitTx),
+        ]);
+        // TODO: initialize implementation with 0s
+
+        const dist = await YALDistributor.at(distProxy.address);
+        const exchange = await YALExchange.at(exchangeProxy.address);
+
+        console.log('Funding GSN recipients...');
+        await Promise.all([
+            fundRecipient(web3, { recipient: coinToken.address, amount: ether(1) }),
+            fundRecipient(web3, { recipient: dist.address, amount: ether(1) }),
+            fundRecipient(web3, { recipient: exchange.address, amount: ether(1) })
+        ]);
+
 
         console.log('Granting deployer permissions...');
         await Promise.all([
+            exchange.addRoleTo(deployer, 'fund_manager'),
             coinToken.addRoleTo(deployer, 'fee_manager'),
             coinToken.addRoleTo(deployer, 'transfer_wl_manager'),
         ]);
@@ -88,18 +142,30 @@ module.exports = async function (truffle, network, accounts) {
             coinToken.addRoleTo(superuser, 'pauser'),
             coinToken.addRoleTo(superuser, 'fee_manager'),
             coinToken.addRoleTo(superuser, 'transfer_wl_manager'),
-            coinToken.addRoleTo(superuser, 'role_manager')
+            coinToken.addRoleTo(superuser, 'role_manager'),
+
+            exchange.addRoleTo(superuser, 'fund_manager'),
+            exchange.addRoleTo(superuser, 'operator'),
+            exchange.addRoleTo(superuser, 'super_operator'),
+            exchange.addRoleTo(superuser, 'pauser'),
         ]);
 
         console.log('Setting up fees...');
         await Promise.all([
-            coinToken.setTransferFee(ether('0.02')),
-            coinToken.setGsnFee(ether('0.87')),
-            dist.setGsnFee(ether('0.87')),
+            coinToken.setTransferFee(erc20TransferFeeShare),
+            coinToken.setGsnFee(gsnFee),
+            dist.setGsnFee(gsnFee),
+            exchange.setGsnFee(gsnFee),
         ]);
 
         console.log('Setting up whitelisted contracts for token transfers...');
         await coinToken.setWhitelistAddress(dist.address, true);
+        await coinToken.setWhitelistAddress(exchange.address, true);
+        await coinToken.setWhitelistAddress(superuser, true);
+
+        console.log('Setting up exchange limits...');
+        await exchange.setDefaultMemberPeriodLimit(defaultMemberPeriodLimit);
+        await exchange.setTotalPeriodLimit(totalPeriodLimit);
 
         console.log('Linking contracts...');
         await coinToken.setDistributor(dist.address);
@@ -127,6 +193,7 @@ module.exports = async function (truffle, network, accounts) {
 
         console.log('Revoking CoinToken deployer permissions...');
         await Promise.all([
+            exchange.removeRoleFrom(deployer, 'fund_manager'),
             coinToken.removeRoleFrom(deployer, 'fee_manager'),
             coinToken.removeRoleFrom(deployer, 'transfer_wl_manager'),
             coinToken.removeRoleFrom(deployer, 'role_manager'),
@@ -135,6 +202,9 @@ module.exports = async function (truffle, network, accounts) {
         console.log('Revoking YALDistributor deployer permissions...');
         await dist.setVerifier(superuser);
         await dist.transferOwnership(superuser);
+
+        console.log('Revoking YALExchange deployer permissions...');
+        await exchange.transferOwnership(superuser);
 
         console.log('Saving addresses and abi to deployed folder...');
         await new Promise(resolve => {
@@ -150,10 +220,12 @@ module.exports = async function (truffle, network, accounts) {
                 deployFile,
                 JSON.stringify(
                     _.extend(data, {
-                        testCoinTokenAddress: coinToken.address,
-                        testCoinTokenAbi: coinToken.abi,
-                        testYalDistributorAddress: dist.address,
-                        testYalDistributorAbi: dist.abi
+                        coinTokenAddress: coinToken.address,
+                        coinTokenAbi: coinToken.abi,
+                        yalDistributorAddress: dist.address,
+                        yalDistributorAbi: dist.abi,
+                        yalExchangeAddress: exchange.address,
+                        yalExchangeAbi: exchange.abi
                     }),
                     null,
                     2

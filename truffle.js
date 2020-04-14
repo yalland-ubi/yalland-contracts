@@ -22,10 +22,20 @@ module.exports = {
     // See <http://truffleframework.com/docs/advanced/configuration>
     // to customize your Truffle configuration!
     networks: {
-        local: {
+        ganache: {
             host: "127.0.0.1",
             port: 8545,
             network_id: "*" // Match any network id
+        },
+        sokol: {
+            // 1 gwei
+            gasPrice: 1000 * 1000 * 1000,
+            // 10M
+            gasLimit: 9 * 1000 * 1000,
+            skipDryRun: true,
+            websockets: true,
+            provider: getProvider('ws://sokol-rpc-parity-001.poa.network:8546'),
+            network_id: '*'
         },
         kovan: {
             // 1 gwei
