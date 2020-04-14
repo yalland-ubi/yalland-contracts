@@ -50,6 +50,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
     uint256 yalAmount;
     uint256 buyAmount;
     uint256 createdAt;
+    uint256 createdAtPeriod;
     string paymentDetails;
   }
 
@@ -59,7 +60,6 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
 
     uint256 totalExchanged;
     uint256 totalVoided;
-    uint256 totalOpen;
 
     // periodId => yal exchanged
     mapping(uint256 => uint256) yalExchangedByPeriod;
@@ -237,18 +237,12 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
       );
     }
 
-    m.yalExchangedByPeriod[currentPeriod] = m.yalExchangedByPeriod[currentPeriod].add(o.yalAmount);
-
     o.status = OrderStatus.CLOSED;
     o.paymentDetails = _paymentDetails;
 
-    totalExchangedYal = totalExchangedYal.add(o.yalAmount);
-    m.totalExchanged = m.totalExchanged.add(o.yalAmount);
-    m.totalOpen = m.totalOpen.sub(o.yalAmount);
-
     emit CloseOrder(_orderId, msg.sender);
 
-    yalToken.transferFrom(address(this), msg.sender, o.yalAmount);
+    yalToken.transfer(msg.sender, o.yalAmount);
   }
 
   function cancelOrder(uint256 _orderId, string calldata _cancelReason) external onlyOperator {
@@ -259,11 +253,15 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
 
     o.status = OrderStatus.CANCELLED;
 
-    m.totalOpen = m.totalOpen.sub(o.yalAmount);
+    m.totalExchanged = m.totalExchanged.sub(o.yalAmount);
+    m.yalExchangedByPeriod[o.createdAtPeriod] = m.yalExchangedByPeriod[o.createdAtPeriod].sub(o.yalAmount);
+
+    yalExchangedByPeriod[o.createdAtPeriod] = yalExchangedByPeriod[o.createdAtPeriod].sub(o.yalAmount);
+    totalExchangedYal = totalExchangedYal.sub(o.yalAmount);
 
     emit CancelOrder(_orderId, msg.sender, _cancelReason);
 
-    yalToken.transferFrom(address(this), yalDistributor.getMemberAddress(o.memberId), o.yalAmount);
+    yalToken.transfer(yalDistributor.getMemberAddress(o.memberId), o.yalAmount);
   }
 
   // SUPER OPERATOR INTERFACE
@@ -294,15 +292,18 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
     require(yalDistributor.isActive(memberAddress), "YALExchange: Member isn't active");
 
     bytes32 memberId = yalDistributor.memberAddress2Id(memberAddress);
+    uint256 currentPeriod = yalDistributor.getCurrentPeriodId();
 
     // Limit #1 check
     require(_yalAmount <= calculateMaxYalToSell(memberId), "YALExchange: YAL amount exceeds Limit #1");
 
-    // Limit #2 checks
-    requireLimit2NotReached(memberId, _yalAmount);
+    // Limit #2 check
+    requireLimit2NotReached(memberId, _yalAmount, currentPeriod);
+
+    // Limit #3 check
+    requireLimit3NotReached(memberId, _yalAmount, currentPeriod);
 
     uint256 buyAmount = calculateBuyAmount(memberId, _yalAmount);
-    uint256 currentPeriod = yalDistributor.getCurrentPeriodId();
 
     uint256 orderId = nextId();
     Order storage o = orders[orderId];
@@ -315,8 +316,8 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
     o.createdAt = now;
     o.buyAmount = buyAmount;
     o.yalAmount = _yalAmount;
+    o.createdAtPeriod = currentPeriod;
 
-    m.totalOpen = m.totalOpen.add(_yalAmount);
     m.totalExchanged = m.totalExchanged.add(_yalAmount);
     m.yalExchangedByPeriod[currentPeriod] = m.yalExchangedByPeriod[currentPeriod].add(_yalAmount);
 
@@ -351,6 +352,27 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
     return idCounter;
   }
 
+  function requireLimit1NotReached(bytes32 _memberId, uint256 _yalAmount) internal {
+    require(
+      checkExchangeFitsLimit1(_memberId, _yalAmount),
+      "YALExchange: exceeds Limit #1 (member volume)"
+    );
+  }
+
+  function requireLimit2NotReached(bytes32 _memberId, uint256 _yalAmount, uint256 _periodId) internal {
+    require(
+      checkExchangeFitsLimit2(_memberId, _yalAmount, _periodId) == true,
+      "YALExchange: exceeds Limit #2 (member period limit)"
+    );
+  }
+
+  function requireLimit3NotReached(bytes32 _memberId, uint256 _yalAmount, uint256 _periodId) internal {
+    require(
+      checkExchangeFitsLimit3(_memberId, _yalAmount, _periodId) == true,
+      "YALExchange: exceeds Limit #3 (total period limit)"
+    );
+  }
+
   // GETTERS
 
   function calculateMaxYalToSell(bytes32 _memberId) public view returns(uint256) {
@@ -359,8 +381,53 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
 
     return totalClaimed
       .sub(m.totalExchanged)
-      .sub(m.totalOpen)
       .add(m.totalVoided);
+  }
+
+  function checkExchangeFitsLimit1(
+    bytes32 _memberId,
+    uint256 _yalAmount
+  )
+    public
+    view
+    returns (bool)
+  {
+    return _yalAmount <= calculateMaxYalToSell(_memberId);
+  }
+
+  function checkExchangeFitsLimit2(
+    bytes32 _memberId,
+    uint256 _yalAmount,
+    uint256 _periodId
+  )
+    public
+    view
+    returns (bool)
+  {
+    Member storage m = members[_memberId];
+
+    uint256 limit = m.customPeriodLimit;
+    if (limit == 0) {
+      limit = defaultMemberPeriodLimit;
+    }
+
+    if (limit != 0 && m.yalExchangedByPeriod[_periodId].add(_yalAmount) <= limit) {
+      return true;
+    }
+
+    return false;
+  }
+
+  function checkExchangeFitsLimit3(
+    bytes32 _memberId,
+    uint256 _yalAmount,
+    uint256 _periodId
+  )
+    public
+    view
+    returns (bool)
+  {
+    return yalExchangedByPeriod[_periodId].add(_yalAmount) <= totalPeriodLimit;
   }
 
   function getCustomExchangeRate(bytes32 _memberId) external view returns (uint256) {

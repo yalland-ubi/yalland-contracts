@@ -36,13 +36,13 @@ const OrderStatus = {
     VOIDED: 4
 };
 
-describe.only('YALExchange Unit tests', () => {
-    const [verifier, alice, bob, charlie, dan, eve, minter, burner, fundManager, feeManager, transferWlManager] = accounts;
+describe('YALExchange Unit tests', () => {
+    const [verifier, alice, bob, charlie, dan, eve, minter, operator, fundManager, feeManager, transferWlManager] = accounts;
     const owner = defaultSender;
 
     // 7 days
     const periodLength = 7 * 24 * 60 * 60;
-    const periodVolume = ether(250 * 1000);
+    const periodVolume = ether(250);
     const verifierRewardShare = ether(10);
     const baseAliceBalance = 10000000;
     const feePercent = 0.02;
@@ -93,10 +93,15 @@ describe.only('YALExchange Unit tests', () => {
 
         await yalToken.setWhitelistAddress(dist.address, true, { from: transferWlManager });
         await yalToken.setWhitelistAddress(exchange.address, true, { from: transferWlManager });
+        await yalToken.setWhitelistAddress(operator, true, { from: transferWlManager });
 
         await dist.setGsnFee(ether('4.2'));
 
         await exchange.addRoleTo(fundManager, 'fund_manager');
+        await exchange.addRoleTo(operator, 'operator');
+
+        await exchange.setDefaultMemberPeriodLimit(ether(30), { from: fundManager });
+        await exchange.setTotalPeriodLimit(ether(70), { from: fundManager });
 
         // this will affect on dist provider too
         yalToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
@@ -310,11 +315,9 @@ describe.only('YALExchange Unit tests', () => {
 
                     const bobsYalExchangedByPeriodBefore = (await exchange.members(memberId1)).totalExchanged;
                     const bobsTotalExchangedYalBefore = await exchange.getMemberYallExchangedInCurrentPeriod(memberId1);
-                    const bobsTotalOpenBefore = (await exchange.members(memberId1)).totalOpen;
 
                     const charliesYalExchangedByPeriodBefore = (await exchange.members(memberId2)).totalExchanged;
                     const charliesTotalExchangedYalBefore = await exchange.getMemberYallExchangedInCurrentPeriod(memberId2);
-                    const charliesTotalOpenBefore = (await exchange.members(memberId2)).totalOpen;
 
                     await exchange.createOrder(ether(3), { from: bob });
                     await exchange.createOrder(ether(5), { from: bob });
@@ -325,23 +328,77 @@ describe.only('YALExchange Unit tests', () => {
 
                     const bobsYalExchangedByPeriodAfter = (await exchange.members(memberId1)).totalExchanged;
                     const bobsTotalExchangedYalAfter = await exchange.getMemberYallExchangedInCurrentPeriod(memberId1);
-                    const bobsTotalOpenAfter = (await exchange.members(memberId1)).totalOpen;
 
                     const charliesYalExchangedByPeriodAfter = (await exchange.members(memberId2)).totalExchanged;
                     const charliesTotalExchangedYalAfter = await exchange.getMemberYallExchangedInCurrentPeriod(memberId2);
-                    const charliesTotalOpenAfter = (await exchange.members(memberId2)).totalOpen;
 
                     assertChanged(totalExchangedYalBefore, totalExchangedYalAfter, ether(15));
                     assertChanged(yalExchangedByPeriodBefore, yalExchangedByPeriodAfter, ether(15));
 
                     assertChanged(bobsYalExchangedByPeriodBefore, bobsYalExchangedByPeriodAfter, ether(8));
                     assertChanged(bobsTotalExchangedYalBefore, bobsTotalExchangedYalAfter, ether(8));
-                    assertChanged(bobsTotalOpenBefore, bobsTotalOpenAfter, ether(8));
 
                     assertChanged(charliesYalExchangedByPeriodBefore, charliesYalExchangedByPeriodAfter, ether(7));
                     assertChanged(charliesTotalExchangedYalBefore, charliesTotalExchangedYalAfter, ether(7));
-                    assertChanged(charliesTotalOpenBefore, charliesTotalOpenAfter, ether(7));
                 });
+            });
+        });
+    });
+
+    describe('Limits', () => {
+        beforeEach(async function() {
+            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [alice, bob, charlie], { from: verifier });
+            await increaseTime(12);
+        });
+
+        describe('Limit #1', () => {
+            it('should be 0 if there are no funds claimed yet', async function() {
+                assert.equal(await exchange.calculateMaxYalToSell(memberId2), 0);
+            });
+
+            it('should equal the amount of claimed funds if not exchanged yet', async function() {
+                await dist.claimFunds({ from: bob });
+                assert.equal(await exchange.calculateMaxYalToSell(memberId2), ether(75));
+
+                await increaseTime(periodLength);
+                await dist.claimFunds({ from: bob });
+                assert.equal(await exchange.calculateMaxYalToSell(memberId2), ether(2 * 75));
+
+                await increaseTime(periodLength);
+                await dist.claimFunds({ from: bob });
+                assert.equal(await exchange.calculateMaxYalToSell(memberId2), ether(3 * 75));
+            });
+
+            it('should reduce amount for opened orders', async function() {
+                await dist.claimFunds({ from: bob });
+
+                assert.equal(await exchange.calculateMaxYalToSell(memberId2), ether(75));
+
+                await yalToken.approve(exchange.address, ether(10), { from: bob });
+                await exchange.createOrder(ether(10), { from: bob });
+
+                assert.equal(await exchange.calculateMaxYalToSell(memberId2), ether(65));
+            });
+
+            it('should reduce amount for canceled or closed orders', async function() {
+                await dist.claimFunds({ from: bob });
+                await yalToken.transfer(exchange.address, ether(0.02), { from: bob });
+
+                assert.equal(await exchange.calculateMaxYalToSell(memberId2), ether(75));
+
+                await yalToken.approve(exchange.address, ether(10), { from: bob });
+                await exchange.createOrder(ether(10), { from: bob });
+
+                await yalToken.approve(exchange.address, ether(10), { from: bob });
+                await exchange.createOrder(ether(10), { from: bob });
+
+                assert.equal(await exchange.calculateMaxYalToSell(memberId2), ether(55));
+
+                await exchange.closeOrder(1, 'foo', { from: operator });
+                assert.equal(await exchange.calculateMaxYalToSell(memberId2), ether(55));
+
+                await exchange.cancelOrder(2, 'bar', { from: operator });
+                assert.equal(await exchange.calculateMaxYalToSell(memberId2), ether(65));
             });
         });
     });
