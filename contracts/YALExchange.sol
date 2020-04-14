@@ -35,6 +35,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
   event SetTotalPeriodLimit(address indexed fundManager, uint256 defaultPeriodLimit);
   event SetDefaultMemberPeriodLimit(address indexed fundManager, uint256 memberPeriodLimit);
   event SetCustomPeriodLimit(address indexed fundManager, bytes32 indexed memberId, uint256 memberPeriodLimit);
+  event SetGsnFee(address indexed fundManager, uint256 value);
   event VoidOrder(uint256 indexed orderId, address operator);
 
   enum OrderStatus {
@@ -79,6 +80,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
   uint256 public defaultExchangeRate;
   uint256 public defaultMemberPeriodLimit;
   uint256 public totalPeriodLimit;
+  uint256 public gsnFee;
 
   // Caches
   uint256 public totalExchangedYal;
@@ -144,7 +146,24 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
   {
     bytes4 signature = getDataSignature(_encodedFunction);
 
-    return (GSNRecipientSignatureErrorCodes.METHOD_NOT_SUPPORTED, "");
+    if (signature == YALExchange(0).createOrder.selector) {
+
+      if (yalToken.balanceOf(_caller) >= gsnFee && yalToken.allowance(_caller, address(this)) >= gsnFee) {
+        return (GSNRecipientSignatureErrorCodes.OK, abi.encode(_caller, signature));
+      } else {
+        return (GSNRecipientSignatureErrorCodes.INSUFFICIENT_BALANCE, "");
+      }
+    } else {
+      return (GSNRecipientSignatureErrorCodes.METHOD_NOT_SUPPORTED, "");
+    }
+  }
+
+  function _preRelayedCall(bytes memory _context) internal returns (bytes32) {
+    (address from, bytes4 signature) = abi.decode(_context, (address,bytes4));
+
+    if (signature == YALExchange(0).createOrder.selector) {
+      yalToken.transferFrom(from, address(this), gsnFee);
+    }
   }
 
   // FUND MANAGER INTERFACE
@@ -201,6 +220,15 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
     members[_memberId].customPeriodLimit = _customPeriodLimit;
 
     emit SetCustomPeriodLimit(msg.sender, _memberId, _customPeriodLimit);
+  }
+
+  /**
+   * @dev Sets a default GSN fee
+   */
+  function setGsnFee(uint256 _gsnFee) public onlyFundManager {
+    gsnFee = _gsnFee;
+
+    emit SetGsnFee(msg.sender, _gsnFee);
   }
 
   /**
@@ -331,7 +359,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
 
     emit CreateOrder(orderId, memberId, _yalAmount, buyAmount);
 
-    yalToken.transferFrom(msg.sender, address(this), _yalAmount);
+    yalToken.transferFrom(_msgSender(), address(this), _yalAmount);
   }
 
   function calculateBuyAmount(bytes32 _memberId, uint256 _yalAmount) public returns(uint256) {

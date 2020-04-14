@@ -24,7 +24,7 @@ CoinToken.numberFormat = 'String';
 YALDistributor.numberFormat = 'String';
 YALExchange.numberFormat = 'String';
 
-const { ether, now, int, increaseTime, assertRevert, assertGsnReject, getEventArg, getResTimestamp, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
+const { ether, now, increaseTime, assertRevert, assertGsnReject, getEventArg, getResTimestamp, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
 
 const keccak256 = web3.utils.soliditySha3;
 
@@ -37,7 +37,7 @@ const OrderStatus = {
 };
 
 describe('YALExchange Unit tests', () => {
-    const [verifier, alice, bob, charlie, dan, superOperator, pauser, minter, operator, fundManager, feeManager, transferWlManager] = accounts;
+    const [verifier, alice, bob, charlie, dan, superOperator, pauser, minter, burner, operator, fundManager, feeManager, transferWlManager] = accounts;
     const owner = defaultSender;
 
     // 7 days
@@ -83,6 +83,7 @@ describe('YALExchange Unit tests', () => {
         await yalToken.addRoleTo(dist.address, "minter");
         await yalToken.addRoleTo(dist.address, "burner");
         await yalToken.addRoleTo(minter, 'minter');
+        await yalToken.addRoleTo(burner, 'burner');
         await yalToken.addRoleTo(feeManager, 'fee_manager');
         await yalToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
 
@@ -105,12 +106,13 @@ describe('YALExchange Unit tests', () => {
 
         await exchange.setDefaultMemberPeriodLimit(ether(30), { from: fundManager });
         await exchange.setTotalPeriodLimit(ether(70), { from: fundManager });
+        await exchange.setGsnFee(ether('3'), { from: fundManager });
 
         // this will affect on dist provider too
         yalToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
 
         await deployRelayHub(web3);
-        await fundRecipient(web3, { recipient: dist.address, amount: ether(1) });
+        await fundRecipient(web3, { recipient: exchange.address, amount: ether(1) });
     });
 
     describe('FundManager Interface', () => {
@@ -289,6 +291,28 @@ describe('YALExchange Unit tests', () => {
                     assertErc20BalanceChanged(exchangeBalanceBefore, exchangeBalanceAfter, '123');
                 });
 
+                it('should allow creating an order using GSN', async function() {
+                    await yalToken.approve(exchange.address, ether(13 + 3), { from: bob });
+
+                    const exchangeBalanceBefore = await yalToken.balanceOf(exchange.address);
+                    const bobsBalanceBefore = await yalToken.balanceOf(bob);
+                    let res = await exchange.createOrder(ether(13), { from: bob, useGSN: true });
+                    assertRelayedCall(res);
+                    const exchangeBalanceAfter = await yalToken.balanceOf(exchange.address);
+                    const bobsBalanceAfter = await yalToken.balanceOf(bob);
+
+                    const total = (new BigNumber(ether(13 + 3)));
+                    const feeRate = new BigNumber('0.02');
+                    assertErc20BalanceChanged(
+                        exchangeBalanceBefore,
+                        exchangeBalanceAfter,
+                        total
+                            .minus(total.multipliedBy(feeRate).dividedBy(100))
+                            .toString()
+                    );
+                    assertErc20BalanceChanged(bobsBalanceBefore, bobsBalanceAfter, ether(-16));
+                });
+
                 it('should increment order id by 1 on each call', async function() {
                     let res = await exchange.createOrder(1, { from: bob });
                     assert.equal(getEventArg(res, 'CreateOrder', 'orderId'), 2);
@@ -349,6 +373,39 @@ describe('YALExchange Unit tests', () => {
                     assertChanged(charliesYalExchangedByPeriodBefore, charliesYalExchangedByPeriodAfter, ether(7));
                     assertChanged(charliesTotalExchangedYalBefore, charliesTotalExchangedYalAfter, ether(7));
                 });
+
+                describe('GSN reject', () => {
+                    beforeEach(async function() {
+                        assert.equal(await yalToken.balanceOf(bob), ether(63));
+                        assert.equal(await exchange.gsnFee(), ether('3'));
+                    })
+
+                    it('should deny creating an order without sufficient pre-approved funds using GSN', async function() {
+                        await yalToken.approve(exchange.address, 0, { from: bob });
+                        assert.equal(await yalToken.allowance(bob, exchange.address), 0);
+
+                        await assertGsnReject(
+                            exchange.createOrder(ether(1), { from: bob, gasLimit: 9000000, useGSN: true }),
+                            GSNRecipientSignatureErrorCodes.INSUFFICIENT_BALANCE
+                        );
+
+                        assert.equal(await yalToken.balanceOf(bob), ether(63));
+                    });
+
+                    it('should deny creating a new order without sufficient funds using GSN', async function() {
+                        await yalToken.approve(dist.address, ether(12), { from: bob });
+                        await yalToken.burn(bob, ether(62), { from: burner });
+                        assert.equal(await yalToken.balanceOf(bob), ether(1));
+                        assert.equal(await yalToken.allowance(bob, dist.address), ether(12));
+
+                        await assertGsnReject(
+                            exchange.createOrder(ether(1), { from: bob, gasLimit: 9000000, useGSN: true }),
+                            GSNRecipientSignatureErrorCodes.INSUFFICIENT_BALANCE
+                        );
+
+                        assert.equal(await yalToken.balanceOf(bob), ether(1));
+                    });
+                })
             });
         });
     });
