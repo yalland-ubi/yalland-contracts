@@ -217,25 +217,16 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
 
   // OPERATOR INTERFACE
 
+  /**
+   * @dev An operator successfully closes an exchange order
+   * @param _orderId to close
+   * @param _paymentDetails like bank tx number
+   */
   function closeOrder(uint256 _orderId, string calldata _paymentDetails) external onlyOperator {
     Order storage o = orders[_orderId];
     Member storage m = members[o.memberId];
 
     require(o.status == OrderStatus.OPEN, "YALExchange: Order should be open");
-
-    uint256 currentPeriod = yalDistributor.getCurrentPeriodId();
-
-    uint256 limit = m.customPeriodLimit;
-    if (limit == 0) {
-      limit = totalPeriodLimit;
-    }
-
-    if (limit > 0) {
-      require(
-        m.yalExchangedByPeriod[currentPeriod].add(o.yalAmount) <= limit,
-        "YALExchange: Exchange amount exceeds the period limit"
-      );
-    }
 
     o.status = OrderStatus.CLOSED;
     o.paymentDetails = _paymentDetails;
@@ -245,6 +236,11 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
     yalToken.transfer(msg.sender, o.yalAmount);
   }
 
+  /**
+   * @dev An operator cancels an order failed due some reason
+   * @param _orderId to cancel
+   * @param _cancelReason description
+   */
   function cancelOrder(uint256 _orderId, string calldata _cancelReason) external onlyOperator {
     Order storage o = orders[_orderId];
     Member storage m = members[o.memberId];
@@ -284,6 +280,10 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, GSNRecipien
 
   // USER INTERFACE
 
+  /**
+   * @dev A user creates a new order with a specified amount to exchange
+   * @param _yalAmount to exchange
+   */
   function createOrder(uint256 _yalAmount) external {
     require(_yalAmount > 0, "YALExchange: YAL amount can't be 0");
 

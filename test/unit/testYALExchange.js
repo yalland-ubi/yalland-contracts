@@ -37,7 +37,7 @@ const OrderStatus = {
 };
 
 describe('YALExchange Unit tests', () => {
-    const [verifier, alice, bob, charlie, dan, eve, minter, operator, fundManager, feeManager, transferWlManager] = accounts;
+    const [verifier, alice, bob, charlie, dan, superOperator, minter, operator, fundManager, feeManager, transferWlManager] = accounts;
     const owner = defaultSender;
 
     // 7 days
@@ -99,6 +99,7 @@ describe('YALExchange Unit tests', () => {
 
         await exchange.addRoleTo(fundManager, 'fund_manager');
         await exchange.addRoleTo(operator, 'operator');
+        await exchange.addRoleTo(superOperator, 'super_operator');
 
         await exchange.setDefaultMemberPeriodLimit(ether(30), { from: fundManager });
         await exchange.setTotalPeriodLimit(ether(70), { from: fundManager });
@@ -341,6 +342,103 @@ describe('YALExchange Unit tests', () => {
                     assertChanged(charliesYalExchangedByPeriodBefore, charliesYalExchangedByPeriodAfter, ether(7));
                     assertChanged(charliesTotalExchangedYalBefore, charliesTotalExchangedYalAfter, ether(7));
                 });
+            });
+        });
+    });
+
+    describe('Operator Interface', () => {
+        let orderId;
+
+        beforeEach(async function() {
+            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [alice, bob, charlie], { from: verifier });
+            await increaseTime(12);
+
+            await dist.claimFunds({ from: bob });
+
+            await yalToken.approve(exchange.address, ether(12), { from: bob });
+            let res = await exchange.createOrder(ether(12), { from: bob });
+
+            orderId = getEventArg(res, 'CreateOrder', 'orderId');
+
+            // for erc20 fees
+            await yalToken.transfer(exchange.address, ether(1), { from: bob });
+        });
+
+        describe('#closeOrder()', () => {
+            it('should change corresponding oder information', async function() {
+                await exchange.closeOrder(orderId, 'blah', { from: operator });
+                const res = await exchange.orders(orderId);
+                assert.equal(res.status, OrderStatus.CLOSED);
+                assert.equal(res.paymentDetails, 'blah');
+            });
+
+            it('should transfer YALs to an operator', async function() {
+                const operatorBalanceBefore = await yalToken.balanceOf(operator);
+                await exchange.closeOrder(orderId, 'blah', { from: operator });
+                const operatorBalanceAfter = await yalToken.balanceOf(operator);
+
+                assertErc20BalanceChanged(operatorBalanceBefore, operatorBalanceAfter, ether(12));
+            });
+
+            it('should deny closing second time', async function() {
+                await exchange.closeOrder(orderId, 'blah', { from: operator });
+                await assertRevert(exchange.closeOrder(orderId, 'blah', { from: operator }), 'YALExchange: Order should be open');
+            });
+
+            it('should deny non-operator closing an order', async function() {
+                await assertRevert(exchange.closeOrder(orderId, 'blah', { from: superOperator }), 'YALExchange: Only operator role allowed');
+            });
+        });
+
+        describe('#cancelOrder()', () => {
+            it('should change corresponding order information', async function() {
+                let res = await exchange.cancelOrder(orderId, 'blah', { from: operator });
+                assert.equal(getEventArg(res, 'CancelOrder', 'reason'), 'blah');
+                res = await exchange.orders(orderId);
+                assert.equal(res.status, OrderStatus.CANCELLED);
+                assert.equal(res.paymentDetails, '');
+            });
+
+            it('should transfer YALs back to a member', async function() {
+                const bobsBalanceBefore = await yalToken.balanceOf(bob);
+                await exchange.cancelOrder(orderId, 'blah', { from: operator });
+                const bobsBalanceAfter = await yalToken.balanceOf(bob);
+
+                assertErc20BalanceChanged(bobsBalanceBefore, bobsBalanceAfter, ether(12));
+            });
+
+            it('should decrement accumulators', async function() {
+                const currentPeriod = await dist.getCurrentPeriodId();
+                const assertChanged = assertErc20BalanceChanged;
+
+                const totalExchangedYalBefore = await exchange.totalExchangedYal();
+                const yalExchangedByPeriodBefore = await exchange.yalExchangedByPeriod(currentPeriod);
+
+                const bobsYalExchangedByPeriodBefore = (await exchange.members(memberId2)).totalExchanged;
+                const bobsTotalExchangedYalBefore = await exchange.getMemberYallExchangedInCurrentPeriod(memberId2);
+
+                await exchange.cancelOrder(orderId, 'blah', { from: operator });
+
+                const totalExchangedYalAfter = await exchange.totalExchangedYal();
+                const yalExchangedByPeriodAfter = await exchange.yalExchangedByPeriod(currentPeriod);
+
+                const bobsYalExchangedByPeriodAfter = (await exchange.members(memberId2)).totalExchanged;
+                const bobsTotalExchangedYalAfter = await exchange.getMemberYallExchangedInCurrentPeriod(memberId2);
+
+                assertChanged(totalExchangedYalBefore, totalExchangedYalAfter, ether(-12));
+                assertChanged(yalExchangedByPeriodBefore, yalExchangedByPeriodAfter, ether(-12));
+
+                assertChanged(bobsYalExchangedByPeriodBefore, bobsYalExchangedByPeriodAfter, ether(-12));
+                assertChanged(bobsTotalExchangedYalBefore, bobsTotalExchangedYalAfter, ether(-12));
+            });
+
+            it('should deny cancelling second time', async function() {
+                await exchange.cancelOrder(orderId, 'blah', { from: operator });
+                await assertRevert(exchange.cancelOrder(orderId, 'blah', { from: operator }), 'YALExchange: Order should be open');
+            });
+
+            it('should deny non-operator cancelling an order', async function() {
+                await assertRevert(exchange.cancelOrder(orderId, 'blah', { from: superOperator }), 'YALExchange: Only operator role allowed');
             });
         });
     });
