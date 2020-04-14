@@ -221,11 +221,11 @@ contract CoinToken is
 
     _chargeTransferFee(_msgSender(), _value);
 
-    return true;
+    return result;
   }
 
   // INTERNAL
-  function _requireMemberIsValid(address _member) internal {
+  function _requireMemberIsValid(address _member) internal view {
     require(isMemberValid(_member), "YALToken: Member is invalid");
   }
 

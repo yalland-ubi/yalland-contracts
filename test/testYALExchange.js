@@ -229,10 +229,10 @@ describe('YALExchange Integration tests', () => {
             assert.equal(await exchange.checkExchangeFitsLimit2(memberId3, ether(31), firstPeriod), false);
 
             // limit #3
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId2, ether(70), firstPeriod), true);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId2, ether(71), firstPeriod), false);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId3, ether(70), firstPeriod), true);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId3, ether(71), firstPeriod), false);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(70), firstPeriod), true);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(71), firstPeriod), false);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(70), firstPeriod), true);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(71), firstPeriod), false);
 
             // >>> Step 2
             await yalToken.approve(exchange.address, ether(10), { from: bob });
@@ -252,10 +252,10 @@ describe('YALExchange Integration tests', () => {
             assert.equal(await exchange.checkExchangeFitsLimit2(memberId3, ether(31), firstPeriod), false);
 
             // limit #3
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId2, ether(50), firstPeriod), true);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId2, ether(51), firstPeriod), false);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId3, ether(50), firstPeriod), true);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId3, ether(51), firstPeriod), false);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(50), firstPeriod), true);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(51), firstPeriod), false);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(50), firstPeriod), true);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(51), firstPeriod), false);
 
             // >>> Step 3
             await exchange.closeOrder(1, 'foo', { from: operator });
@@ -272,10 +272,10 @@ describe('YALExchange Integration tests', () => {
             assert.equal(await exchange.checkExchangeFitsLimit2(memberId3, ether(31), firstPeriod), false);
 
             // limit #3
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId2, ether(60), firstPeriod), true);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId2, ether(61), firstPeriod), false);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId3, ether(60), firstPeriod), true);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId3, ether(61), firstPeriod), false);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(60), firstPeriod), true);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(61), firstPeriod), false);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(60), firstPeriod), true);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(61), firstPeriod), false);
 
             // >>> Step 4
 
@@ -291,10 +291,10 @@ describe('YALExchange Integration tests', () => {
             assert.equal(await exchange.checkExchangeFitsLimit2(memberId3, ether(31), firstPeriod), false);
 
             // limit #3
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId2, ether(60), firstPeriod), true);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId2, ether(61), firstPeriod), false);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId3, ether(60), firstPeriod), true);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId3, ether(61), firstPeriod), false);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(60), firstPeriod), true);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(61), firstPeriod), false);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(60), firstPeriod), true);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(61), firstPeriod), false);
 
             // >>> Step 5
 
@@ -318,14 +318,14 @@ describe('YALExchange Integration tests', () => {
             assert.equal(await exchange.checkExchangeFitsLimit2(memberId3, ether(31), secondPeriod), false);
 
             // limit #3
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId2, ether(60), firstPeriod), true);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId2, ether(61), firstPeriod), false);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId3, ether(60), firstPeriod), true);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId3, ether(61), firstPeriod), false);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId2, ether(70), secondPeriod), true);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId2, ether(71), secondPeriod), false);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId3, ether(70), secondPeriod), true);
-            assert.equal(await exchange.checkExchangeFitsLimit3(memberId3, ether(71), secondPeriod), false);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(60), firstPeriod), true);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(61), firstPeriod), false);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(60), firstPeriod), true);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(61), firstPeriod), false);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(70), secondPeriod), true);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(71), secondPeriod), false);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(70), secondPeriod), true);
+            assert.equal(await exchange.checkExchangeFitsLimit3(ether(71), secondPeriod), false);
         });
     });
 });

@@ -263,7 +263,11 @@ describe('YALExchange Unit tests', () => {
 
             it('should deny creating an order if Limit #1 value isnt satisfied', async function() {
                 await yalToken.approve(exchange.address, 3, { from: bob });
-                await assertRevert(exchange.createOrder(1, { from: bob }), 'YALExchange: YAL amount exceeds Limit #1');
+                await assertRevert(
+                    exchange.createOrder(1, { from: bob, useGSN: false }),
+                    'YALExchange: exceeds Limit #1 (member volume)',
+                    false
+                );
             });
 
             describe('with enough approval and satisfied limits', () => {

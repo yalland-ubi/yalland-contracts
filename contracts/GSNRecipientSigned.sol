@@ -59,7 +59,7 @@ contract GSNRecipientSigned is GSNRecipient {
   function _handleRelayedCall(bytes memory _encodedFunction, address _caller)
     internal view returns (GSNRecipientSignatureErrorCodes, bytes memory);
 
-  function getDataSignature(bytes memory _encodedFunction) public view returns (bytes4 signature){
+  function getDataSignature(bytes memory _encodedFunction) public pure returns (bytes4 signature){
     assembly {
       signature := mload(add(_encodedFunction, 0x20))
     }

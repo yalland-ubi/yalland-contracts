@@ -253,7 +253,6 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
    */
   function closeOrder(uint256 _orderId, string calldata _paymentDetails) external onlyOperator {
     Order storage o = orders[_orderId];
-    Member storage m = members[o.memberId];
 
     require(o.status == OrderStatus.OPEN, "YALExchange: Order should be open");
 
@@ -328,13 +327,13 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
     uint256 currentPeriod = yalDistributor.getCurrentPeriodId();
 
     // Limit #1 check
-    require(_yalAmount <= calculateMaxYalToSell(memberId), "YALExchange: YAL amount exceeds Limit #1");
+    requireLimit1NotReached(memberId, _yalAmount);
 
     // Limit #2 check
     requireLimit2NotReached(memberId, _yalAmount, currentPeriod);
 
     // Limit #3 check
-    requireLimit3NotReached(memberId, _yalAmount, currentPeriod);
+    requireLimit3NotReached(_yalAmount, currentPeriod);
 
     uint256 buyAmount = calculateBuyAmount(memberId, _yalAmount);
 
@@ -362,13 +361,43 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
     yalToken.transferFrom(_msgSender(), address(this), _yalAmount);
   }
 
-  function calculateBuyAmount(bytes32 _memberId, uint256 _yalAmount) public returns(uint256) {
+  // INTERNAL
+
+  function nextId() internal returns (uint256) {
+    idCounter += 1;
+    return idCounter;
+  }
+
+  function requireLimit1NotReached(bytes32 _memberId, uint256 _yalAmount) internal view {
+    require(
+      checkExchangeFitsLimit1(_memberId, _yalAmount),
+      "YALExchange: exceeds Limit #1 (member volume)"
+    );
+  }
+
+  function requireLimit2NotReached(bytes32 _memberId, uint256 _yalAmount, uint256 _periodId) internal view {
+    require(
+      checkExchangeFitsLimit2(_memberId, _yalAmount, _periodId) == true,
+      "YALExchange: exceeds Limit #2 (member period limit)"
+    );
+  }
+
+  function requireLimit3NotReached(uint256 _yalAmount, uint256 _periodId) internal view {
+    require(
+      checkExchangeFitsLimit3(_yalAmount, _periodId) == true,
+      "YALExchange: exceeds Limit #3 (total period limit)"
+    );
+  }
+
+  // GETTERS
+
+  function calculateBuyAmount(bytes32 _memberId, uint256 _yalAmount) public view returns(uint256) {
     return _yalAmount
-      .mul(calculateMemberExchangeRate(_memberId, _yalAmount))
+      .mul(calculateMemberExchangeRate(_memberId))
       .div(RATE_DIVIDER);
   }
 
-  function calculateMemberExchangeRate(bytes32 _memberId, uint256 _yalAmount) public returns(uint256) {
+  function calculateMemberExchangeRate(bytes32 _memberId) public view returns(uint256) {
     uint256 rate = members[_memberId].customExchangeRate;
 
     if (rate == 0) {
@@ -377,36 +406,6 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
 
     return rate;
   }
-
-  // INTERNAL
-
-  function nextId() internal returns (uint256) {
-    idCounter += 1;
-    return idCounter;
-  }
-
-  function requireLimit1NotReached(bytes32 _memberId, uint256 _yalAmount) internal {
-    require(
-      checkExchangeFitsLimit1(_memberId, _yalAmount),
-      "YALExchange: exceeds Limit #1 (member volume)"
-    );
-  }
-
-  function requireLimit2NotReached(bytes32 _memberId, uint256 _yalAmount, uint256 _periodId) internal {
-    require(
-      checkExchangeFitsLimit2(_memberId, _yalAmount, _periodId) == true,
-      "YALExchange: exceeds Limit #2 (member period limit)"
-    );
-  }
-
-  function requireLimit3NotReached(bytes32 _memberId, uint256 _yalAmount, uint256 _periodId) internal {
-    require(
-      checkExchangeFitsLimit3(_memberId, _yalAmount, _periodId) == true,
-      "YALExchange: exceeds Limit #3 (total period limit)"
-    );
-  }
-
-  // GETTERS
 
   function calculateMaxYalToSell(bytes32 _memberId) public view returns(uint256) {
     uint256 totalClaimed = yalDistributor.getTotalClaimed(_memberId);
@@ -452,7 +451,6 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
   }
 
   function checkExchangeFitsLimit3(
-    bytes32 _memberId,
     uint256 _yalAmount,
     uint256 _periodId
   )
