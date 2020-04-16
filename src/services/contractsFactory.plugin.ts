@@ -19,6 +19,7 @@ export default {
             'coinToken': CoinTokenContract,
             'city': CityContract,
             'addressUpgrader': CityContract,
+            'yalDistributor': CityContract,
             'tariffAdder': CityContract
         };
 

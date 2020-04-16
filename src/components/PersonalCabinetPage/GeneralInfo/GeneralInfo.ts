@@ -23,7 +23,7 @@ export default {
 
         const interval = setInterval(async () => {
             this.getGeneralInfo();
-        }, 10000);
+        }, 60 * 1000);
         
         this.intervals.push(interval);
     },

@@ -156,7 +156,7 @@ export default {
 
         this.getUserData();
         
-        setInterval(this.getUserData.bind(this), 10000);
+        setInterval(this.getUserData.bind(this), 60 * 1000);
         
         this.$locale.waitForLoad().then(() => {
             this.$waitScreen.setDefaultText(this.$locale.get('wait_screen.default_title'), this.$locale.get('wait_screen.default_tip'));
@@ -176,6 +176,9 @@ export default {
         (global as any).$dev = {
             addCityRole: (address, role) => {
                 return this.$galtUser.addCityRole(address, role);
+            },
+            addDistributorRole: (address, role) => {
+                return this.$galtUser.addDistributorRole(address, role);
             },
             sendCityContractMethod: (methodName, args = []) => {
                 return this.$galtUser.sendCityContractMethod(methodName, args);
@@ -259,7 +262,7 @@ export default {
                         return;
                     this.setUserWallet(accounts[0]);
                 });
-            }, 1000);
+            }, 60 * 1000);
 
             this.$store.commit('internal_wallet', this.$galtUser.getInternalWallet());
             this.$store.commit('internal_wallet_active', this.$galtUser.getInternalWalletActive());
@@ -274,7 +277,7 @@ export default {
 
             this.getInternalWalletData();
 
-            setInterval(this.getInternalWalletData.bind(this), 10000);
+            setInterval(this.getInternalWalletData.bind(this), 60 * 1000);
         },
         
         async initServerWeb3(){
@@ -341,10 +344,10 @@ export default {
                     }
                 }
 
-                console.log('token roleAddedEvents', await this.$coinTokenContract.roleAddedEvents());
-                console.log('token roleRemovedEvents', await this.$coinTokenContract.roleRemovedEvents());
-                console.log('city roleAddedEvents', await this.$cityContract.roleAddedEvents());
-                console.log('events has role', await this.$coinTokenContract.hasRole('0xf0430bbb78C3c359c22d4913484081A563B86170', 'role_manager'))
+                // console.log('token roleAddedEvents', await this.$coinTokenContract.roleAddedEvents());
+                // console.log('token roleRemovedEvents', await this.$coinTokenContract.roleRemovedEvents());
+                // console.log('city roleAddedEvents', await this.$cityContract.roleAddedEvents());
+                // console.log('events has role', await this.$coinTokenContract.hasRole('0xf0430bbb78C3c359c22d4913484081A563B86170', 'role_manager'))
             });
         },
 
