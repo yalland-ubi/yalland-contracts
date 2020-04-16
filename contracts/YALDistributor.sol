@@ -57,17 +57,6 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     bool verifierClaimedReward;
   }
 
-  struct Member {
-    bool active;
-    address addr;
-    uint256 createdAt;
-    uint256 lastEnabledAt;
-    uint256 lastDisabledAt;
-    uint256 totalClaimed;
-    // periodId => claimed
-    mapping(uint256 => bool) claimedPeriods;
-  }
-
   uint256 public genesisTimestamp;
   uint256 public periodLength;
   uint256 public periodVolume;

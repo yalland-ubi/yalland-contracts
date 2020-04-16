@@ -56,4 +56,15 @@ interface IYALDistributor {
     uint256 lastDisabledAt,
     uint256 totalClaimed
   );
+
+  struct Member {
+    bool active;
+    address addr;
+    uint256 createdAt;
+    uint256 lastEnabledAt;
+    uint256 lastDisabledAt;
+    uint256 totalClaimed;
+    // periodId => claimed
+    mapping(uint256 => bool) claimedPeriods;
+  }
 }

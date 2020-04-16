@@ -407,8 +407,17 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
     return rate;
   }
 
+  function calculateMaxYalToSellByAddress(address _memberAddress) public view returns(uint256) {
+    (,,,,,,uint256 totalClaimed) = yalDistributor.getMemberByAddress(_memberAddress);
+    Member storage m = members[yalDistributor.memberAddress2Id(_memberAddress)];
+
+    return totalClaimed
+      .sub(m.totalExchanged)
+      .add(m.totalVoided);
+  }
+
   function calculateMaxYalToSell(bytes32 _memberId) public view returns(uint256) {
-    uint256 totalClaimed = yalDistributor.getTotalClaimed(_memberId);
+    (,,,,,,uint256 totalClaimed) = yalDistributor.getMemberByAddress(yalDistributor.getMemberAddress(_memberId));
     Member storage m = members[_memberId];
 
     return totalClaimed
