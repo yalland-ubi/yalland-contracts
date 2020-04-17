@@ -560,8 +560,8 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     bytes32 memberId = memberAddress2Id[_memberAddress];
     Member storage m = member[memberId];
 
-    require(m.addr == _memberAddress, "Address doesn't match");
     require(m.active == true, "Not active member");
+    require(m.addr == _memberAddress, "Address doesn't match");
 
     require(m.createdAt < _currentPeriodStart, "Can't assign rewards for the creation period");
     require(m.claimedPeriods[_currentPeriodId] == false, "Already claimed for the current period");
@@ -672,6 +672,14 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
 
   function isActive(address _addr) external view returns (bool) {
     return member[memberAddress2Id[_addr]].active;
+  }
+
+  function getTotalClaimed(bytes32 _memberId) external view returns (uint256) {
+    return member[_memberId].totalClaimed;
+  }
+
+  function getMemberAddress(bytes32 _memberId) external view returns (address) {
+    return member[_memberId].addr;
   }
 
   function getMemberByAddress(address _memberAddress) external view returns (

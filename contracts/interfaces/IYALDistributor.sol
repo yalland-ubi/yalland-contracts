@@ -17,6 +17,7 @@ pragma solidity ^0.5.13;
 interface IYALDistributor {
   function period(uint256 _periodId) external view returns(uint256 rewardPerMember, uint256 verifierReward, bool verifierClaimedReward);
   function activeMemberCount() external view returns(uint256);
+  function memberAddress2Id(address _memberAddress) external view returns(bytes32);
 
 
   function claimFundsMultiple(address[] calldata _memberAddresses) external;
@@ -41,6 +42,10 @@ interface IYALDistributor {
   function isPeriodClaimedByAddress(address _memberAddress, uint256 _periodId) external view returns (bool);
 
   function isActive(address _addr) external view returns (bool);
+
+  function getTotalClaimed(bytes32 _memberId) external view returns (uint256);
+
+  function getMemberAddress(bytes32 _memberId) external view returns (address);
 
   function getMemberByAddress(address _memberAddress) external view returns (
     bytes32 id,

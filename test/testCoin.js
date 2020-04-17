@@ -68,7 +68,6 @@ describe('Coin', () => {
         await coinToken.addRoleTo(minter, 'minter');
         await coinToken.addRoleTo(feeManager, 'fee_manager');
         await coinToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
-        // await coinToken.addRoleTo(feeManager, 'fee_manager');
 
         await coinToken.setDistributor(dist.address);
         await coinToken.mint(alice, ether(baseAliceBalance), {from: minter});
@@ -426,6 +425,28 @@ describe('Coin', () => {
 
             assertErc20BalanceChanged(feeManagerBalanceBefore, feeManagerBalanceAfter, ether(transferCoinAmount / 100 * feePercent));
         });
+
+        it('should revert if there is no fee to cover transfer fee expenses', async function () {
+            await coinToken.mint(bob, ether(10), {from: minter});
+            assert.equal(await coinToken.balanceOf(bob), ether(10));
+
+            await coinToken.approve(bob, ether('9.9999'), { from: bob });
+            assertRevert(
+                coinToken.transferFrom(bob, alice, ether('9.9999'), { from: bob }),
+                'YALToken: insufficient balance for paying a fee'
+            )
+        });
+
+        it('should allow if the balance is exact sum of the amount being transferring and a fee', async function () {
+            // 10 eth + (10 eth * 0.02%)
+            await coinToken.mint(bob, ether('10.002'), {from: minter});
+            assert.equal(await coinToken.balanceOf(bob), ether('10.002'));
+
+            await coinToken.approve(bob, ether('10'), { from: bob });
+            await coinToken.transferFrom(bob, alice, ether('10'), { from: bob });
+
+            assert.equal(await coinToken.balanceOf(bob), ether(0));
+        });
     });
 
     describe('#transfer()', () => {
@@ -528,6 +549,26 @@ describe('Coin', () => {
             const feeManagerBalanceAfter = await coinToken.balanceOf(feeManager);
 
             assertErc20BalanceChanged(feeManagerBalanceBefore, feeManagerBalanceAfter, ether(transferCoinAmount / 100 * feePercent));
+        });
+
+        it('should revert if there is no fee to cover transfer fee expenses', async function () {
+            await coinToken.mint(bob, ether(10), {from: minter});
+            assert.equal(await coinToken.balanceOf(bob), ether(10));
+
+            assertRevert(
+                coinToken.transfer(alice, ether('9.9999'), { from: bob }),
+                'YALToken: insufficient balance for paying a fee'
+            )
+        });
+
+        it('should allow if the balance is exact sum of the amount being transferring and a fee', async function () {
+            // 10 eth + (10 eth * 0.02%)
+            await coinToken.mint(bob, ether('10.002'), {from: minter});
+            assert.equal(await coinToken.balanceOf(bob), ether('10.002'));
+
+            await coinToken.transfer(alice, ether('10'), { from: bob });
+
+            assert.equal(await coinToken.balanceOf(bob), ether(0));
         });
     });
 });

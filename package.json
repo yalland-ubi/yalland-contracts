@@ -16,8 +16,8 @@
     "deploy-prod": "yarn && NODE_ENV=production node ./node_modules/.bin/webpack && surge ./dist dcity.surge.sh",
     "build": "yarn && NODE_ENV=production node ./node_modules/.bin/webpack",
     "migrate": "truffle migrate --network yalland --f 10 --to 999",
-    "migrate-kovan": "truffle migrate --network kovan -f 1001",
-    "migrate-test": "truffle migrate --network testnet57 -f 1001"
+    "migrate-kovan": "truffle migrate -f 1001",
+    "migrate-sokol": "truffle migrate -f 1001"
   },
   "repository": {
     "type": "git",
