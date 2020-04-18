@@ -15,7 +15,20 @@ pragma solidity ^0.5.13;
  * @notice Mints YAL tokens on request according pre-configured formula
  **/
 interface IYALDistributor {
+  function member(bytes32 _memberId)
+    external
+    view
+    returns(
+      bool active,
+      address addr,
+      uint256 createdAt,
+      uint256 lastEnabledAt,
+      uint256 lastDisabledAt,
+      uint256 totalClaimed
+    );
+
   function period(uint256 _periodId) external view returns(uint256 rewardPerMember, uint256 verifierReward, bool verifierClaimedReward);
+
   function activeMemberCount() external view returns(uint256);
   function memberAddress2Id(address _memberAddress) external view returns(bytes32);
 
