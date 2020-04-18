@@ -187,6 +187,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
    */
   function setCustomExchangeRate(bytes32 _memberId, uint256 _customExchangeRate) external onlyFundManager {
     members[_memberId].customExchangeRate = _customExchangeRate;
+    (,address addr,,,,) = yalDistributor.member(_memberId);
 
     emit SetCustomExchangeRate(msg.sender, _memberId, _customExchangeRate);
   }
@@ -285,7 +286,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
 
     emit CancelOrder(_orderId, msg.sender, _cancelReason);
 
-    yalToken.transfer(yalDistributor.getMemberAddress(o.memberId), o.yalAmount);
+    yalToken.transfer(_getMemberAddress(o.memberId), o.yalAmount);
   }
 
   // SUPER OPERATOR INTERFACE
@@ -296,7 +297,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
    */
   function voidOrder(uint256 _orderId) external onlySuperOperator {
     Order storage o = orders[_orderId];
-    address memberAddress = yalDistributor.getMemberAddress(o.memberId);
+    address memberAddress = _getMemberAddress(o.memberId);
     uint256 yalAmount = o.yalAmount;
 
     require(o.status == OrderStatus.CLOSED, "YALExchange: Order should be closed");
@@ -321,7 +322,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
 
     address memberAddress = _msgSender();
 
-    require(yalDistributor.isActive(memberAddress), "YALExchange: Member isn't active");
+    require(_isActiveAddress(memberAddress), "YALExchange: Member isn't active");
 
     bytes32 memberId = yalDistributor.memberAddress2Id(memberAddress);
     uint256 currentPeriod = yalDistributor.getCurrentPeriodId();
@@ -368,6 +369,24 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
     return idCounter;
   }
 
+  function _isActiveAddress(address _addr) internal view returns(bool) {
+    // return yalDistributor.isActive(_addr);
+    (,bool isActive,,,,,) = yalDistributor.getMemberByAddress(_addr);
+    return isActive;
+  }
+
+  function _getTotalClaimed(bytes32 _memberId) internal view returns(uint256) {
+    // return yalDistributor.getTotalClaimed(_memberId);
+    (,,,,,uint256 totalClaimed) = yalDistributor.member(_memberId);
+    return totalClaimed;
+  }
+
+  function _getMemberAddress(bytes32 _memberId) internal view returns(address) {
+    // return yalDistributor.getMemberAddress(_memberId);
+    (,address addr,,,,) = yalDistributor.member(_memberId);
+    return addr;
+  }
+
   function requireLimit1NotReached(bytes32 _memberId, uint256 _yalAmount) internal view {
     require(
       checkExchangeFitsLimit1(_memberId, _yalAmount),
@@ -408,12 +427,16 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
   }
 
   function calculateMaxYalToSell(bytes32 _memberId) public view returns(uint256) {
-    uint256 totalClaimed = yalDistributor.getTotalClaimed(_memberId);
+    uint256 totalClaimed = _getTotalClaimed(_memberId);
     Member storage m = members[_memberId];
 
     return totalClaimed
       .sub(m.totalExchanged)
       .add(m.totalVoided);
+  }
+
+  function calculateMaxYalToSellByAddress(address _memberAddress) external view returns(uint256) {
+    return calculateMaxYalToSell(yalDistributor.memberAddress2Id(_memberAddress));
   }
 
   function checkExchangeFitsLimit1(
