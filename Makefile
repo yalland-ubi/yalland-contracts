@@ -1,4 +1,4 @@
-.PHONY: test coverage
+.PHONY: test coverage ops
 
 cleanup:
 	rm -rf ./build
@@ -16,12 +16,24 @@ test:
 	-npm test
 	-tput bel
 
-claim-funds:
-	DEPLOYMENT_KEY= NETWORK=sokol node ops/claimFunds
+ops-home:
+	NETWORK=sokol node ops/opsHome
+	-tput bel
+
+ops-foreign:
+	NETWORK=kovan node ops/opsForeign
+	-tput bel
+
+migrate-yalland:
+	./node_modules/.bin/truffle migrate -f 11 --to 999 --network yalland --reset
+	-tput bel
+
+migrate-kovan:
+	./node_modules/.bin/truffle migrate -f 2001 --to 2999 --network kovan --reset
 	-tput bel
 
 migrate-sokol:
-	DEPLOYMENT_KEY= NETWORK=sokol ./node_modules/.bin/truffle migrate -f 1001 --network sokol --reset
+	./node_modules/.bin/truffle migrate -f 1001 --to 1999 --network sokol --reset
 	-tput bel
 
 migrate-ganache:
