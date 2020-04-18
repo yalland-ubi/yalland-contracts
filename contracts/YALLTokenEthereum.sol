@@ -32,7 +32,6 @@ contract YALLTokenEthereum is
     public
     ERC20Detailed("YALLEthereum", "YAL", uint8(18))
   {
-    // ROLE_MANAGER is assigned to the msg.sender in Permissionable()
   }
 
   modifier onlyMinter() {
