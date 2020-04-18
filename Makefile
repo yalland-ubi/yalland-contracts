@@ -25,7 +25,7 @@ ops-foreign:
 	-tput bel
 
 migrate-yalland:
-	./node_modules/.bin/truffle migrate -f 11 --to 999 --network yalland --reset
+	./node_modules/.bin/truffle migrate -f 12 --to 999 --network yalland --reset
 	-tput bel
 
 migrate-kovan:
