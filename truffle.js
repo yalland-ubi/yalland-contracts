@@ -10,6 +10,7 @@
 const Ganache = require('ganache-core');
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 const web3 = require('web3');
+const { wsProviderForNetwork } = require('./galtproject-gpc');
 
 function getProvider(rpc) {
     return function() {
@@ -34,7 +35,7 @@ module.exports = {
             gasLimit: 9 * 1000 * 1000,
             skipDryRun: true,
             websockets: true,
-            provider: getProvider('ws://sokol-rpc-parity-001.poa.network:8546'),
+            provider: wsProviderForNetwork('sokol'),
             network_id: '*'
         },
         kovan: {
@@ -43,8 +44,8 @@ module.exports = {
             // 10M
             gasLimit: 9 * 1000 * 1000,
             skipDryRun: true,
-            provider: getProvider('wss://kovan.infura.io/ws/v3/e37391279cc043d29ca318d1bfcfcce1'),
-            // provider: getProvider('wss://wss-rpc.kovan.galtproject.io'),
+            websockets: true,
+            provider: wsProviderForNetwork('kovan'),
             network_id: '*'
         },
         yalland: {
@@ -53,7 +54,7 @@ module.exports = {
             // 10M
             gasLimit: 9 * 1000 * 1000,
             skipDryRun: true,
-            provider: getProvider('wss://server.yalland.com:8646/'),
+            provider: wsProviderForNetwork('yalland'),
             network_id: '*'
         },
         // network name deprecated

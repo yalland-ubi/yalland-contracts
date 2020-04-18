@@ -65,7 +65,8 @@
     "vue-router": "3.0.1",
     "vue-template-compiler": "^2.5.13",
     "vuex": "^3.0.1",
-    "web3": "1.2.4"
+    "web3": "1.2.4",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "@openzeppelin/test-environment": "^0.1.3",
