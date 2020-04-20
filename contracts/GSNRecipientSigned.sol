@@ -61,15 +61,14 @@ contract GSNRecipientSigned is GSNRecipient {
 
   function getDataSignature(bytes memory _encodedFunction) public pure returns (bytes4 signature){
     assembly {
+      // solhint-disable-previous-line no-inline-assembly
       signature := mload(add(_encodedFunction, 0x20))
     }
   }
 
   function _preRelayedCall(bytes memory) internal returns (bytes32) {
-    // solhint-disable-previous-line no-empty-blocks
   }
 
   function _postRelayedCall(bytes memory, bool, uint256, bytes32) internal {
-    // solhint-disable-previous-line no-empty-blocks
   }
 }

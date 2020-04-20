@@ -121,8 +121,8 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
     address _yalToken,
     uint256 _defaultExchangeRate
   )
-    initializeWithOwner(_initialOwner)
     external
+    initializeWithOwner(_initialOwner)
   {
     require(_defaultExchangeRate > 0, "YALExchange: Default rate can't be 0");
     require(_yalDistributor != address(0), "YALExchange: YALDistributor address can't be 0");
@@ -159,7 +159,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
   }
 
   function _preRelayedCall(bytes memory _context) internal returns (bytes32) {
-    (address from, bytes4 signature) = abi.decode(_context, (address,bytes4));
+    (address from, bytes4 signature) = abi.decode(_context, (address, bytes4));
 
     if (signature == YALExchange(0).createOrder.selector) {
       yalToken.transferFrom(from, address(this), gsnFee);
@@ -187,7 +187,6 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
    */
   function setCustomExchangeRate(bytes32 _memberId, uint256 _customExchangeRate) external onlyFundManager {
     members[_memberId].customExchangeRate = _customExchangeRate;
-    (,address addr,,,,) = yalDistributor.member(_memberId);
 
     emit SetCustomExchangeRate(msg.sender, _memberId, _customExchangeRate);
   }
@@ -371,18 +370,21 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
 
   function _isActiveAddress(address _addr) internal view returns(bool) {
     // return yalDistributor.isActive(_addr);
+    // solhint-disable-next-line space-after-comma
     (,bool isActive,,,,,) = yalDistributor.getMemberByAddress(_addr);
     return isActive;
   }
 
   function _getTotalClaimed(bytes32 _memberId) internal view returns(uint256) {
     // return yalDistributor.getTotalClaimed(_memberId);
+    // solhint-disable-next-line space-after-comma
     (,,,,,uint256 totalClaimed) = yalDistributor.member(_memberId);
     return totalClaimed;
   }
 
   function _getMemberAddress(bytes32 _memberId) internal view returns(address) {
     // return yalDistributor.getMemberAddress(_memberId);
+    // solhint-disable-next-line space-after-comma
     (,address addr,,,,) = yalDistributor.member(_memberId);
     return addr;
   }
