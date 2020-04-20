@@ -1,0 +1,4 @@
+contracts/Migrations.sol
+contracts/City.sol
+contracts/AddressUpgrader.sol
+contracts/legacy/*
