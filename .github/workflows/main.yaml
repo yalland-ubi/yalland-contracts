@@ -25,5 +25,5 @@ jobs:
           chmod 700 ~/.ssh
           ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
           yarn
-          # make lint && make compile && npm run test
-          make compile && yarn test
+          # TODO: enable js tests linter
+          yarn lint:sol && make compile && yarn test
