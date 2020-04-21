@@ -468,11 +468,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
       limit = defaultMemberPeriodLimit;
     }
 
-    if (limit != 0 && m.yalExchangedByPeriod[_periodId].add(_yalAmount) <= limit) {
-      return true;
-    }
-
-    return false;
+    return limit == 0 || m.yalExchangedByPeriod[_periodId].add(_yalAmount) <= limit;
   }
 
   function checkExchangeFitsLimit3(
@@ -483,7 +479,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
     view
     returns (bool)
   {
-    return yalExchangedByPeriod[_periodId].add(_yalAmount) <= totalPeriodLimit;
+    return totalPeriodLimit == 0 || yalExchangedByPeriod[_periodId].add(_yalAmount) <= totalPeriodLimit;
   }
 
   function getCustomExchangeRate(bytes32 _memberId) external view returns (uint256) {

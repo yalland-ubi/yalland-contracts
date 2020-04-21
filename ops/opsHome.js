@@ -1,4 +1,4 @@
-const { getLoader } = require('../galtproject-truffle-config');
+const { getLoader } = require('../galtproject-gpc');
 const {
     fundRecipient,
     registerRelay,
@@ -8,15 +8,17 @@ const assert = require('assert');
 
 const { loader, defaultSender } = getLoader();
 
-const config = require(`../deployed/${process.env.NETWORK}.json`)
+const config = require(`../deployed/${process.env.NETWORK}_netconfig.json`)
 
 const YALDistributor = loader.truffle.fromArtifact('YALDistributor');
+const YALExchange = loader.truffle.fromArtifact('YALExchange');
 const CoinToken = loader.truffle.fromArtifact('CoinToken');
 const HomeMediator = loader.truffle.fromABI(config.homeBridgeMediatorAbi)
 
 HomeMediator.numberFormat = 'String';
 YALDistributor.numberFormat = 'String';
 CoinToken.numberFormat = 'String';
+YALExchange.numberFormat = 'String';
 
 const { web3 } = YALDistributor;
 // eslint-disable-next-line import/order
@@ -93,12 +95,41 @@ async function balanceOf(token) {
     console.log('>>> YALToken balanceOf ', await token.balanceOf(me));
 }
 
+async function estimateExchange(dist, token, exchange) {
+    console.log('>>> YALExchange address ', await exchange.address);
+
+    const addr = '0x11965fa061d53b7b9d49e06155f35964682df52b';
+    const amount = ether(0.9);
+
+    const memberId = await dist.memberAddress2Id(addr);
+    const currentPeriod = await dist.getCurrentPeriodId();
+    console.log('>>> Member ID:', memberId);
+    console.log('>>> Current Period ID:', currentPeriod);
+    console.log('>>> YALDist member count:', await dist.activeMemberCount());
+    // console.log('>>> Member Details:', await dist.getMemberByAddress(addr));
+
+    console.log('>>> Approving... ');
+    await token.approve(exchange.address, amount, { from: addr })
+
+    console.log('>>> Limit 1:', await exchange.checkExchangeFitsLimit1(memberId, amount));
+    console.log('>>> Limit 2:', await exchange.checkExchangeFitsLimit2(memberId, amount, currentPeriod));
+    console.log('>>> Limit 3:', await exchange.checkExchangeFitsLimit3(amount, currentPeriod));
+
+    console.log('>>> Estimating... ');
+    console.log(
+        '>>> YALExchange estimation ',
+        await exchange.contract.methods
+            .createOrder(amount)
+            .estimateGas({ from: addr })
+    );
+}
 
 async function main() {
     console.log('web3::eth::id::', await web3.eth.net.getId());
 
     const token = await CoinToken.at(config.coinTokenAddress);
     const dist = await YALDistributor.at(config.yalDistributorAddress);
+    const exchange = await YALExchange.at(config.yalExchangeAddress);
     const mediator = await HomeMediator.at(config.homeBridgeMediatorAddress);
     console.log('>>> Starting...');
 
@@ -111,6 +142,7 @@ async function main() {
     // await setMediatorOnOtherSide(mediator);
     // await totalSupply(token);
     // await balanceOf(token);
+    // await estimateExchange(dist, token, exchange);
 }
 
 (async function() {

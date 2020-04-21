@@ -649,5 +649,89 @@ describe('YALExchange Unit tests', () => {
                 assert.equal(await exchange.calculateMaxYalToSell(memberId2), ether(65));
             });
         });
+
+        describe('Limit #2', () => {
+            let currentPeriodId;
+
+            beforeEach(async function() {
+                currentPeriodId = await dist.getCurrentPeriodId();
+                await exchange.setDefaultMemberPeriodLimit(ether(40), { from: fundManager });
+                await exchange.setCustomPeriodLimit(memberId1, ether(30), { from: fundManager });
+            });
+
+            it('should use default member limit if no personal set', async function() {
+                assert.equal(
+                    await exchange.checkExchangeFitsLimit2(memberId2, ether(30), currentPeriodId),
+                    true
+                );
+                assert.equal(
+                    await exchange.checkExchangeFitsLimit2(memberId2, ether(40), currentPeriodId),
+                    true
+                );
+                assert.equal(
+                    await exchange.checkExchangeFitsLimit2(memberId2, ether(41), currentPeriodId),
+                    false
+                );
+            });
+
+            it('should use a personal member limit if it is not 0', async function() {
+                assert.equal(
+                    await exchange.checkExchangeFitsLimit2(memberId1, ether(30), currentPeriodId),
+                    true
+                );
+                assert.equal(
+                    await exchange.checkExchangeFitsLimit2(memberId1, ether(31), currentPeriodId),
+                    false
+                );
+                assert.equal(
+                    await exchange.checkExchangeFitsLimit2(memberId1, ether(41), currentPeriodId),
+                    false
+                );
+            });
+
+            it('should not apply any limits if both personal and custom are 0', async function() {
+                await exchange.setDefaultMemberPeriodLimit(ether(0), { from: fundManager });
+                assert.equal(
+                    await exchange.checkExchangeFitsLimit2(memberId2, ether(30), currentPeriodId),
+                    true
+                );
+                assert.equal(
+                    await exchange.checkExchangeFitsLimit2(memberId2, ether(10000000), currentPeriodId),
+                    true
+                );
+            });
+        });
+
+        describe('Limit #3', () => {
+            let currentPeriodId;
+
+            beforeEach(async function() {
+                currentPeriodId = await dist.getCurrentPeriodId();
+                await exchange.setTotalPeriodLimit(ether(100), { from: fundManager });
+            });
+
+            it('should use non-zero period limit', async function() {
+                assert.equal(
+                    await exchange.checkExchangeFitsLimit3(ether(100), currentPeriodId),
+                    true
+                );
+                assert.equal(
+                    await exchange.checkExchangeFitsLimit3(ether(101), currentPeriodId),
+                    false
+                );
+            });
+
+            it('should ignore zero period limit', async function() {
+                await exchange.setTotalPeriodLimit(ether(0), { from: fundManager });
+                assert.equal(
+                    await exchange.checkExchangeFitsLimit3(ether(100), currentPeriodId),
+                    true
+                );
+                assert.equal(
+                    await exchange.checkExchangeFitsLimit3(ether(100000), currentPeriodId),
+                    true
+                );
+            });
+        });
     });
 });
