@@ -189,7 +189,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
   }
 
   function _preRelayedCall(bytes memory _context) internal returns (bytes32) {
-    (address from, bytes4 signature) = abi.decode(_context, (address,bytes4));
+    (address from, bytes4 signature) = abi.decode(_context, (address, bytes4));
 
     if (signature == YALDistributor(0).changeMyAddress.selector) {
       IERC20(address(token)).transferFrom(from, address(this), gsnFee);
@@ -334,7 +334,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
 
     require(len > 0, "Missing input members");
 
-    for (uint256 i = 0; i < len; i++ ) {
+    for (uint256 i = 0; i < len; i++) {
       address addr = _memberAddresses[i];
       bytes32 memberId = memberAddress2Id[addr];
       Member storage m = member[memberId];
@@ -367,7 +367,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
 
     require(len > 0, "Missing input members");
 
-    for (uint256 i = 0; i < len; i++ ) {
+    for (uint256 i = 0; i < len; i++) {
       address addr = _memberAddresses[i];
       bytes32 memberId = memberAddress2Id[addr];
       Member storage m = member[memberId];
@@ -394,7 +394,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     uint256 len = _fromAddresses.length;
     require(len == _toAddresses.length, "Both ids and addresses array should have the same size");
 
-    for(uint256 i = 0; i < len; i++) {
+    for (uint256 i = 0; i < len; i++) {
       _changeMemberAddress(_fromAddresses[i], _toAddresses[i]);
     }
   }
