@@ -30,9 +30,7 @@ contract YALLTokenEthereum is
 
   constructor()
     public
-    ERC20Detailed("YALLEthereum", "YAL", uint8(18))
-  {
-  }
+    ERC20Detailed("YALLEthereum", "YAL", uint8(18)) {}
 
   modifier onlyMinter() {
     require(msg.sender == minter, "YALLTokenEthereum: Only minter allowed");

@@ -24,8 +24,7 @@ contract CoinToken is
   ERC20Pausable,
   ERC20Detailed,
   Permissionable,
-  GSNRecipientSigned
-{
+  GSNRecipientSigned {
   uint256 public constant INITIAL_SUPPLY = 0;
 
   string public constant MINTER_ROLE = "minter";

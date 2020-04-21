@@ -35,8 +35,8 @@ contract YALLReferralPayouts is OwnableAndInitializable, OwnedAccessControl {
     address _initialOwner,
     address _yalToken
   )
-    initializeWithOwner(_initialOwner)
     external
+    initializeWithOwner(_initialOwner)
   {
     require(_yalToken != address(0), "YALLReferralPayouts: YALToken address can't be 0");
 
