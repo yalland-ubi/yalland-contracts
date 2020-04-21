@@ -21,12 +21,12 @@ CoinToken.numberFormat = 'String';
 YALDistributor.numberFormat = 'String';
 
 const { ether, now, getEventArg, increaseTime, assertRevert, assertGsnReject } = require('@galtproject/solidity-test-chest')(web3);
-const { approveFunction } = require('./helpers')(web3);
+const { approveFunction, GSNRecipientSignatureErrorCodes } = require('./helpers')(web3);
 
 const keccak256 = web3.utils.soliditySha3;
 
-describe.skip('YALDistribution Integration Tests', () => {
-    const [verifier, alice, bob, charlie, dan, eve, anyone] = accounts;
+describe('YALDistribution Integration Tests', () => {
+    const [verifier, alice, bob, charlie, dan, eve, minter, feeManager] = accounts;
 
     // 7 days
     const periodLength = 7 * 24 * 60 * 60;
@@ -46,7 +46,7 @@ describe.skip('YALDistribution Integration Tests', () => {
 
     beforeEach(async function () {
         genesisTimestamp = parseInt(await now(), 10) + startAfter;
-        coinToken = await CoinToken.new("Coin token", "COIN", 18);
+        coinToken = await CoinToken.new(alice, "Coin token", "COIN", 18);
         dist = await YALDistributor.new();
         await dist.initialize(
             periodVolume,
@@ -58,9 +58,14 @@ describe.skip('YALDistribution Integration Tests', () => {
             genesisTimestamp
         );
 
-        await coinToken.mint(alice, ether(baseAliceBalance));
-        await coinToken.setTransferFee(web3.utils.toWei(feePercent.toString(), 'szabo'));
         await coinToken.addRoleTo(dist.address, "minter");
+        await coinToken.addRoleTo(minter, 'minter');
+        await coinToken.addRoleTo(feeManager, 'fee_manager');
+        // await coinToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
+        await coinToken.setDistributor(dist.address);
+
+        await coinToken.setTransferFee(ether(10), { from: feeManager });
+        await coinToken.mint(alice, ether(baseAliceBalance), { from: minter });
 
         // this will affect on dist provider too
         coinToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
@@ -85,12 +90,13 @@ describe.skip('YALDistribution Integration Tests', () => {
     });
 
     it('should allow single member claiming his funds', async function() {
-        await assertGsnReject(
+        await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
+
+        await assertRevert(
             dist.claimFunds({ from: bob, useGSN: true }),
-            'Contract not initiated yet'
+            'Contract not initiated yet',
         );
         await assertRevert(dist.claimFunds({ from: bob, useGSN: false }), 'Contract not initiated yet');
-        await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
 
         const member = await dist.getMemberByAddress(bob);
         assert.equal(member.id, memberId1);
@@ -112,7 +118,11 @@ describe.skip('YALDistribution Integration Tests', () => {
         await increaseTime(11 + periodLength);
 
         await dist.claimFunds({ from: bob });
-        await assertRevert(dist.claimFunds({ from: bob, useGSN: true }), 'Already claimed for the current period');
+        await assertGsnReject(
+            dist.claimFunds({ from: bob, useGSN: true }),
+            GSNRecipientSignatureErrorCodes.DENIED,
+            'Already claimed for the current period'
+        );
 
         res = await dist.period(1);
         assert.equal(res.verifierReward, ether(25 * 1000));

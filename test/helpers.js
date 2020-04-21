@@ -41,10 +41,19 @@ function helpers(web3) {
         )
     }
 
+    const GSNRecipientSignatureErrorCodes = {
+        METHOD_NOT_SUPPORTED: 11,
+        OK: 12,
+        DENIED: 13,
+        INSUFFICIENT_BALANCE: 14
+    }
+
+
     return {
         approveFunction,
         assertRelayedCall,
         fixSignature,
+        GSNRecipientSignatureErrorCodes
     }
 }
 

@@ -9,15 +9,15 @@
     "test": "mocha --exit --recursive test --timeout 10000",
     "ganache-fork": "ganache-cli --fork http://127.0.0.1:8245@4127311 --gasLimit 28000000",
     "compile": "truffle compile",
-    "eslint": "eslint .",
-    "ethlint": "solium --dir .",
+    "lint:js": "eslint .",
+    "lint:sol": "solhint --max-warnings 0 \"contracts/**/*.sol\"",
     "local": "NODE_ENV=local ./node_modules/.bin/webpack-dev-server",
     "deploy-test": "yarn && NODE_ENV=test node ./node_modules/.bin/webpack && surge ./dist dcity-test.surge.sh",
     "deploy-prod": "yarn && NODE_ENV=production node ./node_modules/.bin/webpack && surge ./dist dcity.surge.sh",
     "build": "yarn && NODE_ENV=production node ./node_modules/.bin/webpack",
     "migrate": "truffle migrate --network yalland --f 10 --to 999",
-    "migrate-kovan": "truffle migrate --network kovan -f 1001",
-    "migrate-test": "truffle migrate --network testnet57 -f 1001"
+    "migrate-kovan": "truffle migrate -f 1001",
+    "migrate-sokol": "truffle migrate -f 1001"
   },
   "repository": {
     "type": "git",
@@ -31,7 +31,7 @@
   "homepage": "https://github.com/galtspace/dcity#readme",
   "dependencies": {
     "@galtproject/libs": "git+ssh://git@github.com/galtproject/galtproject-common.git#7639cda",
-    "@galtproject/solidity-test-chest": "https://github.com/galtproject/solidity-test-chest#898238d",
+    "@galtproject/solidity-test-chest": "https://github.com/galtproject/solidity-test-chest#5ebd982",
     "@galtproject/utils": "^0.9.1",
     "@openzeppelin/contracts": "2.5.0",
     "@openzeppelin/gsn-helpers": "^0.2.3",
@@ -40,6 +40,7 @@
     "@truffle/hdwallet-provider": "^1.0.28",
     "async": "^2.5.0",
     "axios": "^0.16.2",
+    "bignumber.js": "^9.0.0",
     "chai-as-promised": "^7.1.1",
     "chai-bignumber": "^3.0.0",
     "cli-table": "^0.3.1",
@@ -55,7 +56,8 @@
     "lodash": "^4.17.11",
     "moment": "^2.20.1",
     "p-iteration": "^1.1.7",
-    "truffle": "5.1.7",
+    "solhint": "^2.3.1",
+    "truffle": "5.1.20",
     "vue": "^2.5.13",
     "vue-drag-drop": "^0.2.3",
     "vue-material": "^1.0.0-beta-10.2",
@@ -64,7 +66,8 @@
     "vue-router": "3.0.1",
     "vue-template-compiler": "^2.5.13",
     "vuex": "^3.0.1",
-    "web3": "1.2.4"
+    "web3": "1.2.4",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "@openzeppelin/test-environment": "^0.1.3",

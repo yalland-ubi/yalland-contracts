@@ -96,7 +96,7 @@ export default {
 			this.checkingBalance = true;
 			pIteration.forEach(this.addressesToMigrate, item => {
 				return this.$root.$coinTokenContract.balanceOf(item.old).then(balance => {
-					item.haveEnoughYal = balance >= 250;
+					item.haveEnoughYal = balance > 0;
 					if(!item.haveEnoughYal) {
 						this.notEnoughBalance.push(item);
 					}
