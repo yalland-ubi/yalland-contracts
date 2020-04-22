@@ -1,4 +1,4 @@
-const { getLoader } = require('../galtproject-truffle-config');
+const { getLoader } = require('../galtproject-gpc');
 const assert = require('assert');
 
 const { loader } = getLoader();

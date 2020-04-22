@@ -1,5 +1,5 @@
 {
-  "yallTokenAddress": "0x4B674Be863b1F2b744DE27D8856dc3ea782aAD02",
+  "yallTokenAddress": "0xbC9D225A52dD6A296d5F2284F45bc9d1A14E895e",
   "yallTokenAbi": [
     {
       "inputs": [
@@ -1380,7 +1380,7 @@
       "signature": "0x28912822"
     }
   ],
-  "yallDistributorAddress": "0x2Cb423bA940EdE9EC5F59FaEc9d5605d04876441",
+  "yallDistributorAddress": "0x60bD7b978B54C7C73ADed9D0E11813708C6aA5C5",
   "yallDistributorAbi": [
     {
       "inputs": [],
@@ -2888,7 +2888,7 @@
       "signature": "0x3dd9899f"
     }
   ],
-  "yallExchangeAddress": "0xB6cB2D4d99db0eF60D61DC93fAE0Da8EcD627f13",
+  "yallExchangeAddress": "0x1B9caC5fcD392669470deF40B873b7f4EdbdB590",
   "yallExchangeAbi": [
     {
       "inputs": [],
@@ -4203,6 +4203,28 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0x625d4e0e"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_memberAddress",
+          "type": "address"
+        }
+      ],
+      "name": "calculateMaxYalToSellByAddress",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x538a0da0"
     },
     {
       "constant": true,

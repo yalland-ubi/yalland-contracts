@@ -1,14 +1,24 @@
 const { getLoader } = require('../galtproject-gpc');
 const {
     fundRecipient,
-    registerRelay,
-    deployRelayHub
 } = require('@openzeppelin/gsn-helpers');
 const assert = require('assert');
 
-const { loader, defaultSender } = getLoader();
+const { loader, provider, defaultSender } = getLoader({
+    gsnSupport: true,
+    loaderOptions: {
+        // 12 gwei
+        defaultGasPrice: 12 * 10 ** 9
+    },
+    gsnOptions: {
+        preferredRelayer: {
+            RelayServerAddress: '0xae9fd8783cf13a722d1b2aff9b749f73cb61999e',
+            relayUrl: 'https://gsn-relayer.sokol.galtproject.io/',
+        }
+    }
+});
 
-const config = require(`../deployed/${process.env.NETWORK}_netconfig.json`)
+const config = require(`../deployed/${process.env.NETWORK}.json`)
 
 const YALDistributor = loader.truffle.fromArtifact('YALDistributor');
 const YALExchange = loader.truffle.fromArtifact('YALExchange');
@@ -74,6 +84,22 @@ async function claimFunds(dist) {
     await dist.claimFunds({ from: me });
 }
 
+async function claimFundsGSN(dist) {
+    console.log('>>> dist getHubAddr ', await dist.getHubAddr());
+    console.log('>>> token ', await dist.token());
+    console.log('>>> currentPeriodId ', await dist.getCurrentPeriodId());
+    console.log('>>> me active ', await dist.member(myMemberId));
+
+    await dist.claimFunds({ from: me, useGSN: true });
+}
+
+// WARNING: doesnt' work, will be fixed later
+async function fundGSNContracts(dist, token, exchange) {
+    await fundRecipient(web3, { recipient: dist.address, amount: ether(1), useGSN: false });
+    await fundRecipient(web3, { recipient: token.address, amount: ether(1) });
+    await fundRecipient(web3, { recipient: exchange.address, amount: ether(1) });
+}
+
 async function setMediatorOnOtherSide(mediator) {
     console.log('>>> current mediator on other side ', await mediator.mediatorContractOnOtherSide());
     await mediator.setMediatorContractOnOtherSide(config.foreignBridgeMediatorAddress, { from: superuser });
@@ -127,16 +153,18 @@ async function estimateExchange(dist, token, exchange) {
 async function main() {
     console.log('web3::eth::id::', await web3.eth.net.getId());
 
-    const token = await CoinToken.at(config.coinTokenAddress);
-    const dist = await YALDistributor.at(config.yalDistributorAddress);
-    const exchange = await YALExchange.at(config.yalExchangeAddress);
+    const token = await CoinToken.at(config.yallTokenAddress);
+    const dist = await YALDistributor.at(config.yallDistributorAddress);
+    const exchange = await YALExchange.at(config.yallExchangeAddress);
     const mediator = await HomeMediator.at(config.homeBridgeMediatorAddress);
     console.log('>>> Starting...');
 
     // NOTICE: Please, keep all the following method call lines commented out before making a commit
 
     // await ambTransferHomeToForeign(token, mediator);
+    // await fundGSNContracts(dist, token, exchange);
     // await claimFunds(dist);
+    // await claimFundsGSN(dist);
     // await addWhitelistedAddress(token);
     // await checkWhitelistedAddresses(token);
     // await setMediatorOnOtherSide(mediator);

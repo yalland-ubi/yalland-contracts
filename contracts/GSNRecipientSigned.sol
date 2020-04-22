@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/cryptography/ECDSA.sol";
 contract GSNRecipientSigned is GSNRecipient {
   using ECDSA for bytes32;
 
+  address constant internal DEFAULT_RELAY_HUB = 0xD216153c06E857cD7f72665E0aF1d7D82172F494;
+
   enum GSNRecipientSignatureErrorCodes {
     METHOD_NOT_SUPPORTED,
     OK,
