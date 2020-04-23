@@ -7,20 +7,15 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-const { accounts, contract, web3 } = require('@openzeppelin/test-environment');
+const { accounts, defaultSender, web3 } = require('@openzeppelin/test-environment');
 const { assert } = require('chai');
 const {
     deployRelayHub,
     fundRecipient,
 } = require('@openzeppelin/gsn-helpers');
+const { buildCoinDistAndExchange } = require('./builders');
 
-const CoinToken = contract.fromArtifact('CoinToken');
-const YALDistributor = contract.fromArtifact('YALDistributor');
-
-CoinToken.numberFormat = 'String';
-YALDistributor.numberFormat = 'String';
-
-const { ether, now, getEventArg, increaseTime, assertRevert, assertGsnReject } = require('@galtproject/solidity-test-chest')(web3);
+const { ether, getEventArg, increaseTime, assertRevert, assertGsnReject } = require('@galtproject/solidity-test-chest')(web3);
 const { approveFunction, GSNRecipientSignatureErrorCodes } = require('./helpers')(web3);
 
 const keccak256 = web3.utils.soliditySha3;
@@ -28,35 +23,21 @@ const keccak256 = web3.utils.soliditySha3;
 describe('YALDistribution Integration Tests', () => {
     const [verifier, alice, bob, charlie, dan, eve, minter, feeManager] = accounts;
 
-    // 7 days
+    let coinToken;
+    let dist;
+    let genesisTimestamp;
+    const periodVolume = ether(250 * 1000)
     const periodLength = 7 * 24 * 60 * 60;
-    const periodVolume = ether(250 * 1000);
-    const verifierRewardShare = ether(10);
-    const baseAliceBalance = 10000000;
-    const feePercent = 0.02;
-    const startAfter = 10;
     const memberId0 = keccak256('alice');
     const memberId1 = keccak256('bob');
     const memberId2 = keccak256('charlie');
     const memberId3 = keccak256('dan');
     const memberId4 = keccak256('eve');
-    let genesisTimestamp;
-    let coinToken;
-    let dist;
+    const baseAliceBalance = 10000000;
+    const verifierRewardShare = ether(10);
 
     beforeEach(async function () {
-        genesisTimestamp = parseInt(await now(), 10) + startAfter;
-        coinToken = await CoinToken.new(alice, "Coin token", "COIN", 18);
-        dist = await YALDistributor.new();
-        await dist.initialize(
-            periodVolume,
-            verifier,
-            verifierRewardShare,
-
-            coinToken.address,
-            periodLength,
-            genesisTimestamp
-        );
+        [ coinToken, dist,, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, verifier, periodVolume);
 
         await coinToken.addRoleTo(dist.address, "minter");
         await coinToken.addRoleTo(minter, 'minter');

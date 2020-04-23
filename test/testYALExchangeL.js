@@ -12,8 +12,8 @@ const { assert } = require('chai');
 
 const CoinToken = contract.fromArtifact('CoinTokenL');
 const YALDistributor = contract.fromArtifact('YALDistributorL');
-
 const YALExchange = contract.fromArtifact('YALExchange');
+const Proxy = contract.fromArtifact('OwnedUpgradeabilityProxy');
 
 CoinToken.numberFormat = 'String';
 YALExchange.numberFormat = 'String';
@@ -54,10 +54,14 @@ describe('YALExchangeLegacy Integration tests', () => {
     beforeEach(async function () {
         genesisTimestamp = parseInt(await now(), 10) + startAfter;
         yalToken = await CoinToken.new("Coin token", "COIN", 18);
-        dist = await YALDistributor.new();
-        exchange = await YALExchange.new();
 
-        await dist.initialize(
+        const distProxy = await Proxy.new();
+        const exchangeProxy = await Proxy.new();
+
+        const distImplementation = await YALDistributor.new();
+        const exchangeImplementation = await YALExchange.new();
+
+        const distInitTx = distImplementation.contract.methods.initialize(
             periodVolume,
             verifier,
             verifierRewardShare,
@@ -65,15 +69,21 @@ describe('YALExchangeLegacy Integration tests', () => {
             yalToken.address,
             periodLength,
             genesisTimestamp
-        );
+        ).encodeABI();
 
-        await exchange.initialize(
+        const exchangeInitTx = exchangeImplementation.contract.methods.initialize(
             defaultSender,
-            dist.address,
+            distProxy.address,
             yalToken.address,
             // defaultExchangeRate numerator
             ether(42)
-        );
+        ).encodeABI();
+
+        await distProxy.upgradeToAndCall(distImplementation.address, distInitTx);
+        await exchangeProxy.upgradeToAndCall(exchangeImplementation.address, exchangeInitTx);
+
+        dist = await YALDistributor.at(distProxy.address);
+        exchange = await YALExchange.at(exchangeProxy.address);
 
         await yalToken.addRoleTo(minter, "minter");
         await yalToken.addRoleTo(dist.address, "minter");

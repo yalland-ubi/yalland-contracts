@@ -17,6 +17,7 @@ const {
 
 const CoinToken = contract.fromArtifact('CoinToken');
 const YALDistributor = contract.fromArtifact('YALDistributor');
+const Proxy = contract.fromArtifact('OwnedUpgradeabilityProxy');
 const zero = new BigNumber(0);
 
 CoinToken.numberFormat = 'String';
@@ -50,11 +51,12 @@ describe('Coin', () => {
     });
 
     beforeEach(async function () {
-        coinToken = await CoinToken.new(alice, "Coin token", "COIN", 18, {from: deployer});
-        dist = await YALDistributor.new();
         genesisTimestamp = parseInt(await now(), 10) + startAfter;
-
-        await dist.initialize(
+        coinToken = await CoinToken.new(alice, "Coin token", "COIN", 18, {from: deployer});
+        const distProxy = await Proxy.new();
+        const distImplementation = await YALDistributor.new();
+        dist = await YALDistributor.new();
+        const distInitTx = distImplementation.contract.methods.initialize(
             periodVolume,
             verifier,
             verifierRewardShare,
@@ -62,7 +64,10 @@ describe('Coin', () => {
             coinToken.address,
             periodLength,
             genesisTimestamp
-        );
+        ).encodeABI();
+
+        await distProxy.upgradeToAndCall(distImplementation.address, distInitTx);
+        dist = await YALDistributor.at(distProxy.address);
 
         await coinToken.addRoleTo(dist.address, 'minter');
         await coinToken.addRoleTo(minter, 'minter');

@@ -14,19 +14,11 @@ const {
     deployRelayHub,
     fundRecipient,
 } = require('@openzeppelin/gsn-helpers');
+const { buildCoinDistAndExchange } = require('./builders');
 
-const CoinToken = contract.fromArtifact('CoinToken');
-const YALDistributor = contract.fromArtifact('YALDistributor');
-const YALExchange = contract.fromArtifact('YALExchange');
 const { approveFunction, assertRelayedCall, GSNRecipientSignatureErrorCodes } = require('./helpers')(web3);
 
-CoinToken.numberFormat = 'String';
-YALExchange.numberFormat = 'String';
-YALDistributor.numberFormat = 'String';
-
 const { ether, now, increaseTime, assertRevert, getEventArg, getResTimestamp, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
-
-const keccak256 = web3.utils.soliditySha3;
 
 const OrderStatus = {
     NULL: 0,
@@ -36,49 +28,23 @@ const OrderStatus = {
     VOIDED: 4
 };
 
+const keccak256 = web3.utils.soliditySha3;
+
 describe('YALExchange Integration tests', () => {
     const [verifier, alice, bob, charlie, dan, minter, operator, superOperator, fundManager, feeManager, transferWlManager] = accounts;
     const owner = defaultSender;
 
-    // 7 days
+    let yalToken;
+    let dist;
+    let exchange;
     const periodLength = 7 * 24 * 60 * 60;
-    const periodVolume = ether(250);
-    const verifierRewardShare = ether(10);
-    const baseAliceBalance = 10000000;
-    const feePercent = 0.02;
-    const startAfter = 10;
     const memberId1 = keccak256('bob');
     const memberId2 = keccak256('charlie');
     const memberId3 = keccak256('dan');
     const memberId4 = keccak256('eve');
-    let genesisTimestamp;
-    let yalToken;
-    let exchange;
-    let dist;
 
     beforeEach(async function () {
-        genesisTimestamp = parseInt(await now(), 10) + startAfter;
-        yalToken = await CoinToken.new(alice, "Coin token", "COIN", 18);
-        dist = await YALDistributor.new();
-        exchange = await YALExchange.new();
-
-        await dist.initialize(
-            periodVolume,
-            verifier,
-            verifierRewardShare,
-
-            yalToken.address,
-            periodLength,
-            genesisTimestamp
-        );
-
-        await exchange.initialize(
-            defaultSender,
-            dist.address,
-            yalToken.address,
-            // defaultExchangeRate numerator
-            ether(42)
-        );
+        [ yalToken, dist, exchange ] = await buildCoinDistAndExchange(web3, defaultSender, verifier);
 
         await yalToken.addRoleTo(minter, "minter");
         await yalToken.addRoleTo(dist.address, "minter");
