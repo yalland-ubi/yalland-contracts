@@ -20,7 +20,8 @@ export default {
             'city': CityContract,
             'addressUpgrader': CityContract,
             'yalDistributor': CityContract,
-            'tariffAdder': CityContract
+            'tariffAdder': CityContract,
+            'yalExchange': CityContract
         };
 
         Vue.prototype.$contracts = {};

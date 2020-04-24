@@ -183,6 +183,9 @@ export default {
             addDistributorRole: (address, role) => {
                 return this.$galtUser.addDistributorRole(address, role);
             },
+            addExchangeRole: (address, role) => {
+                return this.$galtUser.addExchangeRole(address, role);
+            },
             sendCityContractMethod: (methodName, args = []) => {
                 return this.$galtUser.sendCityContractMethod(methodName, args);
             },

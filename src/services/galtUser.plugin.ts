@@ -222,6 +222,10 @@ export default {
                 return $contracts.$yalDistributor.addRoleTo(sendOptions(), address, role);
             },
 
+            addExchangeRole(address, role) {
+                return $contracts.$yalExchange.addRoleTo(sendOptions(), address, role);
+            },
+
             async sendCityContractMethod(methodName, args) {
                 return $contracts.$city.sendMethodWithArgs(sendOptions(), methodName, args);
             },
