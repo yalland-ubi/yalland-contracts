@@ -3561,8 +3561,8 @@
       "signature": "0x1fafd366"
     }
   ],
-  "yallReferralPayoutsAddress": "0x9bAE9F6f7fC18C4aC91d2D7294b841CB8d5442b4",
-  "yallReferralPayoutsAbi": [
+  "yalReferralPayoutsAddress": "0x9bAE9F6f7fC18C4aC91d2D7294b841CB8d5442b4",
+  "yalReferralPayoutsAbi": [
     {
       "anonymous": false,
       "inputs": [

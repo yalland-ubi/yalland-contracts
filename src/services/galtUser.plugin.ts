@@ -218,6 +218,14 @@ export default {
                 return $contracts.$city.removeRoleFrom(sendOptions(), address, role);
             },
 
+            async addDistributorRole(address, role) {
+                return $contracts.$yalDistributor.addRoleTo(sendOptions(), address, role);
+            },
+
+            addExchangeRole(address, role) {
+                return $contracts.$yalExchange.addRoleTo(sendOptions(), address, role);
+            },
+
             async sendCityContractMethod(methodName, args) {
                 return $contracts.$city.sendMethodWithArgs(sendOptions(), methodName, args);
             },

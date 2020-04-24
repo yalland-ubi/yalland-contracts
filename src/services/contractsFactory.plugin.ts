@@ -19,7 +19,9 @@ export default {
             'coinToken': CoinTokenContract,
             'city': CityContract,
             'addressUpgrader': CityContract,
-            'tariffAdder': CityContract
+            'yalDistributor': CityContract,
+            'tariffAdder': CityContract,
+            'yalExchange': CityContract
         };
 
         Vue.prototype.$contracts = {};

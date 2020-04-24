@@ -224,7 +224,9 @@ module.exports = class EthContract {
     }
     
     async sendMethodWithArgs(options, methodName, methodArgs){
+        console.log('sendMethodWithArgs', options, methodName, methodArgs)
         await this.onReady();
+        console.log('onReady')
         
         const methodFunc = this.contractInstance.methods[methodName];
         

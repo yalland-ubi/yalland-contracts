@@ -56,8 +56,8 @@ module.exports = async function(deployer, network, accounts) {
         deployFile,
         JSON.stringify(
           _.extend(data, {
-            yallReferralPayoutsAddress: referral.address,
-            yallReferralPayoutsAbi: referral.abi
+            yalReferralPayoutsAddress: referral.address,
+            yalReferralPayoutsAbi: referral.abi
           }),
           null,
           2
