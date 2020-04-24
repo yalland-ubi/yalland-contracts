@@ -1,6 +1,7 @@
-const { contract, web3 } = require('@openzeppelin/test-environment');
+const { contract, web3, defaultSender } = require('@openzeppelin/test-environment');
 
 const CoinToken = contract.fromArtifact('CoinToken');
+const YALLRegistry = contract.fromArtifact('YALLRegistry');
 const YALDistributor = contract.fromArtifact('YALDistributor');
 const YALExchange = contract.fromArtifact('YALExchange');
 const Proxy = contract.fromArtifact('OwnedUpgradeabilityProxy');
@@ -11,7 +12,8 @@ YALDistributor.numberFormat = 'String';
 
 const { ether, now } = require('@galtproject/solidity-test-chest')(web3);
 
-async function buildCoinDistAndExchange(web3, owner, verifier, periodVolume = ether(250)) {
+async function buildCoinDistAndExchange(web3, governance, verifier, periodVolume = ether(250)) {
+    const bytes32 = web3.utils.utf8ToHex;
     const keccak256 = web3.utils.soliditySha3;
 
     // 7 days
@@ -26,39 +28,57 @@ async function buildCoinDistAndExchange(web3, owner, verifier, periodVolume = et
     const memberId4 = keccak256('eve');
     const genesisTimestamp = parseInt(await now(), 10) + startAfter;
 
-    const yall = await CoinToken.new(owner, "Coin token", "COIN", 18);
-
+    const registryProxy = await Proxy.new();
     const distProxy = await Proxy.new();
     const exchangeProxy = await Proxy.new();
 
+    const registryImplementation = await YALLRegistry.new();
     const distImplementation = await YALDistributor.new();
     const exchangeImplementation = await YALExchange.new();
+
+    const yall = await CoinToken.new(registryProxy.address, "Coin token", "COIN", 18);
+
+    const registryInitTx = registryImplementation.contract.methods.initialize(
+    ).encodeABI();
 
     const distInitTx = distImplementation.contract.methods.initialize(
         periodVolume,
         verifier,
         verifierRewardShare,
 
-        yall.address,
+        registryProxy.address,
         periodLength,
         genesisTimestamp
     ).encodeABI();
 
     const exchangeInitTx = exchangeImplementation.contract.methods.initialize(
-        owner,
-        distProxy.address,
-        yall.address,
+        registryProxy.address,
         // defaultExchangeRate numerator
         ether(42)
     ).encodeABI();
 
+    await registryProxy.upgradeToAndCall(registryImplementation.address, registryInitTx);
     await distProxy.upgradeToAndCall(distImplementation.address, distInitTx);
     await exchangeProxy.upgradeToAndCall(exchangeImplementation.address, exchangeInitTx);
 
+    const registry = await YALLRegistry.at(registryProxy.address);
     const dist = await YALDistributor.at(distProxy.address);
     const exchange = await YALExchange.at(exchangeProxy.address);
 
+    // Setting up contract addresses
+    await registry.setContract(await registry.YALL_TOKEN_KEY(), yall.address);
+    await registry.setContract(await registry.YALL_DISTRIBUTOR_KEY(), dist.address);
+    await registry.setContract(await registry.YALL_EXCHANGE_KEY(), exchange.address);
+
+    await registry.transferOwnership(governance);
+    await dist.transferOwnership(governance);
+    await exchange.transferOwnership(governance);
+
+    // Setting up ACL roles
+    // nothing todo yet
+
     return [
+        registry,
         yall,
         dist,
         exchange,

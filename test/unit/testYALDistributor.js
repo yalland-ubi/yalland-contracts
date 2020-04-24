@@ -13,10 +13,10 @@ const {
     deployRelayHub,
     fundRecipient,
 } = require('@openzeppelin/gsn-helpers');
+const { buildCoinDistAndExchange } = require('../builders');
 
 const CoinToken = contract.fromArtifact('CoinToken');
 const YALDistributor = contract.fromArtifact('YALDistributor');
-const Proxy = contract.fromArtifact('OwnedUpgradeabilityProxy');
 const { approveFunction, assertRelayedCall, GSNRecipientSignatureErrorCodes } = require('../helpers')(web3);
 
 CoinToken.numberFormat = 'String';
@@ -45,23 +45,7 @@ describe('YALDistributor Unit tests', () => {
     let dist;
 
     beforeEach(async function () {
-        genesisTimestamp = parseInt(await now(), 10) + startAfter;
-        coinToken = await CoinToken.new(alice, "Coin token", "COIN", 18);
-        const distProxy = await Proxy.new();
-        const distImplementation = await YALDistributor.new();
-        dist = await YALDistributor.new();
-        const distInitTx = distImplementation.contract.methods.initialize(
-            periodVolume,
-            verifier,
-            verifierRewardShare,
-
-            coinToken.address,
-            periodLength,
-            genesisTimestamp
-        ).encodeABI();
-
-        await distProxy.upgradeToAndCall(distImplementation.address, distInitTx);
-        dist = await YALDistributor.at(distProxy.address);
+        [ registry, coinToken, dist,, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, verifier, periodVolume);
 
         await coinToken.addRoleTo(dist.address, "minter");
         await coinToken.addRoleTo(dist.address, "burner");
@@ -70,7 +54,6 @@ describe('YALDistributor Unit tests', () => {
         await coinToken.addRoleTo(feeManager, 'fee_manager');
         await coinToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
 
-        await coinToken.setDistributor(dist.address);
         await coinToken.mint(alice, ether(baseAliceBalance), { from: minter });
         await coinToken.setTransferFee(ether('0.02'), { from: feeManager });
         await coinToken.setGsnFee(ether('1.7'), { from: feeManager });
@@ -963,7 +946,7 @@ describe('YALDistributor Unit tests', () => {
             });
 
             it('should return correct time before 0->1 transition', async function() {
-                await increaseTime(10 + periodLength - 2);
+                await increaseTime(10 + periodLength - 4);
                 await assertRevert(dist.getPreviousPeriodBeginsAt(), 'No previous period');
                 assert.equal(
                     await dist.getCurrentPeriodBeginsAt(),
@@ -992,7 +975,7 @@ describe('YALDistributor Unit tests', () => {
             });
 
             it('should return correct time before 1->2 transition', async function() {
-                await increaseTime(10 + periodLength * 2 - 2);
+                await increaseTime(10 + periodLength * 2 - 4);
                 assert.equal(
                     await dist.getPreviousPeriodBeginsAt(),
                     await dist.genesisTimestamp()

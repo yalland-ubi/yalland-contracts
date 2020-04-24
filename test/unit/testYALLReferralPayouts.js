@@ -7,9 +7,10 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-const { accounts, contract, web3 } = require('@openzeppelin/test-environment');
+const { accounts, contract, defaultSender, web3 } = require('@openzeppelin/test-environment');
 const { assert } = require('chai');
 const BigNumber = require('bignumber.js');
+const { buildCoinDistAndExchange } = require('../builders');
 
 const CoinToken = contract.fromArtifact('CoinToken');
 const YALDistributor = contract.fromArtifact('YALDistributor');
@@ -33,9 +34,8 @@ describe('YALLReferralPayouts Unit tests', () => {
     let referral;
 
     beforeEach(async function () {
-        genesisTimestamp = parseInt(await now(), 10) + startAfter;
-        yalToken = await CoinToken.new(alice, "Coin token", "COIN", 18);
-        dist = await YALDistributor.new();
+        [ ,yalToken, dist, , genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, alice);
+
         referral = await YALLReferralPayouts.new();
 
         referral.initialize(bob, yalToken.address);
@@ -44,7 +44,6 @@ describe('YALLReferralPayouts Unit tests', () => {
         await yalToken.addRoleTo(feeManager, 'fee_manager');
         await yalToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
 
-        await yalToken.setDistributor(dist.address);
         await yalToken.mint(alice, ether(1000), { from: minter });
         await yalToken.setTransferFee(ether('0.02'), { from: feeManager });
         await yalToken.setGsnFee(ether('1.7'), { from: feeManager });

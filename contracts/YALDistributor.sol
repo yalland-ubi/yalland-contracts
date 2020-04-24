@@ -16,6 +16,7 @@ import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
 import "./interfaces/ICoinToken.sol";
 import "./interfaces/IYALDistributor.sol";
 import "./GSNRecipientSigned.sol";
+import "./registry/YALLRegistryHelpers.sol";
 
 
 /**
@@ -23,7 +24,7 @@ import "./GSNRecipientSigned.sol";
  * @author Galt Project
  * @notice Mints YAL tokens on request according pre-configured formula
  **/
-contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipientSigned {
+contract YALDistributor is IYALDistributor, YALLRegistryHelpers, OwnableAndInitializable, GSNRecipientSigned {
   using SafeMath for uint256;
   using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -73,7 +74,6 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
   uint256 public periodVolume;
   bool public paused;
 
-  ICoinToken public token;
   uint256 public activeMemberCount;
 
   address public verifier;
@@ -135,7 +135,6 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
   constructor() public GSNRecipientSigned() {
   }
 
-  // @dev The Owner role will be assigned to tx.origin
   function initialize(
     // can be changed later:
     uint256 _periodVolume,
@@ -143,7 +142,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     uint256 _verifierRewardShare,
 
     // can't be changed later:
-    address _token,
+    address _yallRegistry,
     uint256 _periodLength,
     uint256 _genesisTimestamp
   )
@@ -154,7 +153,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     verifier = _verifier;
     verifierRewardShare = _verifierRewardShare;
 
-    token = ICoinToken(_token);
+    yallRegistry = YALLRegistry(_yallRegistry);
     periodLength = _periodLength;
     genesisTimestamp = _genesisTimestamp;
 
@@ -178,7 +177,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
         return (GSNRecipientSignatureErrorCodes.DENIED, "");
       }
     } else if (signature == YALDistributor(0).changeMyAddress.selector) {
-      IERC20 t = IERC20(address(token));
+      IERC20 t = _yallTokenIERC20();
 
       if (t.balanceOf(_caller) >= gsnFee && t.allowance(_caller, address(this)) >= gsnFee) {
         return (GSNRecipientSignatureErrorCodes.OK, abi.encode(_caller, signature));
@@ -194,7 +193,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     (address from, bytes4 signature) = abi.decode(_context, (address, bytes4));
 
     if (signature == YALDistributor(0).changeMyAddress.selector) {
-      IERC20(address(token)).transferFrom(from, address(this), gsnFee);
+      _yallTokenIERC20().transferFrom(from, address(this), gsnFee);
     }
   }
 
@@ -241,13 +240,13 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     emit SetGsnFee(_gsnFee);
   }
 
-  function withdrawFee() public onlyOwner {
-    address _this = address(this);
-    uint256 _payout = IERC20(address(token)).balanceOf(_this);
+  function withdrawFee() external onlyOwner {
+    address tokenAddress = _yallTokenAddress();
+    uint256 payout = IERC20(tokenAddress).balanceOf(address(this));
 
-    require(_payout > 0, "Nothing to withdraw");
+    require(payout > 0, "Nothing to withdraw");
 
-    IERC20(address(token)).transfer(msg.sender, _payout.sub(token.transferFee()));
+    IERC20(tokenAddress).transfer(msg.sender, payout.sub(ICoinToken(tokenAddress).transferFee()));
   }
 
   /*
@@ -432,7 +431,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
 
     emit ClaimVerifierReward(_periodId, _to);
 
-    token.mint(_to, givenPeriod.verifierReward);
+    _yallToken().mint(_to, givenPeriod.verifierReward);
   }
 
   // VERIFIER INTERNAL METHODS
@@ -483,8 +482,9 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     activeAddressesCache.remove(from);
     activeAddressesCache.add(_to);
 
-    uint256 memberBalance = IERC20(address(token)).balanceOf(from);
+    uint256 memberBalance = _yallTokenIERC20().balanceOf(from);
     if (memberBalance > 0) {
+      ICoinToken token = _yallToken();
       token.burn(_from, memberBalance);
       token.mint(_to, memberBalance);
     }
@@ -592,7 +592,7 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
 
     emit ClaimFunds(memberId, _memberAddress, _currentPeriodId, _rewardPerMember);
 
-    token.mint(_memberAddress, _rewardPerMember);
+    _yallToken().mint(_memberAddress, _rewardPerMember);
   }
 
   /*

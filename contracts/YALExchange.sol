@@ -17,6 +17,7 @@ import "./interfaces/ICoinToken.sol";
 import "./GSNRecipientSigned.sol";
 import "./traits/OwnedAccessControl.sol";
 import "./traits/PauserRole.sol";
+import "./registry/YALLRegistryHelpers.sol";
 
 
 /**
@@ -24,7 +25,13 @@ import "./traits/PauserRole.sol";
  * @author Galt Project
  * @notice Exchange YAL to another currency
  **/
-contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole, GSNRecipientSigned {
+contract YALExchange is
+  OwnableAndInitializable,
+  OwnedAccessControl,
+  YALLRegistryHelpers,
+  PauserRole,
+  GSNRecipientSigned
+{
   using SafeMath for uint256;
 
   event CloseOrder(uint256 indexed orderId, address operator);
@@ -74,8 +81,6 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
   uint256 public constant RATE_DIVIDER = 100 ether;
 
   uint256 internal idCounter;
-  IERC20 public yalToken;
-  IYALDistributor public yalDistributor;
 
   uint256 public defaultExchangeRate;
   uint256 public defaultMemberPeriodLimit;
@@ -116,20 +121,16 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
   }
 
   function initialize(
-    address _initialOwner,
-    address _yalDistributor,
-    address _yalToken,
+    address _yallRegistry,
     uint256 _defaultExchangeRate
   )
     external
-    initializeWithOwner(_initialOwner)
+    isInitializer
   {
     require(_defaultExchangeRate > 0, "YALExchange: Default rate can't be 0");
-    require(_yalDistributor != address(0), "YALExchange: YALDistributor address can't be 0");
-    require(_yalToken != address(0), "YALExchange: YALToken address can't be 0");
+    require(_yallRegistry != address(0), "YALExchange: YALLRegistry address can't be 0");
 
-    yalDistributor = IYALDistributor(_yalDistributor);
-    yalToken = IERC20(_yalToken);
+    yallRegistry = YALLRegistry(_yallRegistry);
 
     defaultExchangeRate = _defaultExchangeRate;
 
@@ -149,8 +150,9 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
     bytes4 signature = getDataSignature(_encodedFunction);
 
     if (signature == YALExchange(0).createOrder.selector) {
+      IERC20 t = _yallTokenIERC20();
 
-      if (yalToken.balanceOf(_caller) >= gsnFee && yalToken.allowance(_caller, address(this)) >= gsnFee) {
+      if (t.balanceOf(_caller) >= gsnFee && t.allowance(_caller, address(this)) >= gsnFee) {
         return (GSNRecipientSignatureErrorCodes.OK, abi.encode(_caller, signature));
       } else {
         return (GSNRecipientSignatureErrorCodes.INSUFFICIENT_BALANCE, "");
@@ -164,7 +166,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
     (address from, bytes4 signature) = abi.decode(_context, (address, bytes4));
 
     if (signature == YALExchange(0).createOrder.selector) {
-      yalToken.transferFrom(from, address(this), gsnFee);
+      _yallTokenIERC20().transferFrom(from, address(this), gsnFee);
     }
   }
 
@@ -238,12 +240,13 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
    * It keeps a small percent of tokens to reduce gas cost for further transfer operations with this address using GSN.
    */
   function withdrawYALs() public onlyFundManager {
-    uint256 _payout = yalToken.balanceOf(address(this));
+    address tokenAddress = _yallTokenAddress();
+    uint256 payout = IERC20(tokenAddress).balanceOf(address(this));
 
-    require(_payout > 0, "YALExchange: Nothing to withdraw");
+    require(payout > 0, "YALExchange: Nothing to withdraw");
 
     // NOTICE: will keep a small amount of YAL tokens
-    yalToken.transfer(msg.sender, _payout.sub(ICoinToken(address(yalToken)).transferFee()));
+    IERC20(tokenAddress).transfer(msg.sender, payout.sub(ICoinToken(tokenAddress).transferFee()));
   }
 
   // OPERATOR INTERFACE
@@ -263,7 +266,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
 
     emit CloseOrder(_orderId, msg.sender);
 
-    yalToken.transfer(msg.sender, o.yalAmount);
+    _yallTokenIERC20().transfer(msg.sender, o.yalAmount);
   }
 
   /**
@@ -287,7 +290,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
 
     emit CancelOrder(_orderId, msg.sender, _cancelReason);
 
-    yalToken.transfer(_getMemberAddress(o.memberId), o.yalAmount);
+    _yallTokenIERC20().transfer(_getMemberAddress(o.memberId), o.yalAmount);
   }
 
   // SUPER OPERATOR INTERFACE
@@ -309,7 +312,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
     o.status = OrderStatus.VOIDED;
     emit VoidOrder(_orderId, msg.sender);
 
-    yalToken.transferFrom(msg.sender, memberAddress, yalAmount);
+    _yallTokenIERC20().transferFrom(msg.sender, memberAddress, yalAmount);
   }
 
   // USER INTERFACE
@@ -325,8 +328,9 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
 
     require(_isActiveAddress(memberAddress), "YALExchange: Member isn't active");
 
-    bytes32 memberId = yalDistributor.memberAddress2Id(memberAddress);
-    uint256 currentPeriod = yalDistributor.getCurrentPeriodId();
+    IYALDistributor yallDistributor = _yallDistributor();
+    bytes32 memberId = yallDistributor.memberAddress2Id(memberAddress);
+    uint256 currentPeriod = yallDistributor.getCurrentPeriodId();
 
     // Limit #1 check
     requireLimit1NotReached(memberId, _yalAmount);
@@ -360,7 +364,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
 
     emit CreateOrder(orderId, memberId, _yalAmount, buyAmount);
 
-    yalToken.transferFrom(_msgSender(), address(this), _yalAmount);
+    _yallTokenIERC20().transferFrom(_msgSender(), address(this), _yalAmount);
   }
 
   // INTERNAL
@@ -373,21 +377,21 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
   function _isActiveAddress(address _addr) internal view returns(bool) {
     // return yalDistributor.isActive(_addr);
     // solhint-disable-next-line space-after-comma
-    (,bool isActive,,,,,) = yalDistributor.getMemberByAddress(_addr);
+    (,bool isActive,,,,,) = _yallDistributor().getMemberByAddress(_addr);
     return isActive;
   }
 
   function _getTotalClaimed(bytes32 _memberId) internal view returns(uint256) {
     // return yalDistributor.getTotalClaimed(_memberId);
     // solhint-disable-next-line space-after-comma
-    (,,,,,uint256 totalClaimed) = yalDistributor.member(_memberId);
+    (,,,,,uint256 totalClaimed) = _yallDistributor().member(_memberId);
     return totalClaimed;
   }
 
   function _getMemberAddress(bytes32 _memberId) internal view returns(address) {
     // return yalDistributor.getMemberAddress(_memberId);
     // solhint-disable-next-line space-after-comma
-    (,address addr,,,,) = yalDistributor.member(_memberId);
+    (,address addr,,,,) = _yallDistributor().member(_memberId);
     return addr;
   }
 
@@ -440,7 +444,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
   }
 
   function calculateMaxYalToSellByAddress(address _memberAddress) external view returns(uint256) {
-    return calculateMaxYalToSell(yalDistributor.memberAddress2Id(_memberAddress));
+    return calculateMaxYalToSell(_yallDistributor().memberAddress2Id(_memberAddress));
   }
 
   function checkExchangeFitsLimit1(
@@ -493,7 +497,7 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
   }
 
   function getMemberYallExchangedInCurrentPeriod(bytes32 _memberId) external view returns (uint256) {
-    return members[_memberId].yalExchangedByPeriod[yalDistributor.getCurrentPeriodId()];
+    return members[_memberId].yalExchangedByPeriod[_yallDistributor().getCurrentPeriodId()];
   }
 
   function getMemberYallExchangedByPeriod(bytes32 _memberId, uint256 _periodId) external view returns (uint256) {
