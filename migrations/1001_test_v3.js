@@ -48,7 +48,7 @@ module.exports = async function (truffle, network, accounts) {
 
     const superuser = 'fffff2b5e1b308331b8548960347f9d874824f40';
     truffle.then(async () => {
-        const networkName = process.env.NETWORK || 'ganache';
+        const networkName = network || 'ganache';
         console.log('network name:', networkName);
 
         let deployer;
@@ -62,7 +62,7 @@ module.exports = async function (truffle, network, accounts) {
         await deployRelayHub(web3);
 
         console.log('Deploying CoinToken contract...');
-        const coinToken = await truffle.deploy(CoinToken, deployer, "Yalland Test", "YALT", 18);
+        const yall = await truffle.deploy(CoinToken, deployer, "Yalland Test", "YALT", 18);
 
         console.log('Deploying YALDistributor/YALExchange proxy instances...');
         const distProxy = await Proxy.new();
@@ -97,7 +97,7 @@ module.exports = async function (truffle, network, accounts) {
             deployer,
             verifierRewardShare,
 
-            coinToken.address,
+            yall.address,
             periodLength,
             genesisTimestamp
         ).encodeABI();
@@ -106,7 +106,7 @@ module.exports = async function (truffle, network, accounts) {
             // owner
             deployer,
             distProxy.address,
-            coinToken.address,
+            yall.address,
             defaultExchangeRateNumerator
         ).encodeABI();
 
@@ -120,9 +120,14 @@ module.exports = async function (truffle, network, accounts) {
         const dist = await YALDistributor.at(distProxy.address);
         const exchange = await YALExchange.at(exchangeProxy.address);
 
-        console.log('Funding GSN recipients...');
+        console.log('GSN checks...');
+        console.log('YALLToken:', await yall.getHubAddr());
+        console.log('YALLDistributor:', await dist.getHubAddr());
+        console.log('YALLExchange:', await exchange.getHubAddr());
+
+        // console.log('Funding GSN recipients...');
         await Promise.all([
-            fundRecipient(web3, { recipient: coinToken.address, amount: ether(1) }),
+            fundRecipient(web3, { recipient: yall.address, amount: ether(1) }),
             fundRecipient(web3, { recipient: dist.address, amount: ether(1) }),
             fundRecipient(web3, { recipient: exchange.address, amount: ether(1) })
         ]);
@@ -131,18 +136,18 @@ module.exports = async function (truffle, network, accounts) {
         console.log('Granting deployer permissions...');
         await Promise.all([
             exchange.addRoleTo(deployer, 'fund_manager'),
-            coinToken.addRoleTo(deployer, 'fee_manager'),
-            coinToken.addRoleTo(deployer, 'transfer_wl_manager'),
+            yall.addRoleTo(deployer, 'fee_manager'),
+            yall.addRoleTo(deployer, 'transfer_wl_manager'),
         ]);
 
         console.log('Setting up superuser permissions...');
         await Promise.all([
-            coinToken.addRoleTo(dist.address, 'minter'),
-            coinToken.addRoleTo(dist.address, 'burner'),
-            coinToken.addRoleTo(superuser, 'pauser'),
-            coinToken.addRoleTo(superuser, 'fee_manager'),
-            coinToken.addRoleTo(superuser, 'transfer_wl_manager'),
-            coinToken.addRoleTo(superuser, 'role_manager'),
+            yall.addRoleTo(dist.address, 'minter'),
+            yall.addRoleTo(dist.address, 'burner'),
+            yall.addRoleTo(superuser, 'pauser'),
+            yall.addRoleTo(superuser, 'fee_manager'),
+            yall.addRoleTo(superuser, 'transfer_wl_manager'),
+            yall.addRoleTo(superuser, 'role_manager'),
 
             exchange.addRoleTo(superuser, 'fund_manager'),
             exchange.addRoleTo(superuser, 'operator'),
@@ -152,23 +157,23 @@ module.exports = async function (truffle, network, accounts) {
 
         console.log('Setting up fees...');
         await Promise.all([
-            coinToken.setTransferFee(erc20TransferFeeShare),
-            coinToken.setGsnFee(gsnFee),
+            yall.setTransferFee(erc20TransferFeeShare),
+            yall.setGsnFee(gsnFee),
             dist.setGsnFee(gsnFee),
             exchange.setGsnFee(gsnFee),
         ]);
 
         console.log('Setting up whitelisted contracts for token transfers...');
-        await coinToken.setWhitelistAddress(dist.address, true);
-        await coinToken.setWhitelistAddress(exchange.address, true);
-        await coinToken.setWhitelistAddress(superuser, true);
+        await yall.setWhitelistAddress(dist.address, true);
+        await yall.setWhitelistAddress(exchange.address, true);
+        await yall.setWhitelistAddress(superuser, true);
 
         console.log('Setting up exchange limits...');
         await exchange.setDefaultMemberPeriodLimit(defaultMemberPeriodLimit);
         await exchange.setTotalPeriodLimit(totalPeriodLimit);
 
         console.log('Linking contracts...');
-        await coinToken.setDistributor(dist.address);
+        await yall.setDistributor(dist.address);
 
         console.log('Adding initial members...');
         await Promise.all([
@@ -194,9 +199,9 @@ module.exports = async function (truffle, network, accounts) {
         console.log('Revoking CoinToken deployer permissions...');
         await Promise.all([
             exchange.removeRoleFrom(deployer, 'fund_manager'),
-            coinToken.removeRoleFrom(deployer, 'fee_manager'),
-            coinToken.removeRoleFrom(deployer, 'transfer_wl_manager'),
-            coinToken.removeRoleFrom(deployer, 'role_manager'),
+            yall.removeRoleFrom(deployer, 'fee_manager'),
+            yall.removeRoleFrom(deployer, 'transfer_wl_manager'),
+            yall.removeRoleFrom(deployer, 'role_manager'),
         ]);
 
         console.log('Revoking YALDistributor deployer permissions...');
@@ -220,12 +225,12 @@ module.exports = async function (truffle, network, accounts) {
                 deployFile,
                 JSON.stringify(
                     _.extend(data, {
-                        coinTokenAddress: coinToken.address,
-                        coinTokenAbi: coinToken.abi,
-                        yalDistributorAddress: dist.address,
-                        yalDistributorAbi: dist.abi,
-                        yalExchangeAddress: exchange.address,
-                        yalExchangeAbi: exchange.abi
+                        yallTokenAddress: yall.address,
+                        yallTokenAbi: yall.abi,
+                        yallDistributorAddress: dist.address,
+                        yallDistributorAbi: dist.abi,
+                        yallExchangeAddress: exchange.address,
+                        yallExchangeAbi: exchange.abi
                     }),
                     null,
                     2

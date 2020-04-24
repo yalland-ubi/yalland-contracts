@@ -16,6 +16,7 @@ const {
 
 const CoinToken = contract.fromArtifact('CoinToken');
 const YALDistributor = contract.fromArtifact('YALDistributor');
+const Proxy = contract.fromArtifact('OwnedUpgradeabilityProxy');
 const { approveFunction, assertRelayedCall, GSNRecipientSignatureErrorCodes } = require('../helpers')(web3);
 
 CoinToken.numberFormat = 'String';
@@ -46,8 +47,10 @@ describe('YALDistributor Unit tests', () => {
     beforeEach(async function () {
         genesisTimestamp = parseInt(await now(), 10) + startAfter;
         coinToken = await CoinToken.new(alice, "Coin token", "COIN", 18);
+        const distProxy = await Proxy.new();
+        const distImplementation = await YALDistributor.new();
         dist = await YALDistributor.new();
-        await dist.initialize(
+        const distInitTx = distImplementation.contract.methods.initialize(
             periodVolume,
             verifier,
             verifierRewardShare,
@@ -55,7 +58,10 @@ describe('YALDistributor Unit tests', () => {
             coinToken.address,
             periodLength,
             genesisTimestamp
-        );
+        ).encodeABI();
+
+        await distProxy.upgradeToAndCall(distImplementation.address, distInitTx);
+        dist = await YALDistributor.at(distProxy.address);
 
         await coinToken.addRoleTo(dist.address, "minter");
         await coinToken.addRoleTo(dist.address, "burner");

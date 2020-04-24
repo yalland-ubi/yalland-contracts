@@ -7,6 +7,7 @@ const web3 = require('web3')
 const _ = require('lodash')
 
 const HDWalletProvider = require('@truffle/hdwallet-provider')
+
 const wsProviders = {};
 const httpProviders = {};
 
@@ -71,18 +72,44 @@ const wsProviderForNetwork = network => () => {
     return wsProviders[network];
 }
 
-function getLoader(network, provider, options) {
+/**
+ * Get OZ loader
+ *
+ * @param options ether config object or a network name string
+ * @returns {{defaultSender: *, loader: any}}
+ */
+function getLoader(options) {
+    let network;
+    if (typeof options === 'string') {
+        network = options;
+    } else {
+        network = options.network;
+    }
+
     const { setupLoader } = require('@openzeppelin/contract-loader');
-    provider = provider || wsProviderForNetwork(network)();
+
+    let provider = options.provider || wsProviderForNetwork(network)();
+    let defaultSender=  provider.addresses[0];
+    if (options.gsnSupport) {
+        const { GSNProvider } = require("@openzeppelin/gsn-provider");
+        provider = new GSNProvider(
+            provider,
+            _.extend(
+                { debug: false, useGSN: false },
+                options.gsnOptions || {}
+            )
+        );
+    }
 
     return {
         loader: setupLoader(_.extend({
             provider ,
-            useGSN: false,
+            useGSN: true,
             defaultGas: 8000000,
             defaultGasPrice: 10 ** 9
-        }, options)),
-        defaultSender: provider.addresses[0]
+        }, options.loaderOptions || {})),
+        provider,
+        defaultSender
     };
 }
 

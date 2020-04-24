@@ -15,14 +15,8 @@ const {
     fundRecipient,
 } = require('@openzeppelin/gsn-helpers');
 
-const CoinToken = contract.fromArtifact('CoinToken');
-const YALDistributor = contract.fromArtifact('YALDistributor');
-const YALExchange = contract.fromArtifact('YALExchange');
 const { approveFunction, assertRelayedCall, GSNRecipientSignatureErrorCodes } = require('../helpers')(web3);
-
-CoinToken.numberFormat = 'String';
-YALDistributor.numberFormat = 'String';
-YALExchange.numberFormat = 'String';
+const { buildCoinDistAndExchange } = require('../builders');
 
 const { ether, now, increaseTime, assertRevert, assertGsnReject, getEventArg, getResTimestamp, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
 
@@ -57,28 +51,7 @@ describe('YALExchange Unit tests', () => {
     let dist;
 
     beforeEach(async function () {
-        genesisTimestamp = parseInt(await now(), 10) + startAfter;
-        yalToken = await CoinToken.new(alice, "Coin token", "COIN", 18);
-        dist = await YALDistributor.new();
-        exchange = await YALExchange.new();
-
-        await dist.initialize(
-            periodVolume,
-            verifier,
-            verifierRewardShare,
-
-            yalToken.address,
-            periodLength,
-            genesisTimestamp
-        );
-
-        await exchange.initialize(
-            defaultSender,
-            dist.address,
-            yalToken.address,
-            // defaultExchangeRate numerator
-            ether(42)
-        );
+        [ yalToken, dist, exchange, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, verifier, periodVolume);
 
         await yalToken.addRoleTo(dist.address, "minter");
         await yalToken.addRoleTo(dist.address, "burner");

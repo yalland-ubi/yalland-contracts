@@ -133,6 +133,8 @@ contract YALExchange is OwnableAndInitializable, OwnedAccessControl, PauserRole,
 
     defaultExchangeRate = _defaultExchangeRate;
 
+    _upgradeRelayHub(DEFAULT_RELAY_HUB);
+
     emit SetDefaultExchangeRate(msg.sender, _defaultExchangeRate);
   }
 

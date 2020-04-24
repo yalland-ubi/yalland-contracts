@@ -157,6 +157,8 @@ contract YALDistributor is IYALDistributor, OwnableAndInitializable, GSNRecipien
     token = ICoinToken(_token);
     periodLength = _periodLength;
     genesisTimestamp = _genesisTimestamp;
+
+    _upgradeRelayHub(DEFAULT_RELAY_HUB);
   }
 
   function _handleRelayedCall(
