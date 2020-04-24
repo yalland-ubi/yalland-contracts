@@ -65,6 +65,10 @@
     eslint-plugin-prettier "^3.1.1"
     prettier "^1.13.7"
 
+"@galtproject/libs@git+ssh://git@github.com/galtproject/galtproject-common-legacy.git#7639cda":
+  version "0.1.0"
+  resolved "git+ssh://git@github.com/galtproject/galtproject-common-legacy.git#7639cdab885fb78a884928f1a722c24bfd8f03cd"
+
 "@galtproject/solidity-test-chest@https://github.com/galtproject/solidity-test-chest#5ebd982":
   version "0.0.2"
   resolved "https://github.com/galtproject/solidity-test-chest#5ebd982e920f43def14316c3bd46123b548004a9"
