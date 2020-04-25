@@ -51,7 +51,7 @@ describe('YALExchange Unit tests', () => {
     let dist;
 
     beforeEach(async function () {
-        [ yalToken, dist, exchange, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, verifier, periodVolume);
+        [ ,yalToken, dist, exchange, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, verifier, periodVolume);
 
         await yalToken.addRoleTo(dist.address, "minter");
         await yalToken.addRoleTo(dist.address, "burner");
@@ -60,7 +60,6 @@ describe('YALExchange Unit tests', () => {
         await yalToken.addRoleTo(feeManager, 'fee_manager');
         await yalToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
 
-        await yalToken.setDistributor(dist.address);
         await yalToken.mint(alice, ether(baseAliceBalance), { from: minter });
         await yalToken.setTransferFee(ether('0.02'), { from: feeManager });
         await yalToken.setGsnFee(ether('1.7'), { from: feeManager });

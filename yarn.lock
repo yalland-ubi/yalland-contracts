@@ -49,6 +49,10 @@
     reflect-metadata "^0.1.12"
     tslib "^1.8.1"
 
+"@galtproject/common@git+ssh://git@github.com/galtproject/galtproject-common.git#fc165ba":
+  version "0.1.0"
+  resolved "git+ssh://git@github.com/galtproject/galtproject-common.git#fc165ba6f9fe17c1d50662bd2f4a17ec71d18784"
+
 "@galtproject/eslint-config-galt@^1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@galtproject/eslint-config-galt/-/eslint-config-galt-1.1.0.tgz#fcd2c50a36a7e4882c62d4cd2ff04978c3ad8fb1"
@@ -61,9 +65,9 @@
     eslint-plugin-prettier "^3.1.1"
     prettier "^1.13.7"
 
-"@galtproject/libs@git+ssh://git@github.com/galtproject/galtproject-common.git#7639cda":
+"@galtproject/libs@git+ssh://git@github.com/galtproject/galtproject-common-legacy.git#7639cda":
   version "0.1.0"
-  resolved "git+ssh://git@github.com/galtproject/galtproject-common.git#7639cdab885fb78a884928f1a722c24bfd8f03cd"
+  resolved "git+ssh://git@github.com/galtproject/galtproject-common-legacy.git#7639cdab885fb78a884928f1a722c24bfd8f03cd"
 
 "@galtproject/solidity-test-chest@https://github.com/galtproject/solidity-test-chest#5ebd982":
   version "0.0.2"

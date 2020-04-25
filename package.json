@@ -30,7 +30,8 @@
   },
   "homepage": "https://github.com/galtspace/dcity#readme",
   "dependencies": {
-    "@galtproject/libs": "git+ssh://git@github.com/galtproject/galtproject-common.git#7639cda",
+    "@galtproject/libs": "git+ssh://git@github.com/galtproject/galtproject-common-legacy.git#7639cda",
+    "@galtproject/common": "git+ssh://git@github.com/galtproject/galtproject-common.git#fc165ba",
     "@galtproject/solidity-test-chest": "https://github.com/galtproject/solidity-test-chest#5ebd982",
     "@galtproject/utils": "^0.9.1",
     "@openzeppelin/contracts": "2.5.0",

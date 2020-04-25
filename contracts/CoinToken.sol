@@ -14,8 +14,9 @@ import "@openzeppelin/contracts/token/ERC20/ERC20Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "@galtproject/libs/contracts/traits/Permissionable.sol";
 import "./interfaces/ICoinToken.sol";
+import "./interfaces/IYALDistributor.sol";
 import "./GSNRecipientSigned.sol";
-import "./YALDistributor.sol";
+import "./registry/YALLRegistry.sol";
 
 
 contract CoinToken is
@@ -47,12 +48,13 @@ contract CoinToken is
   uint256 public transferFee = 0;
   // in YAL wei
   uint256 public gsnFee = 0;
-  YALDistributor public yalDistributor;
+
+  YALLRegistry public yallRegistry;
 
   mapping(address => bool) public opsWhitelist;
 
   constructor(
-    address _yalDistributorAddress,
+    address _yallRegistry,
     string memory _name,
     string memory _symbol,
     uint8 _decimals
@@ -62,7 +64,7 @@ contract CoinToken is
     Permissionable()
     GSNRecipientSigned()
   {
-    yalDistributor = YALDistributor(_yalDistributorAddress);
+    yallRegistry = YALLRegistry(_yallRegistry);
 
     // ROLE_MANAGER is assigned to the msg.sender in Permissionable()
   }
@@ -157,12 +159,6 @@ contract CoinToken is
     emit SetWhitelistAddress(_addr, _isActive);
   }
 
-  function setDistributor(uint256 _yalDistributor) public onlyRoleManager {
-    yalDistributor = YALDistributor(_yalDistributor);
-
-    emit SetDistributor(_yalDistributor);
-  }
-
   function setTransferFee(uint256 _transferFee) public onlyFeeManager {
     require(_transferFee < HUNDRED_PCT, "Invalid fee value");
 
@@ -248,7 +244,7 @@ contract CoinToken is
   }
 
   function isMemberValid(address _member) public view returns(bool) {
-    return yalDistributor.isActive(_member) || opsWhitelist[_member] == true;
+    return IYALDistributor(yallRegistry.getYallDistributorAddress()).isActive(_member) || opsWhitelist[_member] == true;
   }
 
   function canPayForGsnCall(address _addr) public view returns (bool) {

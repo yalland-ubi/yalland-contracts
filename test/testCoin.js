@@ -14,10 +14,9 @@ const {
     deployRelayHub,
     fundRecipient,
 } = require('@openzeppelin/gsn-helpers');
+const { buildCoinDistAndExchange } = require('./builders');
 
 const CoinToken = contract.fromArtifact('CoinToken');
-const YALDistributor = contract.fromArtifact('YALDistributor');
-const Proxy = contract.fromArtifact('OwnedUpgradeabilityProxy');
 const zero = new BigNumber(0);
 
 CoinToken.numberFormat = 'String';
@@ -32,6 +31,7 @@ describe('Coin', () => {
     const [pauser, alice, bob, charlie, dan, minter, verifier, feeManager, transferWlManager] = accounts;
     const deployer = defaultSender;
 
+    let registry;
     let coinToken;
     let dist;
     const periodLength = 7 * 24 * 60 * 60;
@@ -45,36 +45,18 @@ describe('Coin', () => {
     let genesisTimestamp;
 
     before(async function() {
-        dist = await YALDistributor.new();
-        dist.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
-
+        // dist = await YALDistributor.new();
+        // dist.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
     });
 
     beforeEach(async function () {
-        genesisTimestamp = parseInt(await now(), 10) + startAfter;
-        coinToken = await CoinToken.new(alice, "Coin token", "COIN", 18, {from: deployer});
-        const distProxy = await Proxy.new();
-        const distImplementation = await YALDistributor.new();
-        dist = await YALDistributor.new();
-        const distInitTx = distImplementation.contract.methods.initialize(
-            periodVolume,
-            verifier,
-            verifierRewardShare,
-
-            coinToken.address,
-            periodLength,
-            genesisTimestamp
-        ).encodeABI();
-
-        await distProxy.upgradeToAndCall(distImplementation.address, distInitTx);
-        dist = await YALDistributor.at(distProxy.address);
+        [ registry, coinToken, dist ] = await buildCoinDistAndExchange(web3, defaultSender, verifier);
 
         await coinToken.addRoleTo(dist.address, 'minter');
         await coinToken.addRoleTo(minter, 'minter');
         await coinToken.addRoleTo(feeManager, 'fee_manager');
         await coinToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
 
-        await coinToken.setDistributor(dist.address);
         await coinToken.mint(alice, ether(baseAliceBalance), {from: minter});
         await coinToken.setTransferFee(ether(feePercent), {from: feeManager});
         await coinToken.setGsnFee(ether(gsnFee), {from: feeManager});

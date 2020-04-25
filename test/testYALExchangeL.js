@@ -31,7 +31,7 @@ const OrderStatus = {
     VOIDED: 4
 };
 
-describe('YALExchangeLegacy Integration tests', () => {
+describe.skip('YALExchangeLegacy Integration tests', () => {
     const [verifier, alice, bob, charlie, dan, minter, operator, superOperator, fundManager, feeManager, transferWlManager] = accounts;
     const owner = defaultSender;
 

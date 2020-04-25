@@ -23,6 +23,7 @@ const keccak256 = web3.utils.soliditySha3;
 describe('YALDistribution Integration Tests', () => {
     const [verifier, alice, bob, charlie, dan, eve, minter, feeManager] = accounts;
 
+    let registry;
     let coinToken;
     let dist;
     let genesisTimestamp;
@@ -37,13 +38,11 @@ describe('YALDistribution Integration Tests', () => {
     const verifierRewardShare = ether(10);
 
     beforeEach(async function () {
-        [ coinToken, dist,, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, verifier, periodVolume);
+        [ registry, coinToken, dist,, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, verifier, periodVolume);
 
         await coinToken.addRoleTo(dist.address, "minter");
         await coinToken.addRoleTo(minter, 'minter');
         await coinToken.addRoleTo(feeManager, 'fee_manager');
-        // await coinToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
-        await coinToken.setDistributor(dist.address);
 
         await coinToken.setTransferFee(ether(10), { from: feeManager });
         await coinToken.mint(alice, ether(baseAliceBalance), { from: minter });
@@ -62,7 +61,7 @@ describe('YALDistribution Integration Tests', () => {
             verifier,
             verifierRewardShare,
 
-            coinToken.address,
+            registry.address,
             periodLength,
             genesisTimestamp
             ),
