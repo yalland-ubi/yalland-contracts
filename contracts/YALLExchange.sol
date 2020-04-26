@@ -15,9 +15,8 @@ import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
 import "./interfaces/IYALLDistributor.sol";
 import "./interfaces/IYALLToken.sol";
 import "./GSNRecipientSigned.sol";
-import "./traits/OwnedAccessControl.sol";
-import "./traits/PauserRole.sol";
 import "./registry/YALLRegistryHelpers.sol";
+import "./traits/ACLPausable.sol";
 
 
 /**
@@ -27,12 +26,17 @@ import "./registry/YALLRegistryHelpers.sol";
  **/
 contract YALLExchange is
   OwnableAndInitializable,
-  OwnedAccessControl,
   YALLRegistryHelpers,
-  PauserRole,
+  ACLPausable,
   GSNRecipientSigned
 {
   using SafeMath for uint256;
+
+  bytes32 public constant FUND_MANAGER_ROLE = bytes32("EXCHANGE_FUND_MANAGER");
+  bytes32 public constant OPERATOR_ROLE = bytes32("EXCHANGE_OPERATOR");
+  bytes32 public constant SUPER_OPERATOR_ROLE = bytes32("EXCHANGE_SUPER_OPERATOR");
+
+  uint256 public constant RATE_DIVIDER = 100 ether;
 
   event CloseOrder(uint256 indexed orderId, address operator);
   event CancelOrder(uint256 indexed orderId, address operator, string reason);
@@ -74,12 +78,6 @@ contract YALLExchange is
     mapping(uint256 => uint256) yallExchangedByPeriod;
   }
 
-  string public constant FUND_MANAGER_ROLE = "fund_manager";
-  string public constant OPERATOR_ROLE = "operator";
-  string public constant SUPER_OPERATOR_ROLE = "super_operator";
-
-  uint256 public constant RATE_DIVIDER = 100 ether;
-
   uint256 internal idCounter;
 
   uint256 public defaultExchangeRate;
@@ -100,19 +98,19 @@ contract YALLExchange is
   mapping(uint256 => uint256) public yallExchangedByPeriod;
 
   modifier onlyFundManager() {
-    require(hasRole(msg.sender, FUND_MANAGER_ROLE), "YALLExchange: Only fund manager role allowed");
+    require(yallRegistry.hasRole(msg.sender, FUND_MANAGER_ROLE), "YALLExchange: Only FUND_MANAGER allowed");
 
     _;
   }
 
   modifier onlyOperator() {
-    require(hasRole(msg.sender, OPERATOR_ROLE), "YALLExchange: Only operator role allowed");
+    require(yallRegistry.hasRole(msg.sender, OPERATOR_ROLE), "YALLExchange: Only OPERATOR allowed");
 
     _;
   }
 
   modifier onlySuperOperator() {
-    require(hasRole(msg.sender, SUPER_OPERATOR_ROLE), "YALLExchange: Only super operator role allowed");
+    require(yallRegistry.hasRole(msg.sender, SUPER_OPERATOR_ROLE), "YALLExchange: Only SUPER_OPERATOR allowed");
 
     _;
   }

@@ -27,7 +27,7 @@ const { approveFunction, assertRelayedCall } = require('./helpers')(web3);
 const keccak256 = web3.utils.soliditySha3;
 
 
-describe('Coin', () => {
+describe('YALLToken', () => {
     const [pauser, alice, bob, charlie, dan, minter, verifier, feeManager, transferWlManager] = accounts;
     const deployer = defaultSender;
 
@@ -44,18 +44,13 @@ describe('Coin', () => {
     const memberId1 = keccak256('bob');
     let genesisTimestamp;
 
-    before(async function() {
-        // dist = await YALLDistributor.new();
-        // dist.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
-    });
-
     beforeEach(async function () {
-        [ registry, yallToken, dist ] = await buildCoinDistAndExchange(web3, defaultSender, verifier);
-
-        await yallToken.addRoleTo(dist.address, 'minter');
-        await yallToken.addRoleTo(minter, 'minter');
-        await yallToken.addRoleTo(feeManager, 'fee_manager');
-        await yallToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
+        [ registry, yallToken, dist ] = await buildCoinDistAndExchange(web3, defaultSender, {
+            verifier,
+            yallMinter: minter,
+            feeManager,
+            yallWLManager: transferWlManager
+        });
 
         await yallToken.mint(alice, ether(baseAliceBalance), {from: minter});
         await yallToken.setTransferFee(ether(feePercent), {from: feeManager});
@@ -103,8 +98,8 @@ describe('Coin', () => {
 
     describe('Pausable', () => {
         it('should deny transferring when paused', async function() {
-            await yallToken.addRoleTo(pauser, await yallToken.PAUSER_ROLE(), { from: deployer });
-            await assertRevert(yallToken.pause({ from: deployer }), 'Only pauser allowed');
+            await registry.setRole(pauser, await yallToken.PAUSER_ROLE(), true);
+            await assertRevert(yallToken.pause({ from: deployer }), 'YALLToken: Only PAUSER allowed');
 
             // approve before paused
             await yallToken.approve(bob, ether(10), { from: alice });
@@ -145,7 +140,7 @@ describe('Coin', () => {
         it('should deny non wl manager calling the method', async function() {
             await assertRevert(
                 yallToken.setWhitelistAddress(dan, true, { from: defaultSender }),
-                'Only transfer_wl_manager allowed.'
+                'YALLToken: Only YALL_TOKEN_WHITELIST_MANAGER allowed.'
             );
         });
 
@@ -206,22 +201,15 @@ describe('Coin', () => {
             assert.equal(bobBalanceBefore, ether(0));
             assert.equal(contractBalanceBefore, ether(0));
 
-            // just to increment and get the current block
-            let res = await yallToken.addRoleTo(alice, 'foo');
-            const zeroBlock = res.receipt.blockNumber;
-
             await evmMineBlock();
 
-            res = await yallToken.approve(charlie, ether(transferCoinAmount), { from: alice, useGSN: true });
-            const firstBlock = res.receipt.blockNumber;
+            let res = await yallToken.approve(charlie, ether(transferCoinAmount), { from: alice, useGSN: true });
             await evmMineBlock();
 
             res = await yallToken.approve(charlie, ether(2 * transferCoinAmount), { from: alice, useGSN: true });
-            const secondBlock = res.receipt.blockNumber;
             await evmMineBlock();
 
             res = await yallToken.approve(charlie, ether(0), { from: alice, useGSN: true });
-            const thirdBlock = res.receipt.blockNumber;
             await evmMineBlock();
 
             const aliceBalanceAfter = await yallToken.balanceOf(alice);
@@ -274,22 +262,17 @@ describe('Coin', () => {
 
             assert.equal(await yallToken.balanceOf(charlie), ether(ten));
 
-            // just to increment and get the current block
-            let res = await yallToken.addRoleTo(alice, 'foo');
-            const zeroBlock = res.receipt.blockNumber;
-
             await evmMineBlock();
 
             // 1st transfer
             await yallToken.approve(charlie, ether(transferCoinAmount), { from: alice });
-            res = await yallToken.transferFrom(
+            let res = await yallToken.transferFrom(
                 alice,
                 bob,
                 ether(transferCoinAmount.dividedBy(2)),
                 {from: charlie, useGSN: true}
                 );
             assertRelayedCall(res);
-            const firstBlock = res.receipt.blockNumber;
             await evmMineBlock();
 
             assert.equal(
@@ -460,28 +443,21 @@ describe('Coin', () => {
             const bobBalanaceBefore = await yallToken.balanceOf(bob);
             const contractBalanceBefore = await yallToken.balanceOf(yallToken.address);
 
-            // just to increment and get the current block
-            let res = await yallToken.addRoleTo(alice, 'foo');
-            const zeroBlock = res.receipt.blockNumber;
-
             await evmMineBlock();
 
             // 1st transfer
-            res = await yallToken.transfer(bob, ether(transferCoinAmount.dividedBy(2)), {from: alice, useGSN: true});
+            let res = await yallToken.transfer(bob, ether(transferCoinAmount.dividedBy(2)), {from: alice, useGSN: true});
             assertRelayedCall(res);
-            const firstBlock = res.receipt.blockNumber;
             await evmMineBlock();
 
             // 2nd transfer
             res = await yallToken.transfer(bob, ether(transferCoinAmount.dividedBy(4)), {from: alice, useGSN: true});
             assertRelayedCall(res);
-            const secondBlock = res.receipt.blockNumber;
             await evmMineBlock();
 
             // 3rd transfer
             res = await yallToken.transfer(bob, ether(transferCoinAmount.dividedBy(4)), {from: alice, useGSN: true});
             assertRelayedCall(res);
-            const thirdBlock = res.receipt.blockNumber;
             await evmMineBlock();
 
             const aliceBalanaceAfter = await yallToken.balanceOf(alice);

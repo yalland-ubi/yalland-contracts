@@ -17,6 +17,7 @@ import "./interfaces/IYALLToken.sol";
 import "./interfaces/IYALLDistributor.sol";
 import "./GSNRecipientSigned.sol";
 import "./registry/YALLRegistryHelpers.sol";
+import "./traits/ACLPausable.sol";
 
 
 /**
@@ -24,9 +25,17 @@ import "./registry/YALLRegistryHelpers.sol";
  * @author Galt Project
  * @notice Mints YALL tokens on request according pre-configured formula
  **/
-contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndInitializable, GSNRecipientSigned {
+contract YALLDistributor is
+  IYALLDistributor,
+  YALLRegistryHelpers,
+  OwnableAndInitializable,
+  ACLPausable,
+  GSNRecipientSigned
+{
   using SafeMath for uint256;
   using EnumerableSet for EnumerableSet.AddressSet;
+
+  bytes32 public constant VERIFIER_ROLE = bytes32("VERIFIER_ROLE");
 
   uint256 public constant HUNDRED_PCT = 100 ether;
 
@@ -45,11 +54,8 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
     uint256 verifierReward,
     uint256 activeMemberCount
   );
-  event Pause();
-  event Unpause();
   event SetGsnFee(uint256 value);
   event SetPeriodVolume(uint256 oldPeriodVolume, uint256 newPeriodVolume);
-  event SetVerifier(address verifier);
   event SetVerifierRewardShare(uint256 rewardShare);
 
   struct Period {
@@ -72,11 +78,9 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
   uint256 public genesisTimestamp;
   uint256 public periodLength;
   uint256 public periodVolume;
-  bool public paused;
 
   uint256 public activeMemberCount;
 
-  address public verifier;
   // 100% == 100 ether
   uint256 public verifierRewardShare;
   // in YALL wei
@@ -92,13 +96,7 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
   EnumerableSet.AddressSet internal activeAddressesCache;
 
   modifier onlyVerifier() {
-    require(msg.sender == verifier, "Only verifier allowed");
-
-    _;
-  }
-
-  modifier whenNotPaused() {
-    require(!paused, "Contract is paused");
+    require(yallRegistry.hasRole(msg.sender, VERIFIER_ROLE), "YALLDistributor: Only VERIFIER allowed");
 
     _;
   }
@@ -138,7 +136,6 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
   function initialize(
     // can be changed later:
     uint256 _periodVolume,
-    address _verifier,
     uint256 _verifierRewardShare,
 
     // can't be changed later:
@@ -150,7 +147,6 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
     isInitializer
   {
     periodVolume = _periodVolume;
-    verifier = _verifier;
     verifierRewardShare = _verifierRewardShare;
 
     yallRegistry = YALLRegistry(_yallRegistry);
@@ -200,22 +196,12 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
   // OWNER INTERFACE
 
   /*
-   * @dev Changes a verifier address to a new one.
-   * @param _verifier a new verifier address, address(0) if a verifier role is disabled
-   */
-  function setVerifier(address _verifier) external onlyOwner {
-    verifier = _verifier;
-
-    emit SetVerifier(_verifier);
-  }
-
-  /*
    * @dev Changes a verifier reward share to a new one.
    * @param _verifierRewardShare a new verifier reward share, 0 if there should be no reward for
    * a verifier; 100% == 100 ether
    */
   function setVerifierRewardShare(uint256 _verifierRewardShare) external onlyOwner {
-    require(_verifierRewardShare < 100 ether, "Can't be >= 100%");
+    require(_verifierRewardShare < 100 ether, "YALLDistributor: Can't be >= 100%");
 
     verifierRewardShare = _verifierRewardShare;
 
@@ -244,27 +230,9 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
     address tokenAddress = _yallTokenAddress();
     uint256 payout = IERC20(tokenAddress).balanceOf(address(this));
 
-    require(payout > 0, "Nothing to withdraw");
+    require(payout > 0, "YALLDistributor: Nothing to withdraw");
 
     IERC20(tokenAddress).transfer(msg.sender, payout.sub(IYALLToken(tokenAddress).transferFee()));
-  }
-
-  /*
-   * @dev Pauses contract.
-   */
-  function pause() external onlyOwner {
-    require(paused == false, "Already paused");
-    paused = true;
-    emit Pause();
-  }
-
-  /*
-   * @dev Pauses contract.
-   */
-  function unpause() external onlyOwner {
-    require(paused == true, "Already unpaused");
-    paused = false;
-    emit Unpause();
   }
 
   // VERIFIER INTERFACE
@@ -281,7 +249,7 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
     external
     onlyVerifier
   {
-    require(now < genesisTimestamp, "Can be called before genesis only");
+    require(now < genesisTimestamp, "YALLDistributor: Can be called before genesis only");
 
     _addMembers(_memberIds, _memberAddresses);
   }
@@ -333,14 +301,14 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
   {
     uint256 len = _memberAddresses.length;
 
-    require(len > 0, "Missing input members");
+    require(len > 0, "YALLDistributor: Missing input members");
 
     for (uint256 i = 0; i < len; i++) {
       address addr = _memberAddresses[i];
       bytes32 memberId = memberAddress2Id[addr];
       Member storage m = member[memberId];
-      require(m.active == false, "One of the members is active");
-      require(m.createdAt != 0, "Member doesn't exist");
+      require(m.active == false, "YALLDistributor: One of the members is active");
+      require(m.createdAt != 0, "YALLDistributor: Member doesn't exist");
 
       m.active = true;
       m.lastEnabledAt = now;
@@ -366,14 +334,14 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
   {
     uint256 len = _memberAddresses.length;
 
-    require(len > 0, "Missing input members");
+    require(len > 0, "YALLDistributor: Missing input members");
 
     for (uint256 i = 0; i < len; i++) {
       address addr = _memberAddresses[i];
       bytes32 memberId = memberAddress2Id[addr];
       Member storage m = member[memberId];
-      require(m.active == true, "One of the members is inactive");
-      require(m.createdAt != 0, "Member doesn't exist");
+      require(m.active == true, "YALLDistributor: One of the members is inactive");
+      require(m.createdAt != 0, "YALLDistributor: Member doesn't exist");
 
       m.active = false;
       m.lastDisabledAt = now;
@@ -393,7 +361,7 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
    */
   function changeMemberAddresses(address[] calldata _fromAddresses, address[] calldata _toAddresses) external onlyVerifier {
     uint256 len = _fromAddresses.length;
-    require(len == _toAddresses.length, "Both ids and addresses array should have the same size");
+    require(len == _toAddresses.length, "YALLDistributor: Both ids and addresses array should have the same size");
 
     for (uint256 i = 0; i < len; i++) {
       _changeMemberAddress(_fromAddresses[i], _toAddresses[i]);
@@ -425,7 +393,7 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
   {
     Period storage givenPeriod = period[_periodId];
 
-    require(givenPeriod.verifierClaimedReward == false, "Already claimed for given period");
+    require(givenPeriod.verifierClaimedReward == false, "YALLDistributor: Already claimed for given period");
 
     givenPeriod.verifierClaimedReward = true;
 
@@ -439,8 +407,8 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
   function _addMembers(bytes32[] memory _memberIds, address[] memory _memberAddresses) internal {
     uint256 len = _memberIds.length;
 
-    require(len > 0, "Missing input members");
-    require(len == _memberAddresses.length, "ID and address arrays length should match");
+    require(len > 0, "YALLDistributor: Missing input members");
+    require(len == _memberAddresses.length, "YALLDistributor: ID and address arrays length should match");
 
     for (uint256 i = 0; i < len; i++) {
       _addMember(_memberIds[i], _memberAddresses[i]);
@@ -450,7 +418,7 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
   }
 
   function _addMember(bytes32 _memberId, address _memberAddress) internal {
-    require(memberAddress2Id[_memberAddress] == bytes32(0), "The address already registered");
+    require(memberAddress2Id[_memberAddress] == bytes32(0), "YALLDistributor: The address already registered");
 
     memberAddress2Id[_memberAddress] = _memberId;
 
@@ -470,9 +438,9 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
     Member storage m = member[memberId];
     address from = m.addr;
 
-    require(m.createdAt != 0, "Member doesn't exist");
-    require(memberAddress2Id[_to] == bytes32(0), "Address is already taken by another member");
-    require(_from != _to, "Can't migrate to the same address");
+    require(m.createdAt != 0, "YALLDistributor: Member doesn't exist");
+    require(memberAddress2Id[_to] == bytes32(0), "YALLDistributor: Address is already taken by another member");
+    require(_from != _to, "YALLDistributor: Can't migrate to the same address");
 
     m.addr = _to;
 
@@ -562,11 +530,11 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
     bytes32 memberId = memberAddress2Id[_memberAddress];
     Member storage m = member[memberId];
 
-    require(m.active == true, "Not active member");
-    require(m.addr == _memberAddress, "Address doesn't match");
+    require(m.active == true, "YALLDistributor: Not active member");
+    require(m.addr == _memberAddress, "YALLDistributor: Address doesn't match");
 
-    require(m.createdAt < _currentPeriodStart, "Can't assign rewards for the creation period");
-    require(m.claimedPeriods[_currentPeriodId] == false, "Already claimed for the current period");
+    require(m.createdAt < _currentPeriodStart, "YALLDistributor: Can't assign rewards for the creation period");
+    require(m.claimedPeriods[_currentPeriodId] == false, "YALLDistributor: Already claimed for the current period");
 
     if (m.lastDisabledAt != 0 && _currentPeriodId != 0) {
       // last disabled at
@@ -582,7 +550,7 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
         || (ld >= previousPeriodStart && le >= previousPeriodStart && ld < _currentPeriodStart && le < _currentPeriodStart)
         // both disabled and enabled before the current period started
         || (ld < _currentPeriodStart && le < _currentPeriodStart),
-        "One period should be skipped after re-enabling"
+        "YALLDistributor: One period should be skipped after re-enabling"
       );
     }
 
@@ -602,7 +570,7 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
   function changeMyAddress(address _to) external whenNotPaused {
     bytes32 memberId = memberAddress2Id[_msgSender()];
     Member storage m = member[memberId];
-    require(m.addr == _msgSender(), "Only the member allowed");
+    require(m.addr == _msgSender(), "YALLDistributor: Only the member allowed");
 
     _changeMemberAddress(_msgSender(), _to);
 
@@ -623,7 +591,7 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
   function getCurrentPeriodId() public view returns (uint256) {
     uint256 blockTimestamp = block.timestamp;
 
-    require(blockTimestamp > genesisTimestamp, "Contract not initiated yet");
+    require(blockTimestamp > genesisTimestamp, "YALLDistributor: Contract not initiated yet");
 
     // return (blockTimestamp - genesisTimestamp) / periodLength;
     return (blockTimestamp.sub(genesisTimestamp)) / periodLength;
@@ -632,7 +600,7 @@ contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndIni
   function getPreviousPeriodBeginsAt() public view returns (uint256) {
     uint256 currentPeriodId = getCurrentPeriodId();
 
-    require(currentPeriodId > 0, "No previous period");
+    require(currentPeriodId > 0, "YALLDistributor: No previous period");
 
     // return ((getCurrentPeriod() - 1) * periodLength) + genesisTimestamp;
     return ((currentPeriodId - 1).mul(periodLength)).add(genesisTimestamp);

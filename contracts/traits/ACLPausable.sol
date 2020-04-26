@@ -1,9 +1,10 @@
 pragma solidity ^0.5.0;
 
-import "./OwnedAccessControl.sol";
+import "../registry/YALLRegistryHelpers.sol";
 
-contract PauserRole is OwnedAccessControl {
-  string public constant PAUSER_ROLE = "pauser";
+
+contract ACLPausable is YALLRegistryHelpers {
+  bytes32 public constant PAUSER_ROLE = bytes32("PAUSER");
 
   event Paused(address account);
   event Unpaused(address account);
@@ -29,7 +30,7 @@ contract PauserRole is OwnedAccessControl {
    * @dev Modifier to make sure the caller has pauser role.
    */
   modifier onlyPauser() {
-    require(hasRole(msg.sender, PAUSER_ROLE), "Pausable: not a pauser");
+    require(yallRegistry.hasRole(msg.sender, PAUSER_ROLE), "ACLPausable: Only PAUSER allowed");
     _;
   }
 
@@ -37,7 +38,7 @@ contract PauserRole is OwnedAccessControl {
    * @dev Modifier to make a function callable only when the contract is not paused.
    */
   modifier whenNotPaused() {
-    require(!_paused, "Pausable: paused");
+    require(!_paused, "ACLPausable: paused");
     _;
   }
 
@@ -45,7 +46,7 @@ contract PauserRole is OwnedAccessControl {
    * @dev Modifier to make a function callable only when the contract is paused.
    */
   modifier whenPaused() {
-    require(_paused, "Pausable: not paused");
+    require(_paused, "ACLPausable: not paused");
     _;
   }
 
