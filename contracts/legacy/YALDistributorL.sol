@@ -12,15 +12,15 @@ pragma solidity ^0.5.13;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
-import "../interfaces/ICoinToken.sol";
+import "../interfaces/IYALLToken.sol";
 
 
 /**
- * @title YALDistributor Legacy contract
+ * @title YALLDistributor Legacy contract
  * @author Galt Project
- * @notice Mints YAL tokens on request according pre-configured formula
+ * @notice Mints YALL tokens on request according pre-configured formula
  **/
-contract YALDistributorL is OwnableAndInitializable {
+contract YALLDistributorL is OwnableAndInitializable {
   using SafeMath for uint256;
   using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -69,7 +69,7 @@ contract YALDistributorL is OwnableAndInitializable {
   uint256 public periodVolume;
   bool public paused;
 
-  ICoinToken public token;
+  IYALLToken public token;
   uint256 public activeMemberCount;
 
   address public verifier;
@@ -146,7 +146,7 @@ contract YALDistributorL is OwnableAndInitializable {
     verifier = _verifier;
     verifierRewardShare = _verifierRewardShare;
 
-    token = ICoinToken(_token);
+    token = IYALLToken(_token);
     periodLength = _periodLength;
     genesisTimestamp = _genesisTimestamp;
   }

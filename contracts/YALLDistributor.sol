@@ -13,18 +13,18 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
-import "./interfaces/ICoinToken.sol";
-import "./interfaces/IYALDistributor.sol";
+import "./interfaces/IYALLToken.sol";
+import "./interfaces/IYALLDistributor.sol";
 import "./GSNRecipientSigned.sol";
 import "./registry/YALLRegistryHelpers.sol";
 
 
 /**
- * @title YALDistributor contract
+ * @title YALLDistributor contract
  * @author Galt Project
- * @notice Mints YAL tokens on request according pre-configured formula
+ * @notice Mints YALL tokens on request according pre-configured formula
  **/
-contract YALDistributor is IYALDistributor, YALLRegistryHelpers, OwnableAndInitializable, GSNRecipientSigned {
+contract YALLDistributor is IYALLDistributor, YALLRegistryHelpers, OwnableAndInitializable, GSNRecipientSigned {
   using SafeMath for uint256;
   using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -79,7 +79,7 @@ contract YALDistributor is IYALDistributor, YALLRegistryHelpers, OwnableAndIniti
   address public verifier;
   // 100% == 100 ether
   uint256 public verifierRewardShare;
-  // in YAL wei
+  // in YALL wei
   uint256 public gsnFee = 0;
 
   // credentialsHash => memberDetails
@@ -170,13 +170,13 @@ contract YALDistributor is IYALDistributor, YALLRegistryHelpers, OwnableAndIniti
   {
     bytes4 signature = getDataSignature(_encodedFunction);
 
-    if (signature == YALDistributor(0).claimFunds.selector) {
+    if (signature == YALLDistributor(0).claimFunds.selector) {
       if (isCurrentPeriodClaimedByAddress(_caller) == false) {
         return (GSNRecipientSignatureErrorCodes.OK, abi.encode(_caller, signature));
       } else {
         return (GSNRecipientSignatureErrorCodes.DENIED, "");
       }
-    } else if (signature == YALDistributor(0).changeMyAddress.selector) {
+    } else if (signature == YALLDistributor(0).changeMyAddress.selector) {
       IERC20 t = _yallTokenIERC20();
 
       if (t.balanceOf(_caller) >= gsnFee && t.allowance(_caller, address(this)) >= gsnFee) {
@@ -192,7 +192,7 @@ contract YALDistributor is IYALDistributor, YALLRegistryHelpers, OwnableAndIniti
   function _preRelayedCall(bytes memory _context) internal returns (bytes32) {
     (address from, bytes4 signature) = abi.decode(_context, (address, bytes4));
 
-    if (signature == YALDistributor(0).changeMyAddress.selector) {
+    if (signature == YALLDistributor(0).changeMyAddress.selector) {
       _yallTokenIERC20().transferFrom(from, address(this), gsnFee);
     }
   }
@@ -246,7 +246,7 @@ contract YALDistributor is IYALDistributor, YALLRegistryHelpers, OwnableAndIniti
 
     require(payout > 0, "Nothing to withdraw");
 
-    IERC20(tokenAddress).transfer(msg.sender, payout.sub(ICoinToken(tokenAddress).transferFee()));
+    IERC20(tokenAddress).transfer(msg.sender, payout.sub(IYALLToken(tokenAddress).transferFee()));
   }
 
   /*
@@ -484,7 +484,7 @@ contract YALDistributor is IYALDistributor, YALLRegistryHelpers, OwnableAndIniti
 
     uint256 memberBalance = _yallTokenIERC20().balanceOf(from);
     if (memberBalance > 0) {
-      ICoinToken token = _yallToken();
+      IYALLToken token = _yallToken();
       token.burn(_from, memberBalance);
       token.mint(_to, memberBalance);
     }

@@ -11,8 +11,8 @@ pragma solidity ^0.5.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./YALLRegistry.sol";
-import "../interfaces/ICoinToken.sol";
-import "../interfaces/IYALDistributor.sol";
+import "../interfaces/IYALLDistributor.sol";
+import "../interfaces/IYALLToken.sol";
 
 /**
  * @title YALLRegistry contract
@@ -26,15 +26,15 @@ contract YALLRegistryHelpers {
     return yallRegistry.getYallTokenAddress();
   }
 
-  function _yallToken() internal view returns (ICoinToken) {
-    return ICoinToken(yallRegistry.getYallTokenAddress());
+  function _yallToken() internal view returns (IYALLToken) {
+    return IYALLToken(yallRegistry.getYallTokenAddress());
   }
 
   function _yallTokenIERC20() internal view returns (IERC20) {
     return IERC20(yallRegistry.getYallTokenAddress());
   }
 
-  function _yallDistributor() internal view returns (IYALDistributor) {
-    return IYALDistributor(yallRegistry.getYallDistributorAddress());
+  function _yallDistributor() internal view returns (IYALLDistributor) {
+    return IYALLDistributor(yallRegistry.getYallDistributorAddress());
   }
 }

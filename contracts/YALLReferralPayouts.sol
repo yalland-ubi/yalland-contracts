@@ -15,13 +15,13 @@ import "./traits/OwnedAccessControl.sol";
 
 
 /**
- * @title YALReferralPayouts contract
+ * @title YALLReferralPayouts contract
  * @author Galt Project
  **/
 contract YALLReferralPayouts is OwnableAndInitializable, OwnedAccessControl {
   string public constant OPERATOR_ROLE = "operator";
 
-  IERC20 public yalToken;
+  IERC20 public yallToken;
 
   mapping(uint256 => bool) public payouts;
 
@@ -33,14 +33,14 @@ contract YALLReferralPayouts is OwnableAndInitializable, OwnedAccessControl {
 
   function initialize(
     address _initialOwner,
-    address _yalToken
+    address _yallToken
   )
     external
     initializeWithOwner(_initialOwner)
   {
-    require(_yalToken != address(0), "YALLReferralPayouts: YALToken address can't be 0");
+    require(_yallToken != address(0), "YALLReferralPayouts: YALLToken address can't be 0");
 
-    yalToken = IERC20(_yalToken);
+    yallToken = IERC20(_yallToken);
   }
 
   // OPERATOR INTERFACE
@@ -54,6 +54,6 @@ contract YALLReferralPayouts is OwnableAndInitializable, OwnedAccessControl {
 
     emit Payout(msg.sender, _to, _id, _amount);
 
-    yalToken.transfer(_to, _amount);
+    yallToken.transfer(_to, _amount);
   }
 }

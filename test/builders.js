@@ -1,14 +1,14 @@
 const { contract, web3, defaultSender } = require('@openzeppelin/test-environment');
 
-const CoinToken = contract.fromArtifact('CoinToken');
+const YALLToken = contract.fromArtifact('YALLToken');
 const YALLRegistry = contract.fromArtifact('YALLRegistry');
-const YALDistributor = contract.fromArtifact('YALDistributor');
-const YALExchange = contract.fromArtifact('YALExchange');
+const YALLDistributor = contract.fromArtifact('YALLDistributor');
+const YALLExchange = contract.fromArtifact('YALLExchange');
 const Proxy = contract.fromArtifact('OwnedUpgradeabilityProxy');
 
-CoinToken.numberFormat = 'String';
-YALExchange.numberFormat = 'String';
-YALDistributor.numberFormat = 'String';
+YALLToken.numberFormat = 'String';
+YALLExchange.numberFormat = 'String';
+YALLDistributor.numberFormat = 'String';
 
 const { ether, now } = require('@galtproject/solidity-test-chest')(web3);
 
@@ -33,10 +33,10 @@ async function buildCoinDistAndExchange(web3, governance, verifier, periodVolume
     const exchangeProxy = await Proxy.new();
 
     const registryImplementation = await YALLRegistry.new();
-    const distImplementation = await YALDistributor.new();
-    const exchangeImplementation = await YALExchange.new();
+    const distImplementation = await YALLDistributor.new();
+    const exchangeImplementation = await YALLExchange.new();
 
-    const yall = await CoinToken.new(registryProxy.address, "Coin token", "COIN", 18);
+    const yall = await YALLToken.new(registryProxy.address, "Coin token", "COIN", 18);
 
     const registryInitTx = registryImplementation.contract.methods.initialize(
     ).encodeABI();
@@ -62,8 +62,8 @@ async function buildCoinDistAndExchange(web3, governance, verifier, periodVolume
     await exchangeProxy.upgradeToAndCall(exchangeImplementation.address, exchangeInitTx);
 
     const registry = await YALLRegistry.at(registryProxy.address);
-    const dist = await YALDistributor.at(distProxy.address);
-    const exchange = await YALExchange.at(exchangeProxy.address);
+    const dist = await YALLDistributor.at(distProxy.address);
+    const exchange = await YALLExchange.at(exchangeProxy.address);
 
     // Setting up contract addresses
     await registry.setContract(await registry.YALL_TOKEN_KEY(), yall.address);

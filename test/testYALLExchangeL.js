@@ -10,14 +10,14 @@
 const { accounts, contract, web3, defaultSender } = require('@openzeppelin/test-environment');
 const { assert } = require('chai');
 
-const CoinToken = contract.fromArtifact('CoinTokenL');
-const YALDistributor = contract.fromArtifact('YALDistributorL');
-const YALExchange = contract.fromArtifact('YALExchange');
+const YALLToken = contract.fromArtifact('CoinTokenL');
+const YALLDistributor = contract.fromArtifact('YALLDistributorL');
+const YALLExchange = contract.fromArtifact('YALLExchange');
 const Proxy = contract.fromArtifact('OwnedUpgradeabilityProxy');
 
-CoinToken.numberFormat = 'String';
-YALExchange.numberFormat = 'String';
-YALDistributor.numberFormat = 'String';
+YALLToken.numberFormat = 'String';
+YALLExchange.numberFormat = 'String';
+YALLDistributor.numberFormat = 'String';
 
 const { ether, now, increaseTime, assertRevert, getEventArg } = require('@galtproject/solidity-test-chest')(web3);
 
@@ -31,7 +31,7 @@ const OrderStatus = {
     VOIDED: 4
 };
 
-describe.skip('YALExchangeLegacy Integration tests', () => {
+describe.skip('YALLExchangeLegacy Integration tests', () => {
     const [verifier, alice, bob, charlie, dan, minter, operator, superOperator, fundManager, feeManager, transferWlManager] = accounts;
     const owner = defaultSender;
 
@@ -47,26 +47,26 @@ describe.skip('YALExchangeLegacy Integration tests', () => {
     const memberId3 = keccak256('dan');
     const memberId4 = keccak256('eve');
     let genesisTimestamp;
-    let yalToken;
+    let yallToken;
     let exchange;
     let dist;
 
     beforeEach(async function () {
         genesisTimestamp = parseInt(await now(), 10) + startAfter;
-        yalToken = await CoinToken.new("Coin token", "COIN", 18);
+        yallToken = await YALLToken.new("Coin token", "COIN", 18);
 
         const distProxy = await Proxy.new();
         const exchangeProxy = await Proxy.new();
 
-        const distImplementation = await YALDistributor.new();
-        const exchangeImplementation = await YALExchange.new();
+        const distImplementation = await YALLDistributor.new();
+        const exchangeImplementation = await YALLExchange.new();
 
         const distInitTx = distImplementation.contract.methods.initialize(
             periodVolume,
             verifier,
             verifierRewardShare,
 
-            yalToken.address,
+            yallToken.address,
             periodLength,
             genesisTimestamp
         ).encodeABI();
@@ -74,7 +74,7 @@ describe.skip('YALExchangeLegacy Integration tests', () => {
         const exchangeInitTx = exchangeImplementation.contract.methods.initialize(
             defaultSender,
             distProxy.address,
-            yalToken.address,
+            yallToken.address,
             // defaultExchangeRate numerator
             ether(42)
         ).encodeABI();
@@ -82,24 +82,17 @@ describe.skip('YALExchangeLegacy Integration tests', () => {
         await distProxy.upgradeToAndCall(distImplementation.address, distInitTx);
         await exchangeProxy.upgradeToAndCall(exchangeImplementation.address, exchangeInitTx);
 
-        dist = await YALDistributor.at(distProxy.address);
-        exchange = await YALExchange.at(exchangeProxy.address);
+        dist = await YALLDistributor.at(distProxy.address);
+        exchange = await YALLExchange.at(exchangeProxy.address);
 
-        await yalToken.addRoleTo(minter, "minter");
-        await yalToken.addRoleTo(dist.address, "minter");
-        await yalToken.addRoleTo(dist.address, "burner");
-        await yalToken.addRoleTo(feeManager, 'fee_manager');
-        await yalToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
+        await yallToken.addRoleTo(minter, "minter");
+        await yallToken.addRoleTo(dist.address, "minter");
+        await yallToken.addRoleTo(dist.address, "burner");
+        await yallToken.addRoleTo(feeManager, 'fee_manager');
+        await yallToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
 
-        // await yalToken.setDistributor(dist.address);
         // 0.02 szabo
-        await yalToken.setTransferFee('20000000000', { from: feeManager });
-
-        // await yalToken.setWhitelistAddress(dist.address, true, { from: transferWlManager });
-        // await yalToken.setWhitelistAddress(exchange.address, true, { from: transferWlManager });
-        // await yalToken.setWhitelistAddress(operator, true, { from: transferWlManager });
-        // await yalToken.setWhitelistAddress(superOperator, true, { from: transferWlManager });
-        // await yalToken.setWhitelistAddress(dan, true, { from: transferWlManager });
+        await yallToken.setTransferFee('20000000000', { from: feeManager });
 
         await dist.addMembersBeforeGenesis([memberId1], [alice], { from: verifier })
         await dist.addMembersBeforeGenesis([memberId2], [bob], { from: verifier })
@@ -111,9 +104,9 @@ describe.skip('YALExchangeLegacy Integration tests', () => {
         await exchange.setDefaultMemberPeriodLimit(ether(30), { from: fundManager });
         await exchange.setTotalPeriodLimit(ether(70), { from: fundManager });
 
-        await yalToken.mint(dan, ether(11), { from: minter });
-        assert.equal(await yalToken.balanceOf(dan), ether(11));
-        await yalToken.transfer(exchange.address, ether(10), { from: dan });
+        await yallToken.mint(dan, ether(11), { from: minter });
+        assert.equal(await yallToken.balanceOf(dan), ether(11));
+        await yallToken.transfer(exchange.address, ether(10), { from: dan });
 
         await increaseTime(12);
     });
@@ -121,12 +114,12 @@ describe.skip('YALExchangeLegacy Integration tests', () => {
     it('should create/close/void order successfully', async function() {
         await dist.claimFunds({ from: alice });
 
-        assert.equal(await yalToken.balanceOf(alice), ether( 112.5));
+        assert.equal(await yallToken.balanceOf(alice), ether( 112.5));
 
         await exchange.setDefaultExchangeRate(ether(350), { from: fundManager });
 
         // Create an order
-        await yalToken.approve(exchange.address, ether(12), { from: alice });
+        await yallToken.approve(exchange.address, ether(12), { from: alice });
         let res = await exchange.createOrder(ether(12), { from: alice });
         const orderId = getEventArg(res, 'CreateOrder', 'orderId');
         
@@ -138,23 +131,23 @@ describe.skip('YALExchangeLegacy Integration tests', () => {
         assert.equal(res.memberId, memberId1);
 
         // Close an order
-        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: superOperator }), 'YALExchange: Only operator role allowed');
-        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: alice }), 'YALExchange: Only operator role allowed');
+        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: superOperator }), 'YALLExchange: Only operator role allowed');
+        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: alice }), 'YALLExchange: Only operator role allowed');
         await exchange.closeOrder(orderId, 'foo', { from: operator });
 
         res = await exchange.orders(orderId);
         assert.equal(res.status, OrderStatus.CLOSED);
 
         // Can't close again
-        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: operator }), 'YALExchange: Order should be open');
+        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: operator }), 'YALLExchange: Order should be open');
 
         // Can't cancel
-        await assertRevert(exchange.cancelOrder(orderId, 'foo', { from: operator }), 'YALExchange: Order should be open');
+        await assertRevert(exchange.cancelOrder(orderId, 'foo', { from: operator }), 'YALLExchange: Order should be open');
 
         // But can void
-        await assertRevert(exchange.voidOrder(orderId, { from: operator }), 'YALExchange: Only super operator role allowed');
-        await yalToken.mint(superOperator, ether(12), { from: minter });
-        await yalToken.approve(exchange.address, ether(12), { from: superOperator });
+        await assertRevert(exchange.voidOrder(orderId, { from: operator }), 'YALLExchange: Only super operator role allowed');
+        await yallToken.mint(superOperator, ether(12), { from: minter });
+        await yallToken.approve(exchange.address, ether(12), { from: superOperator });
         await exchange.voidOrder(orderId, { from: superOperator });
 
         res = await exchange.orders(orderId);
@@ -164,12 +157,12 @@ describe.skip('YALExchangeLegacy Integration tests', () => {
     it('should create/cancel order successfully', async function() {
         await dist.claimFunds({ from: alice });
 
-        assert.equal(await yalToken.balanceOf(alice), ether( 112.5));
+        assert.equal(await yallToken.balanceOf(alice), ether( 112.5));
 
         await exchange.setDefaultExchangeRate(ether(350), { from: fundManager });
 
         // Create an order
-        await yalToken.approve(exchange.address, ether(12), { from: alice });
+        await yallToken.approve(exchange.address, ether(12), { from: alice });
         let res = await exchange.createOrder(ether(12), { from: alice });
         const orderId = getEventArg(res, 'CreateOrder', 'orderId');
 
@@ -179,21 +172,21 @@ describe.skip('YALExchangeLegacy Integration tests', () => {
         assert.equal(res.status, OrderStatus.OPEN);
 
         // Close an order
-        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: superOperator }), 'YALExchange: Only operator role allowed');
-        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: alice }), 'YALExchange: Only operator role allowed');
+        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: superOperator }), 'YALLExchange: Only operator role allowed');
+        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: alice }), 'YALLExchange: Only operator role allowed');
         await exchange.cancelOrder(orderId, 'foo', { from: operator });
 
         res = await exchange.orders(orderId);
         assert.equal(res.status, OrderStatus.CANCELLED);
 
         // Can't cancel again
-        await assertRevert(exchange.cancelOrder(orderId, 'foo', { from: operator }), 'YALExchange: Order should be open');
+        await assertRevert(exchange.cancelOrder(orderId, 'foo', { from: operator }), 'YALLExchange: Order should be open');
 
         // Can't close
-        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: operator }), 'YALExchange: Order should be open');
+        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: operator }), 'YALLExchange: Order should be open');
 
         // Can't void
-        await assertRevert(exchange.voidOrder(orderId, { from: superOperator }), 'YALExchange: Order should be closed');
+        await assertRevert(exchange.voidOrder(orderId, { from: superOperator }), 'YALLExchange: Order should be closed');
     });
 
     describe('Limits', () => {
@@ -205,10 +198,10 @@ describe.skip('YALExchangeLegacy Integration tests', () => {
         it('provide correct information on limits', async function() {
             await dist.claimFunds({ from: bob });
             await dist.claimFunds({ from: charlie });
-            await yalToken.transfer(exchange.address, ether(0.02), { from: bob });
+            await yallToken.transfer(exchange.address, ether(0.02), { from: bob });
 
-            await yalToken.transfer(charlie, ether(15), { from: bob });
-            await yalToken.transfer(alice, ether(25), { from: bob });
+            await yallToken.transfer(charlie, ether(15), { from: bob });
+            await yallToken.transfer(alice, ether(25), { from: bob });
 
             const firstPeriod = await dist.getCurrentPeriodId();
 
@@ -218,7 +211,7 @@ describe.skip('YALExchangeLegacy Integration tests', () => {
             // >>> Step 1
 
             // limit #1
-            assert.equal(await exchange.calculateMaxYalToSell(memberId2), ether(75));
+            assert.equal(await exchange.calculateMaxYallToSell(memberId2), ether(75));
 
             // limit #2
             assert.equal(await exchange.checkExchangeFitsLimit2(memberId2, ether(30), firstPeriod), true);
@@ -233,15 +226,15 @@ describe.skip('YALExchangeLegacy Integration tests', () => {
             assert.equal(await exchange.checkExchangeFitsLimit3(ether(71), firstPeriod), false);
 
             // >>> Step 2
-            await yalToken.approve(exchange.address, ether(10), { from: bob });
+            await yallToken.approve(exchange.address, ether(10), { from: bob });
             await exchange.createOrder(ether(10), { from: bob });
 
-            await yalToken.approve(exchange.address, ether(10), { from: bob });
+            await yallToken.approve(exchange.address, ether(10), { from: bob });
             await exchange.createOrder(ether(10), { from: bob });
 
             // limit #1
-            assert.equal(await exchange.calculateMaxYalToSell(memberId2), ether(55));
-            assert.equal(await exchange.calculateMaxYalToSell(memberId3), ether(75));
+            assert.equal(await exchange.calculateMaxYallToSell(memberId2), ether(55));
+            assert.equal(await exchange.calculateMaxYallToSell(memberId3), ether(75));
 
             // limit #2
             assert.equal(await exchange.checkExchangeFitsLimit2(memberId2, ether(10), firstPeriod), true);
@@ -260,8 +253,8 @@ describe.skip('YALExchangeLegacy Integration tests', () => {
             await exchange.cancelOrder(2, 'bar', { from: operator });
 
             // limit #1
-            assert.equal(await exchange.calculateMaxYalToSell(memberId2), ether(65));
-            assert.equal(await exchange.calculateMaxYalToSell(memberId3), ether(75));
+            assert.equal(await exchange.calculateMaxYallToSell(memberId2), ether(65));
+            assert.equal(await exchange.calculateMaxYallToSell(memberId3), ether(75));
 
             // limit #2
             assert.equal(await exchange.checkExchangeFitsLimit2(memberId2, ether(20), firstPeriod), true);
@@ -279,8 +272,8 @@ describe.skip('YALExchangeLegacy Integration tests', () => {
 
             await increaseTime(periodLength);
 
-            assert.equal(await exchange.calculateMaxYalToSell(memberId2), ether(65));
-            assert.equal(await exchange.calculateMaxYalToSell(memberId3), ether(75));
+            assert.equal(await exchange.calculateMaxYallToSell(memberId2), ether(65));
+            assert.equal(await exchange.calculateMaxYallToSell(memberId3), ether(75));
 
             // limit #2
             assert.equal(await exchange.checkExchangeFitsLimit2(memberId2, ether(20), firstPeriod), true);
@@ -302,8 +295,8 @@ describe.skip('YALExchangeLegacy Integration tests', () => {
             const secondPeriod = await dist.getCurrentPeriodId();
 
             // limit #1
-            assert.equal(await exchange.calculateMaxYalToSell(memberId2), ether(65 + 75));
-            assert.equal(await exchange.calculateMaxYalToSell(memberId3), ether(75 + 75));
+            assert.equal(await exchange.calculateMaxYallToSell(memberId2), ether(65 + 75));
+            assert.equal(await exchange.calculateMaxYallToSell(memberId3), ether(75 + 75));
 
             // limit #2
             assert.equal(await exchange.checkExchangeFitsLimit2(memberId2, ether(20), firstPeriod), true);
