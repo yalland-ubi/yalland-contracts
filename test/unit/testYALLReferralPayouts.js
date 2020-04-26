@@ -12,12 +12,12 @@ const { assert } = require('chai');
 const BigNumber = require('bignumber.js');
 const { buildCoinDistAndExchange } = require('../builders');
 
-const CoinToken = contract.fromArtifact('CoinToken');
-const YALDistributor = contract.fromArtifact('YALDistributor');
+const YALLToken = contract.fromArtifact('YALLToken');
+const YALLDistributor = contract.fromArtifact('YALLDistributor');
 const YALLReferralPayouts = contract.fromArtifact('YALLReferralPayouts');
 
-CoinToken.numberFormat = 'String';
-YALDistributor.numberFormat = 'String';
+YALLToken.numberFormat = 'String';
+YALLDistributor.numberFormat = 'String';
 YALLReferralPayouts.numberFormat = 'String';
 
 const { ether, now, assertRevert, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
@@ -29,34 +29,34 @@ describe('YALLReferralPayouts Unit tests', () => {
     // 7 days
     const startAfter = 10;
     let genesisTimestamp;
-    let yalToken;
+    let yallToken;
     let dist;
     let referral;
 
     beforeEach(async function () {
-        [ ,yalToken, dist, , genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, alice);
+        [ ,yallToken, dist, , genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, alice);
 
         referral = await YALLReferralPayouts.new();
 
-        referral.initialize(bob, yalToken.address);
+        referral.initialize(bob, yallToken.address);
 
-        await yalToken.addRoleTo(minter, 'minter');
-        await yalToken.addRoleTo(feeManager, 'fee_manager');
-        await yalToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
+        await yallToken.addRoleTo(minter, 'minter');
+        await yallToken.addRoleTo(feeManager, 'fee_manager');
+        await yallToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
 
-        await yalToken.mint(alice, ether(1000), { from: minter });
-        await yalToken.setTransferFee(ether('0.02'), { from: feeManager });
-        await yalToken.setGsnFee(ether('1.7'), { from: feeManager });
+        await yallToken.mint(alice, ether(1000), { from: minter });
+        await yallToken.setTransferFee(ether('0.02'), { from: feeManager });
+        await yallToken.setGsnFee(ether('1.7'), { from: feeManager });
 
-        await yalToken.setWhitelistAddress(referral.address, true, { from: transferWlManager });
-        await yalToken.setWhitelistAddress(operator, true, { from: transferWlManager });
-        await yalToken.setWhitelistAddress(superOperator, true, { from: transferWlManager });
-        await yalToken.setWhitelistAddress(charlie, true, { from: transferWlManager });
-        await yalToken.setWhitelistAddress(alice, true, { from: transferWlManager });
+        await yallToken.setWhitelistAddress(referral.address, true, { from: transferWlManager });
+        await yallToken.setWhitelistAddress(operator, true, { from: transferWlManager });
+        await yallToken.setWhitelistAddress(superOperator, true, { from: transferWlManager });
+        await yallToken.setWhitelistAddress(charlie, true, { from: transferWlManager });
+        await yallToken.setWhitelistAddress(alice, true, { from: transferWlManager });
     });
 
     it('should deny second initialization', async function() {
-        await assertRevert(referral.initialize(bob, yalToken.address), 'Contract instance has already been initialized');
+        await assertRevert(referral.initialize(bob, yallToken.address), 'Contract instance has already been initialized');
     })
 
     describe('Owner Interface', () => {
@@ -72,19 +72,19 @@ describe('YALLReferralPayouts Unit tests', () => {
     describe('Operator Interface', () => {
         beforeEach(async function() {
             await referral.addRoleTo(alice, 'operator', { from: bob });
-            await yalToken.transfer(referral.address, ether(100), { from: alice });
+            await yallToken.transfer(referral.address, ether(100), { from: alice });
         });
 
         it('should allow an operator making payouts', async function() {
-            const charlieBalanceBefore = await yalToken.balanceOf(charlie);
-            const referralBalanceBefore = await yalToken.balanceOf(referral.address);
+            const charlieBalanceBefore = await yallToken.balanceOf(charlie);
+            const referralBalanceBefore = await yallToken.balanceOf(referral.address);
             const id = 123;
             const amount = ether(12);
 
             await referral.payout(id, charlie, amount, { from: alice });
 
-            const charlieBalanceAfter = await yalToken.balanceOf(charlie);
-            const referralBalanceAfter = await yalToken.balanceOf(referral.address);
+            const charlieBalanceAfter = await yallToken.balanceOf(charlie);
+            const referralBalanceAfter = await yallToken.balanceOf(referral.address);
 
             const changed = (new BigNumber(0))
                 .minus((new BigNumber(ether(12))))

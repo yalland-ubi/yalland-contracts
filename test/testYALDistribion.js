@@ -20,11 +20,11 @@ const { approveFunction, GSNRecipientSignatureErrorCodes } = require('./helpers'
 
 const keccak256 = web3.utils.soliditySha3;
 
-describe('YALDistribution Integration Tests', () => {
+describe('YALLDistribution Integration Tests', () => {
     const [verifier, alice, bob, charlie, dan, eve, minter, feeManager] = accounts;
 
     let registry;
-    let coinToken;
+    let yallToken;
     let dist;
     let genesisTimestamp;
     const periodVolume = ether(250 * 1000)
@@ -38,17 +38,17 @@ describe('YALDistribution Integration Tests', () => {
     const verifierRewardShare = ether(10);
 
     beforeEach(async function () {
-        [ registry, coinToken, dist,, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, verifier, periodVolume);
+        [ registry, yallToken, dist,, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, verifier, periodVolume);
 
-        await coinToken.addRoleTo(dist.address, "minter");
-        await coinToken.addRoleTo(minter, 'minter');
-        await coinToken.addRoleTo(feeManager, 'fee_manager');
+        await yallToken.addRoleTo(dist.address, "minter");
+        await yallToken.addRoleTo(minter, 'minter');
+        await yallToken.addRoleTo(feeManager, 'fee_manager');
 
-        await coinToken.setTransferFee(ether(10), { from: feeManager });
-        await coinToken.mint(alice, ether(baseAliceBalance), { from: minter });
+        await yallToken.setTransferFee(ether(10), { from: feeManager });
+        await yallToken.mint(alice, ether(baseAliceBalance), { from: minter });
 
         // this will affect on dist provider too
-        coinToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
+        yallToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
 
         await deployRelayHub(web3);
         await fundRecipient(web3, { recipient: dist.address, amount: ether(1) });
