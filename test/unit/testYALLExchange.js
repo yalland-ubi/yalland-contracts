@@ -75,11 +75,6 @@ describe('YALLExchange Unit tests', () => {
 
         await dist.setGsnFee(ether('4.2'));
 
-        await exchange.addRoleTo(fundManager, 'fund_manager');
-        await exchange.addRoleTo(operator, 'operator');
-        await exchange.addRoleTo(superOperator, 'super_operator');
-        await exchange.addRoleTo(pauser, 'pauser');
-
         await exchange.setDefaultMemberPeriodLimit(ether(30), { from: fundManager });
         await exchange.setTotalPeriodLimit(ether(70), { from: fundManager });
         await exchange.setGsnFee(ether('3'), { from: fundManager });
