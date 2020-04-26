@@ -13,14 +13,14 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "@galtproject/libs/contracts/traits/Permissionable.sol";
-import "./interfaces/ICoinToken.sol";
-import "./interfaces/IYALDistributor.sol";
+import "./interfaces/IYALLDistributor.sol";
 import "./GSNRecipientSigned.sol";
 import "./registry/YALLRegistry.sol";
+import "./interfaces/IYALLToken.sol";
 
 
-contract CoinToken is
-  ICoinToken,
+contract YALLToken is
+  IYALLToken,
   ERC20,
   ERC20Pausable,
   ERC20Detailed,
@@ -46,7 +46,7 @@ contract CoinToken is
 
   // in 100 % == 100 eth
   uint256 public transferFee = 0;
-  // in YAL wei
+  // in YALL wei
   uint256 public gsnFee = 0;
 
   YALLRegistry public yallRegistry;
@@ -114,10 +114,10 @@ contract CoinToken is
     address payer;
 
     if (
-      signature == CoinToken(0).transfer.selector
-      || signature == CoinToken(0).transferFrom.selector
-      || signature == CoinToken(0).approve.selector
-      || signature == CoinToken(0).transferWithMemo.selector
+      signature == YALLToken(0).transfer.selector
+      || signature == YALLToken(0).transferFrom.selector
+      || signature == YALLToken(0).approve.selector
+      || signature == YALLToken(0).transferWithMemo.selector
     ) {
       payer = _caller;
     } else {
@@ -221,14 +221,14 @@ contract CoinToken is
 
   // INTERNAL
   function _requireMemberIsValid(address _member) internal view {
-    require(isMemberValid(_member), "YALToken: Member is invalid");
+    require(isMemberValid(_member), "YALLToken: Member is invalid");
   }
 
   function _chargeTransferFee(address from, uint256 _value) private {
     uint256 _fee = getTransferFee(_value);
 
     if (_fee > 0) {
-      require(balanceOf(from) >= _fee, "YALToken: insufficient balance for paying a fee");
+      require(balanceOf(from) >= _fee, "YALLToken: insufficient balance for paying a fee");
       _transfer(from, address(this), _fee);
     }
   }
@@ -244,7 +244,7 @@ contract CoinToken is
   }
 
   function isMemberValid(address _member) public view returns(bool) {
-    return IYALDistributor(yallRegistry.getYallDistributorAddress()).isActive(_member) || opsWhitelist[_member] == true;
+    return IYALLDistributor(yallRegistry.getYallDistributorAddress()).isActive(_member) || opsWhitelist[_member] == true;
   }
 
   function canPayForGsnCall(address _addr) public view returns (bool) {

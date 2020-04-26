@@ -12,8 +12,8 @@ pragma solidity ^0.5.13;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
-import "./interfaces/IYALDistributor.sol";
-import "./interfaces/ICoinToken.sol";
+import "./interfaces/IYALLDistributor.sol";
+import "./interfaces/IYALLToken.sol";
 import "./GSNRecipientSigned.sol";
 import "./traits/OwnedAccessControl.sol";
 import "./traits/PauserRole.sol";
@@ -21,11 +21,11 @@ import "./registry/YALLRegistryHelpers.sol";
 
 
 /**
- * @title YALExchange contract
+ * @title YALLExchange contract
  * @author Galt Project
- * @notice Exchange YAL to another currency
+ * @notice Exchange YALL to another currency
  **/
-contract YALExchange is
+contract YALLExchange is
   OwnableAndInitializable,
   OwnedAccessControl,
   YALLRegistryHelpers,
@@ -36,7 +36,7 @@ contract YALExchange is
 
   event CloseOrder(uint256 indexed orderId, address operator);
   event CancelOrder(uint256 indexed orderId, address operator, string reason);
-  event CreateOrder(uint256 indexed orderId, bytes32 indexed memberId, uint256 yalAmount, uint256 buyAmount);
+  event CreateOrder(uint256 indexed orderId, bytes32 indexed memberId, uint256 yallAmount, uint256 buyAmount);
   event SetDefaultExchangeRate(address indexed fundManager, uint256 defaultExchangeRate);
   event SetCustomExchangeRate(address indexed fundManager, bytes32 indexed memberId, uint256 memberExchangeRate);
   event SetTotalPeriodLimit(address indexed fundManager, uint256 defaultPeriodLimit);
@@ -56,7 +56,7 @@ contract YALExchange is
   struct Order {
     OrderStatus status;
     bytes32 memberId;
-    uint256 yalAmount;
+    uint256 yallAmount;
     uint256 buyAmount;
     uint256 createdAt;
     uint256 createdAtPeriod;
@@ -70,8 +70,8 @@ contract YALExchange is
     uint256 totalExchanged;
     uint256 totalVoided;
 
-    // periodId => yal exchanged
-    mapping(uint256 => uint256) yalExchangedByPeriod;
+    // periodId => yall exchanged
+    mapping(uint256 => uint256) yallExchangedByPeriod;
   }
 
   string public constant FUND_MANAGER_ROLE = "fund_manager";
@@ -88,7 +88,7 @@ contract YALExchange is
   uint256 public gsnFee;
 
   // Caches
-  uint256 public totalExchangedYal;
+  uint256 public totalExchangedYall;
 
   // memberId => details
   mapping(bytes32 => Member) public members;
@@ -97,22 +97,22 @@ contract YALExchange is
   mapping(uint256 => Order) public orders;
 
   // periodId => totalExchanged
-  mapping(uint256 => uint256) public yalExchangedByPeriod;
+  mapping(uint256 => uint256) public yallExchangedByPeriod;
 
   modifier onlyFundManager() {
-    require(hasRole(msg.sender, FUND_MANAGER_ROLE), "YALExchange: Only fund manager role allowed");
+    require(hasRole(msg.sender, FUND_MANAGER_ROLE), "YALLExchange: Only fund manager role allowed");
 
     _;
   }
 
   modifier onlyOperator() {
-    require(hasRole(msg.sender, OPERATOR_ROLE), "YALExchange: Only operator role allowed");
+    require(hasRole(msg.sender, OPERATOR_ROLE), "YALLExchange: Only operator role allowed");
 
     _;
   }
 
   modifier onlySuperOperator() {
-    require(hasRole(msg.sender, SUPER_OPERATOR_ROLE), "YALExchange: Only super operator role allowed");
+    require(hasRole(msg.sender, SUPER_OPERATOR_ROLE), "YALLExchange: Only super operator role allowed");
 
     _;
   }
@@ -127,8 +127,8 @@ contract YALExchange is
     external
     isInitializer
   {
-    require(_defaultExchangeRate > 0, "YALExchange: Default rate can't be 0");
-    require(_yallRegistry != address(0), "YALExchange: YALLRegistry address can't be 0");
+    require(_defaultExchangeRate > 0, "YALLExchange: Default rate can't be 0");
+    require(_yallRegistry != address(0), "YALLExchange: YALLRegistry address can't be 0");
 
     yallRegistry = YALLRegistry(_yallRegistry);
 
@@ -149,7 +149,7 @@ contract YALExchange is
   {
     bytes4 signature = getDataSignature(_encodedFunction);
 
-    if (signature == YALExchange(0).createOrder.selector) {
+    if (signature == YALLExchange(0).createOrder.selector) {
       IERC20 t = _yallTokenIERC20();
 
       if (t.balanceOf(_caller) >= gsnFee && t.allowance(_caller, address(this)) >= gsnFee) {
@@ -165,7 +165,7 @@ contract YALExchange is
   function _preRelayedCall(bytes memory _context) internal returns (bytes32) {
     (address from, bytes4 signature) = abi.decode(_context, (address, bytes4));
 
-    if (signature == YALExchange(0).createOrder.selector) {
+    if (signature == YALLExchange(0).createOrder.selector) {
       _yallTokenIERC20().transferFrom(from, address(this), gsnFee);
     }
   }
@@ -177,7 +177,7 @@ contract YALExchange is
    * @param _defaultExchangeRate 100% == 100 ETH
    */
   function setDefaultExchangeRate(uint256 _defaultExchangeRate) external onlyFundManager {
-    require(_defaultExchangeRate > 0, "YALExchange: Default rate can't be 0");
+    require(_defaultExchangeRate > 0, "YALLExchange: Default rate can't be 0");
 
     defaultExchangeRate = _defaultExchangeRate;
 
@@ -197,7 +197,7 @@ contract YALExchange is
 
   /**
    * @dev Sets a total period exchange limit for all users
-   * @param _totalPeriodLimit in YAL
+   * @param _totalPeriodLimit in YALL
    */
   function setTotalPeriodLimit(uint256 _totalPeriodLimit) external onlyFundManager {
     totalPeriodLimit = _totalPeriodLimit;
@@ -207,7 +207,7 @@ contract YALExchange is
 
   /**
    * @dev Sets a member exchange limit for a period
-   * @param _defaultMemberPeriodLimit in YAL; set to 0 to disable member limit
+   * @param _defaultMemberPeriodLimit in YALL; set to 0 to disable member limit
    */
   function setDefaultMemberPeriodLimit(uint256 _defaultMemberPeriodLimit) external onlyFundManager {
     defaultMemberPeriodLimit = _defaultMemberPeriodLimit;
@@ -218,7 +218,7 @@ contract YALExchange is
   /**
    * @dev Sets a particular member exchange limit for a period
    * @param _memberId to set limit for
-   * @param _customPeriodLimit in YAL; set to 0 to disable custom limit and use the default one
+   * @param _customPeriodLimit in YALL; set to 0 to disable custom limit and use the default one
    */
   function setCustomPeriodLimit(bytes32 _memberId, uint256 _customPeriodLimit) external onlyFundManager {
     members[_memberId].customPeriodLimit = _customPeriodLimit;
@@ -236,17 +236,17 @@ contract YALExchange is
   }
 
   /**
-   * @dev Withdraws almost all YAL tokens
+   * @dev Withdraws almost all YALL tokens
    * It keeps a small percent of tokens to reduce gas cost for further transfer operations with this address using GSN.
    */
-  function withdrawYALs() public onlyFundManager {
+  function withdrawYALLs() public onlyFundManager {
     address tokenAddress = _yallTokenAddress();
     uint256 payout = IERC20(tokenAddress).balanceOf(address(this));
 
-    require(payout > 0, "YALExchange: Nothing to withdraw");
+    require(payout > 0, "YALLExchange: Nothing to withdraw");
 
-    // NOTICE: will keep a small amount of YAL tokens
-    IERC20(tokenAddress).transfer(msg.sender, payout.sub(ICoinToken(tokenAddress).transferFee()));
+    // NOTICE: will keep a small amount of YALL tokens
+    IERC20(tokenAddress).transfer(msg.sender, payout.sub(IYALLToken(tokenAddress).transferFee()));
   }
 
   // OPERATOR INTERFACE
@@ -259,14 +259,14 @@ contract YALExchange is
   function closeOrder(uint256 _orderId, string calldata _paymentDetails) external onlyOperator {
     Order storage o = orders[_orderId];
 
-    require(o.status == OrderStatus.OPEN, "YALExchange: Order should be open");
+    require(o.status == OrderStatus.OPEN, "YALLExchange: Order should be open");
 
     o.status = OrderStatus.CLOSED;
     o.paymentDetails = _paymentDetails;
 
     emit CloseOrder(_orderId, msg.sender);
 
-    _yallTokenIERC20().transfer(msg.sender, o.yalAmount);
+    _yallTokenIERC20().transfer(msg.sender, o.yallAmount);
   }
 
   /**
@@ -278,93 +278,93 @@ contract YALExchange is
     Order storage o = orders[_orderId];
     Member storage m = members[o.memberId];
 
-    require(o.status == OrderStatus.OPEN, "YALExchange: Order should be open");
+    require(o.status == OrderStatus.OPEN, "YALLExchange: Order should be open");
 
     o.status = OrderStatus.CANCELLED;
 
-    m.totalExchanged = m.totalExchanged.sub(o.yalAmount);
-    m.yalExchangedByPeriod[o.createdAtPeriod] = m.yalExchangedByPeriod[o.createdAtPeriod].sub(o.yalAmount);
+    m.totalExchanged = m.totalExchanged.sub(o.yallAmount);
+    m.yallExchangedByPeriod[o.createdAtPeriod] = m.yallExchangedByPeriod[o.createdAtPeriod].sub(o.yallAmount);
 
-    yalExchangedByPeriod[o.createdAtPeriod] = yalExchangedByPeriod[o.createdAtPeriod].sub(o.yalAmount);
-    totalExchangedYal = totalExchangedYal.sub(o.yalAmount);
+    yallExchangedByPeriod[o.createdAtPeriod] = yallExchangedByPeriod[o.createdAtPeriod].sub(o.yallAmount);
+    totalExchangedYall = totalExchangedYall.sub(o.yallAmount);
 
     emit CancelOrder(_orderId, msg.sender, _cancelReason);
 
-    _yallTokenIERC20().transfer(_getMemberAddress(o.memberId), o.yalAmount);
+    _yallTokenIERC20().transfer(_getMemberAddress(o.memberId), o.yallAmount);
   }
 
   // SUPER OPERATOR INTERFACE
 
   /**
-   * @dev A super operator voids an already closed order and refunds deposited YALs
+   * @dev A super operator voids an already closed order and refunds deposited YALLs
    * @param _orderId to void
    */
   function voidOrder(uint256 _orderId) external onlySuperOperator {
     Order storage o = orders[_orderId];
     address memberAddress = _getMemberAddress(o.memberId);
-    uint256 yalAmount = o.yalAmount;
+    uint256 yallAmount = o.yallAmount;
 
-    require(o.status == OrderStatus.CLOSED, "YALExchange: Order should be closed");
+    require(o.status == OrderStatus.CLOSED, "YALLExchange: Order should be closed");
 
-    totalExchangedYal = totalExchangedYal.sub(yalAmount);
-    members[o.memberId].totalExchanged = members[o.memberId].totalExchanged.sub(yalAmount);
+    totalExchangedYall = totalExchangedYall.sub(yallAmount);
+    members[o.memberId].totalExchanged = members[o.memberId].totalExchanged.sub(yallAmount);
 
     o.status = OrderStatus.VOIDED;
     emit VoidOrder(_orderId, msg.sender);
 
-    _yallTokenIERC20().transferFrom(msg.sender, memberAddress, yalAmount);
+    _yallTokenIERC20().transferFrom(msg.sender, memberAddress, yallAmount);
   }
 
   // USER INTERFACE
 
   /**
    * @dev A user creates a new order with a specified amount to exchange
-   * @param _yalAmount to exchange
+   * @param _yallAmount to exchange
    */
-  function createOrder(uint256 _yalAmount) external whenNotPaused {
-    require(_yalAmount > 0, "YALExchange: YAL amount can't be 0");
+  function createOrder(uint256 _yallAmount) external whenNotPaused {
+    require(_yallAmount > 0, "YALLExchange: YALL amount can't be 0");
 
     address memberAddress = _msgSender();
 
-    require(_isActiveAddress(memberAddress), "YALExchange: Member isn't active");
+    require(_isActiveAddress(memberAddress), "YALLExchange: Member isn't active");
 
-    IYALDistributor yallDistributor = _yallDistributor();
+    IYALLDistributor yallDistributor = _yallDistributor();
     bytes32 memberId = yallDistributor.memberAddress2Id(memberAddress);
     uint256 currentPeriod = yallDistributor.getCurrentPeriodId();
 
     // Limit #1 check
-    requireLimit1NotReached(memberId, _yalAmount);
+    requireLimit1NotReached(memberId, _yallAmount);
 
     // Limit #2 check
-    requireLimit2NotReached(memberId, _yalAmount, currentPeriod);
+    requireLimit2NotReached(memberId, _yallAmount, currentPeriod);
 
     // Limit #3 check
-    requireLimit3NotReached(_yalAmount, currentPeriod);
+    requireLimit3NotReached(_yallAmount, currentPeriod);
 
-    uint256 buyAmount = calculateBuyAmount(memberId, _yalAmount);
+    uint256 buyAmount = calculateBuyAmount(memberId, _yallAmount);
 
     uint256 orderId = nextId();
     Order storage o = orders[orderId];
     Member storage m = members[memberId];
 
-    require(o.status == OrderStatus.NULL, "YALExchange: Invalid status");
+    require(o.status == OrderStatus.NULL, "YALLExchange: Invalid status");
 
     o.memberId = memberId;
     o.status = OrderStatus.OPEN;
     o.createdAt = now;
     o.buyAmount = buyAmount;
-    o.yalAmount = _yalAmount;
+    o.yallAmount = _yallAmount;
     o.createdAtPeriod = currentPeriod;
 
-    m.totalExchanged = m.totalExchanged.add(_yalAmount);
-    m.yalExchangedByPeriod[currentPeriod] = m.yalExchangedByPeriod[currentPeriod].add(_yalAmount);
+    m.totalExchanged = m.totalExchanged.add(_yallAmount);
+    m.yallExchangedByPeriod[currentPeriod] = m.yallExchangedByPeriod[currentPeriod].add(_yallAmount);
 
-    yalExchangedByPeriod[currentPeriod] = yalExchangedByPeriod[currentPeriod].add(_yalAmount);
-    totalExchangedYal = totalExchangedYal.add(_yalAmount);
+    yallExchangedByPeriod[currentPeriod] = yallExchangedByPeriod[currentPeriod].add(_yallAmount);
+    totalExchangedYall = totalExchangedYall.add(_yallAmount);
 
-    emit CreateOrder(orderId, memberId, _yalAmount, buyAmount);
+    emit CreateOrder(orderId, memberId, _yallAmount, buyAmount);
 
-    _yallTokenIERC20().transferFrom(_msgSender(), address(this), _yalAmount);
+    _yallTokenIERC20().transferFrom(_msgSender(), address(this), _yallAmount);
   }
 
   // INTERNAL
@@ -375,51 +375,51 @@ contract YALExchange is
   }
 
   function _isActiveAddress(address _addr) internal view returns(bool) {
-    // return yalDistributor.isActive(_addr);
+    // return yallDistributor.isActive(_addr);
     // solhint-disable-next-line space-after-comma
     (,bool isActive,,,,,) = _yallDistributor().getMemberByAddress(_addr);
     return isActive;
   }
 
   function _getTotalClaimed(bytes32 _memberId) internal view returns(uint256) {
-    // return yalDistributor.getTotalClaimed(_memberId);
+    // return yallDistributor.getTotalClaimed(_memberId);
     // solhint-disable-next-line space-after-comma
     (,,,,,uint256 totalClaimed) = _yallDistributor().member(_memberId);
     return totalClaimed;
   }
 
   function _getMemberAddress(bytes32 _memberId) internal view returns(address) {
-    // return yalDistributor.getMemberAddress(_memberId);
+    // return yallDistributor.getMemberAddress(_memberId);
     // solhint-disable-next-line space-after-comma
     (,address addr,,,,) = _yallDistributor().member(_memberId);
     return addr;
   }
 
-  function requireLimit1NotReached(bytes32 _memberId, uint256 _yalAmount) internal view {
+  function requireLimit1NotReached(bytes32 _memberId, uint256 _yallAmount) internal view {
     require(
-      checkExchangeFitsLimit1(_memberId, _yalAmount),
-      "YALExchange: exceeds Limit #1 (member volume)"
+      checkExchangeFitsLimit1(_memberId, _yallAmount),
+      "YALLExchange: exceeds Limit #1 (member volume)"
     );
   }
 
-  function requireLimit2NotReached(bytes32 _memberId, uint256 _yalAmount, uint256 _periodId) internal view {
+  function requireLimit2NotReached(bytes32 _memberId, uint256 _yallAmount, uint256 _periodId) internal view {
     require(
-      checkExchangeFitsLimit2(_memberId, _yalAmount, _periodId) == true,
-      "YALExchange: exceeds Limit #2 (member period limit)"
+      checkExchangeFitsLimit2(_memberId, _yallAmount, _periodId) == true,
+      "YALLExchange: exceeds Limit #2 (member period limit)"
     );
   }
 
-  function requireLimit3NotReached(uint256 _yalAmount, uint256 _periodId) internal view {
+  function requireLimit3NotReached(uint256 _yallAmount, uint256 _periodId) internal view {
     require(
-      checkExchangeFitsLimit3(_yalAmount, _periodId) == true,
-      "YALExchange: exceeds Limit #3 (total period limit)"
+      checkExchangeFitsLimit3(_yallAmount, _periodId) == true,
+      "YALLExchange: exceeds Limit #3 (total period limit)"
     );
   }
 
   // GETTERS
 
-  function calculateBuyAmount(bytes32 _memberId, uint256 _yalAmount) public view returns(uint256) {
-    return _yalAmount
+  function calculateBuyAmount(bytes32 _memberId, uint256 _yallAmount) public view returns(uint256) {
+    return _yallAmount
       .mul(calculateMemberExchangeRate(_memberId))
       .div(RATE_DIVIDER);
   }
@@ -434,7 +434,7 @@ contract YALExchange is
     return rate;
   }
 
-  function calculateMaxYalToSell(bytes32 _memberId) public view returns(uint256) {
+  function calculateMaxYallToSell(bytes32 _memberId) public view returns(uint256) {
     uint256 totalClaimed = _getTotalClaimed(_memberId);
     Member storage m = members[_memberId];
 
@@ -443,24 +443,24 @@ contract YALExchange is
       .add(m.totalVoided);
   }
 
-  function calculateMaxYalToSellByAddress(address _memberAddress) external view returns(uint256) {
-    return calculateMaxYalToSell(_yallDistributor().memberAddress2Id(_memberAddress));
+  function calculateMaxYallToSellByAddress(address _memberAddress) external view returns(uint256) {
+    return calculateMaxYallToSell(_yallDistributor().memberAddress2Id(_memberAddress));
   }
 
   function checkExchangeFitsLimit1(
     bytes32 _memberId,
-    uint256 _yalAmount
+    uint256 _yallAmount
   )
     public
     view
     returns (bool)
   {
-    return _yalAmount <= calculateMaxYalToSell(_memberId);
+    return _yallAmount <= calculateMaxYallToSell(_memberId);
   }
 
   function checkExchangeFitsLimit2(
     bytes32 _memberId,
-    uint256 _yalAmount,
+    uint256 _yallAmount,
     uint256 _periodId
   )
     public
@@ -474,18 +474,18 @@ contract YALExchange is
       limit = defaultMemberPeriodLimit;
     }
 
-    return limit == 0 || m.yalExchangedByPeriod[_periodId].add(_yalAmount) <= limit;
+    return limit == 0 || m.yallExchangedByPeriod[_periodId].add(_yallAmount) <= limit;
   }
 
   function checkExchangeFitsLimit3(
-    uint256 _yalAmount,
+    uint256 _yallAmount,
     uint256 _periodId
   )
     public
     view
     returns (bool)
   {
-    return totalPeriodLimit == 0 || yalExchangedByPeriod[_periodId].add(_yalAmount) <= totalPeriodLimit;
+    return totalPeriodLimit == 0 || yallExchangedByPeriod[_periodId].add(_yallAmount) <= totalPeriodLimit;
   }
 
   function getCustomExchangeRate(bytes32 _memberId) external view returns (uint256) {
@@ -497,10 +497,10 @@ contract YALExchange is
   }
 
   function getMemberYallExchangedInCurrentPeriod(bytes32 _memberId) external view returns (uint256) {
-    return members[_memberId].yalExchangedByPeriod[_yallDistributor().getCurrentPeriodId()];
+    return members[_memberId].yallExchangedByPeriod[_yallDistributor().getCurrentPeriodId()];
   }
 
   function getMemberYallExchangedByPeriod(bytes32 _memberId, uint256 _periodId) external view returns (uint256) {
-    return members[_memberId].yalExchangedByPeriod[_periodId];
+    return members[_memberId].yallExchangedByPeriod[_periodId];
   }
 }

@@ -10,7 +10,7 @@
 pragma solidity ^0.5.13;
 
 
-interface ICoinToken {
+interface IYALLToken {
   function mint(address to, uint256 amount) external returns (bool);
   function burn(address account, uint256 amount) external;
   function gsnFee() external view returns(uint256);

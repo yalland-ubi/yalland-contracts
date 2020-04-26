@@ -10,11 +10,11 @@
 pragma solidity ^0.5.13;
 
 /**
- * @title YALDistributor contract
+ * @title YALLDistributor contract
  * @author Galt Project
- * @notice Mints YAL tokens on request according pre-configured formula
+ * @notice Mints YALL tokens on request according pre-configured formula
  **/
-interface IYALDistributor {
+interface IYALLDistributor {
   function member(bytes32 _memberId)
     external
     view
