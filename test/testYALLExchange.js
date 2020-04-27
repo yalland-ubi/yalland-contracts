@@ -44,13 +44,15 @@ describe('YALLExchange Integration tests', () => {
     const memberId4 = keccak256('eve');
 
     beforeEach(async function () {
-        [ registry, yallToken, dist, exchange ] = await buildCoinDistAndExchange(web3, defaultSender, verifier);
-
-        await yallToken.addRoleTo(minter, "minter");
-        await yallToken.addRoleTo(dist.address, "minter");
-        await yallToken.addRoleTo(dist.address, "burner");
-        await yallToken.addRoleTo(feeManager, 'fee_manager');
-        await yallToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
+        [ registry, yallToken, dist, exchange ] = await buildCoinDistAndExchange(web3, defaultSender, {
+            verifier,
+            yallMinter: minter,
+            feeManager,
+            fundManager,
+            operator,
+            superOperator,
+            yallWLManager: transferWlManager
+        });
 
         await yallToken.setTransferFee(ether('0.02'), { from: feeManager });
         await yallToken.setGsnFee(ether('1.7'), { from: feeManager });
@@ -65,10 +67,6 @@ describe('YALLExchange Integration tests', () => {
         await dist.addMembersBeforeGenesis([memberId2], [bob], { from: verifier })
 
         await dist.setGsnFee(ether('4.2'));
-
-        await exchange.addRoleTo(fundManager, 'fund_manager');
-        await exchange.addRoleTo(operator, 'operator');
-        await exchange.addRoleTo(superOperator, 'super_operator');
 
         await exchange.setDefaultMemberPeriodLimit(ether(30), { from: fundManager });
         await exchange.setTotalPeriodLimit(ether(70), { from: fundManager });
@@ -105,8 +103,8 @@ describe('YALLExchange Integration tests', () => {
         assert.equal(res.memberId, memberId1);
 
         // Close an order
-        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: superOperator }), 'YALLExchange: Only operator role allowed');
-        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: alice }), 'YALLExchange: Only operator role allowed');
+        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: superOperator }), 'YALLExchange: Only OPERATOR allowed');
+        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: alice }), 'YALLExchange: Only OPERATOR allowed');
         await exchange.closeOrder(orderId, 'foo', { from: operator });
 
         res = await exchange.orders(orderId);
@@ -119,7 +117,7 @@ describe('YALLExchange Integration tests', () => {
         await assertRevert(exchange.cancelOrder(orderId, 'foo', { from: operator }), 'YALLExchange: Order should be open');
 
         // But can void
-        await assertRevert(exchange.voidOrder(orderId, { from: operator }), 'YALLExchange: Only super operator role allowed');
+        await assertRevert(exchange.voidOrder(orderId, { from: operator }), 'YALLExchange: Only SUPER_OPERATOR allowed');
         await yallToken.mint(superOperator, ether(12), { from: minter });
         await yallToken.approve(exchange.address, ether(12), { from: superOperator });
         await exchange.voidOrder(orderId, { from: superOperator });
@@ -146,8 +144,8 @@ describe('YALLExchange Integration tests', () => {
         assert.equal(res.status, OrderStatus.OPEN);
 
         // Close an order
-        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: superOperator }), 'YALLExchange: Only operator role allowed');
-        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: alice }), 'YALLExchange: Only operator role allowed');
+        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: superOperator }), 'YALLExchange: Only OPERATOR allowed');
+        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: alice }), 'YALLExchange: Only OPERATOR allowed');
         await exchange.cancelOrder(orderId, 'foo', { from: operator });
 
         res = await exchange.orders(orderId);

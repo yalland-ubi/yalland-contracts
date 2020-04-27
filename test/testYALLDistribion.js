@@ -21,7 +21,7 @@ const { approveFunction, GSNRecipientSignatureErrorCodes } = require('./helpers'
 const keccak256 = web3.utils.soliditySha3;
 
 describe('YALLDistribution Integration Tests', () => {
-    const [verifier, alice, bob, charlie, dan, eve, minter, feeManager] = accounts;
+    const [verifier, alice, bob, charlie, dan, eve, minter, feeManager, pauser] = accounts;
 
     let registry;
     let yallToken;
@@ -38,11 +38,13 @@ describe('YALLDistribution Integration Tests', () => {
     const verifierRewardShare = ether(10);
 
     beforeEach(async function () {
-        [ registry, yallToken, dist,, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, verifier, periodVolume);
-
-        await yallToken.addRoleTo(dist.address, "minter");
-        await yallToken.addRoleTo(minter, 'minter');
-        await yallToken.addRoleTo(feeManager, 'fee_manager');
+        [ registry, yallToken, dist,, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, {
+            yallMinter: minter,
+            feeManager,
+            verifier,
+            pauser,
+            periodVolume
+        });
 
         await yallToken.setTransferFee(ether(10), { from: feeManager });
         await yallToken.mint(alice, ether(baseAliceBalance), { from: minter });
@@ -58,7 +60,6 @@ describe('YALLDistribution Integration Tests', () => {
         await assertRevert(
             dist.initialize(
             periodVolume,
-            verifier,
             verifierRewardShare,
 
             registry.address,
@@ -355,22 +356,22 @@ describe('YALLDistribution Integration Tests', () => {
             await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [bob, charlie, dan], { from: verifier });
             await increaseTime(15 + 1 * periodLength);
 
-            await dist.pause();
+            await dist.pause({ from: pauser });
             assert.equal(await dist.paused(), true);
 
             assert.equal(await dist.getCurrentPeriodId(), 1);
 
             await assertRevert(
                 dist.claimFunds({ from: bob }),
-                'Contract is paused'
+                'ACLPausable: paused'
             );
             await assertRevert(
                 dist.claimVerifierReward(0, bob, { from: verifier }),
-                'Contract is paused'
+                'ACLPausable: paused'
             );
             await assertRevert(
                 dist.changeMyAddress(alice, { from: charlie }),
-                'Contract is paused'
+                'ACLPausable: paused'
             );
         });
     });

@@ -27,7 +27,7 @@ const { ether, now, int, increaseTime, assertRevert, assertGsnReject, zeroAddres
 const keccak256 = web3.utils.soliditySha3;
 
 describe('YALLDistributor Unit tests', () => {
-    const [verifier, alice, bob, charlie, dan, eve, minter, burner, feeManager, transferWlManager] = accounts;
+    const [verifier, alice, bob, charlie, dan, eve, minter, burner, feeManager, transferWlManager, pauser] = accounts;
 
     // 7 days
     const periodLength = 7 * 24 * 60 * 60;
@@ -45,14 +45,15 @@ describe('YALLDistributor Unit tests', () => {
     let dist;
 
     beforeEach(async function () {
-        [ registry, yallToken, dist,, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, verifier, periodVolume);
-
-        await yallToken.addRoleTo(dist.address, "minter");
-        await yallToken.addRoleTo(dist.address, "burner");
-        await yallToken.addRoleTo(minter, 'minter');
-        await yallToken.addRoleTo(burner, 'burner');
-        await yallToken.addRoleTo(feeManager, 'fee_manager');
-        await yallToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
+        [ registry, yallToken, dist,, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, {
+            verifier,
+            periodVolume,
+            yallMinter: minter,
+            yallBurner: burner,
+            feeManager,
+            pauser,
+            yallWLManager: transferWlManager
+        });
 
         await yallToken.mint(alice, ether(baseAliceBalance), { from: minter });
         await yallToken.setTransferFee(ether('0.02'), { from: feeManager });
@@ -106,7 +107,7 @@ describe('YALLDistributor Unit tests', () => {
                 });
 
                 it('should deny adding already existing member', async function() {
-                    await assertRevert(dist.addMember(memberId, bob, { from: alice }), 'Only verifier allowed');
+                    await assertRevert(dist.addMember(memberId, bob, { from: alice }), 'YALLDistributor: Only VERIFIER allowed');
                 });
             })
         });
@@ -184,7 +185,7 @@ describe('YALLDistributor Unit tests', () => {
                 it('should deny non-verifier calling the method', async function() {
                     await assertRevert(
                         dist.addMembers([memberId1, memberId2], [bob, charlie], { from: alice }),
-                        'Only verifier allowed'
+                        'YALLDistributor: Only VERIFIER allowed'
                     );
                 });
             })
@@ -253,7 +254,7 @@ describe('YALLDistributor Unit tests', () => {
             it('should deny non-verifier calling the method', async function() {
                 await assertRevert(
                     dist.addMembersBeforeGenesis([memberId1, memberId2], [bob, charlie], { from: alice }),
-                    'Only verifier allowed'
+                    'YALLDistributor: Only VERIFIER allowed'
                 );
             });
 
@@ -307,7 +308,7 @@ describe('YALLDistributor Unit tests', () => {
             });
 
             it('should deny non verifier disabling a member', async function() {
-                await assertRevert(dist.disableMembers([bob], { from: alice }), 'Only verifier allowed');
+                await assertRevert(dist.disableMembers([bob], { from: alice }), 'YALLDistributor: Only VERIFIER allowed');
             });
 
             it('should deny disabling an empty list', async function() {
@@ -363,7 +364,7 @@ describe('YALLDistributor Unit tests', () => {
             });
 
             it('should deny non verifier enabling a member', async function() {
-                await assertRevert(dist.enableMembers([bob], { from: alice }), 'Only verifier allowed');
+                await assertRevert(dist.enableMembers([bob], { from: alice }), 'YALLDistributor: Only VERIFIER allowed');
             });
 
             it('should deny enabling an empty list', async function() {
@@ -416,7 +417,7 @@ describe('YALLDistributor Unit tests', () => {
             });
 
             it('should deny non verifier changing a member address', async function() {
-                await assertRevert(dist.changeMemberAddress(bob, alice, { from: alice }), 'Only verifier allowed');
+                await assertRevert(dist.changeMemberAddress(bob, alice, { from: alice }), 'YALLDistributor: Only VERIFIER allowed');
             });
 
             it('should deny changing a non-existent member address', async function() {
@@ -479,7 +480,7 @@ describe('YALLDistributor Unit tests', () => {
             it('should deny non verifier changing a member address', async function() {
                 await assertRevert(
                     dist.changeMemberAddresses([bob], [alice], { from: alice }),
-                    'Only verifier allowed'
+                    'YALLDistributor: Only VERIFIER allowed'
                 );
             });
 
@@ -544,23 +545,6 @@ describe('YALLDistributor Unit tests', () => {
     });
 
     describe('Owner Interface', () => {
-        describe('#setVerifier()', () => {
-            it('should allow owner setting a new verifier', async function() {
-                assert.equal(await dist.verifier(), verifier);
-                await dist.setVerifier(bob);
-                assert.equal(await dist.verifier(), bob);
-            });
-
-            it('should allow owner setting address(0) as a verifier', async function() {
-                await dist.setVerifier(zeroAddress);
-                assert.equal(await dist.verifier(), zeroAddress);
-            });
-
-            it('should deny non-owner setting a new verifier', async function() {
-                await assertRevert(dist.setVerifier(bob, { from: alice }), 'Ownable: caller is not the owner');
-            });
-        });
-
         describe('#setVerifierRewardShare()', () => {
             it('should allow owner setting a new verifierRewardShare', async function() {
                 assert.equal(await dist.verifierRewardShare(), ether(10));
@@ -625,15 +609,15 @@ describe('YALLDistributor Unit tests', () => {
         describe('#pause()/#unpause()', () => {
             it('should allow the owner pausing/unpausing contract', async function() {
                 assert.equal(await dist.paused(), false);
-                await dist.pause();
+                await dist.pause({ from: pauser });
                 assert.equal(await dist.paused(), true);
-                await dist.unpause();
+                await dist.unpause({ from: pauser });
                 assert.equal(await dist.paused(), false);
             });
 
             it('should deny non-owner pausing/unpausing contract', async function() {
-                await assertRevert(dist.pause({ from: verifier }), 'Ownable: caller is not the owner');
-                await assertRevert(dist.unpause({ from: verifier }), 'Ownable: caller is not the owner');
+                await assertRevert(dist.pause({ from: verifier }), 'ACLPausable: Only PAUSER allowed');
+                await assertRevert(dist.unpause({ from: verifier }), 'ACLPausable: Only PAUSER allowed');
             });
         });
     });
@@ -794,11 +778,11 @@ describe('YALLDistributor Unit tests', () => {
 
             it('should deny claiming a reward for a non-active member', async function() {
                 await dist.disableMembers([charlie], { from: verifier });
-                await assertRevert(dist.claimFundsMultiple([charlie, dan], { from: verifier }), 'Not active member');
+                await assertRevert(dist.claimFundsMultiple([charlie, dan], { from: verifier }), 'YALLDistributor: Not active member');
             });
 
             it('should deny non-verifier claiming a reward', async function() {
-                await assertRevert(dist.claimFundsMultiple([charlie, dan], { from: charlie }), 'Only verifier allowed');
+                await assertRevert(dist.claimFundsMultiple([charlie, dan], { from: charlie }), 'YALLDistributor: Only VERIFIER allowed');
             });
 
             it('should increase totalClaimed value on each successful claim', async function() {
@@ -874,7 +858,7 @@ describe('YALLDistributor Unit tests', () => {
 
             it('should deny claiming a reward for a non-active member', async function() {
                 await dist.disableMembers([charlie], { from: verifier });
-                await assertRevert(dist.claimFunds({ from: charlie }), ' Not active member');
+                await assertRevert(dist.claimFunds({ from: charlie }), ' YALLDistributor: Not active member');
             });
 
             it('should increase totalClaimed value on each successful claim', async function() {
@@ -1041,8 +1025,8 @@ describe('YALLDistributor Unit tests', () => {
 
         describe('#getDataSignature', async function() {
             it('should return correct values', async function() {
-                const data = dist.contract.methods.setVerifier(alice).encodeABI();
-                assert.equal(await dist.getDataSignature(data), '0x5437988d');
+                const data = dist.contract.methods.setVerifierRewardShare(123).encodeABI();
+                assert.equal(await dist.getDataSignature(data), '0x517e12a4');
             });
         })
     })

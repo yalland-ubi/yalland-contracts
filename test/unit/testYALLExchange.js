@@ -51,14 +51,18 @@ describe('YALLExchange Unit tests', () => {
     let dist;
 
     beforeEach(async function () {
-        [ ,yallToken, dist, exchange, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, verifier, periodVolume);
-
-        await yallToken.addRoleTo(dist.address, "minter");
-        await yallToken.addRoleTo(dist.address, "burner");
-        await yallToken.addRoleTo(minter, 'minter');
-        await yallToken.addRoleTo(burner, 'burner');
-        await yallToken.addRoleTo(feeManager, 'fee_manager');
-        await yallToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
+        [ ,yallToken, dist, exchange, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, {
+            verifier,
+            periodVolume,
+            yallMinter: minter,
+            yallBurner: burner,
+            fundManager,
+            feeManager,
+            operator,
+            superOperator,
+            pauser,
+            yallWLManager: transferWlManager
+        });
 
         await yallToken.mint(alice, ether(baseAliceBalance), { from: minter });
         await yallToken.setTransferFee(ether('0.02'), { from: feeManager });
@@ -70,11 +74,6 @@ describe('YALLExchange Unit tests', () => {
         await yallToken.setWhitelistAddress(superOperator, true, { from: transferWlManager });
 
         await dist.setGsnFee(ether('4.2'));
-
-        await exchange.addRoleTo(fundManager, 'fund_manager');
-        await exchange.addRoleTo(operator, 'operator');
-        await exchange.addRoleTo(superOperator, 'super_operator');
-        await exchange.addRoleTo(pauser, 'pauser');
 
         await exchange.setDefaultMemberPeriodLimit(ether(30), { from: fundManager });
         await exchange.setTotalPeriodLimit(ether(70), { from: fundManager });
@@ -104,7 +103,7 @@ describe('YALLExchange Unit tests', () => {
             it('should deny a non-fund manager setting the default exchange rate', async function() {
                 await assertRevert(
                     exchange.setDefaultExchangeRate(ether(123), { from: owner }),
-                    'Only fund manager role allowed'
+                    'YALLExchange: Only FUND_MANAGER allowed'
                 );
             });
         });
@@ -118,7 +117,7 @@ describe('YALLExchange Unit tests', () => {
             it('should deny a non-fund manager setting the default exchange rate', async function() {
                 await assertRevert(
                     exchange.setCustomExchangeRate(memberId2, ether(123), { from: owner }),
-                    'Only fund manager role allowed'
+                    'YALLExchange: Only FUND_MANAGER allowed'
                 );
             });
         });
@@ -132,7 +131,7 @@ describe('YALLExchange Unit tests', () => {
             it('should deny a non-fund manager setting the default exchange rate', async function() {
                 await assertRevert(
                     exchange.setTotalPeriodLimit(ether(123), { from: owner }),
-                    'Only fund manager role allowed'
+                    'YALLExchange: Only FUND_MANAGER allowed'
                 );
             });
         });
@@ -146,7 +145,7 @@ describe('YALLExchange Unit tests', () => {
             it('should deny a non-fund manager setting the default member limit', async function() {
                 await assertRevert(
                     exchange.setDefaultMemberPeriodLimit(ether(123), { from: owner }),
-                    'Only fund manager role allowed'
+                    'YALLExchange: Only FUND_MANAGER allowed'
                 );
             });
         });
@@ -160,7 +159,7 @@ describe('YALLExchange Unit tests', () => {
             it('should deny a non-fund manager setting the custom period limit', async function() {
                 await assertRevert(
                     exchange.setCustomPeriodLimit(memberId2, ether(123), { from: owner }),
-                    'Only fund manager role allowed'
+                    'YALLExchange: Only FUND_MANAGER allowed'
                 );
             });
         });
@@ -192,7 +191,7 @@ describe('YALLExchange Unit tests', () => {
             });
 
             it('should deny non-fund manager withdrawing fee', async function() {
-                await assertRevert(exchange.withdrawYALLs({ from: owner }), 'Only fund manager role allowed');
+                await assertRevert(exchange.withdrawYALLs({ from: owner }), 'YALLExchange: Only FUND_MANAGER allowed');
             });
         });
 
@@ -206,8 +205,8 @@ describe('YALLExchange Unit tests', () => {
             });
 
             it('should deny non-owner pausing/unpausing contract', async function() {
-                await assertRevert(exchange.pause({ from: verifier }), 'Pausable: not a pauser');
-                await assertRevert(exchange.unpause({ from: verifier }), 'Pausable: not a pauser');
+                await assertRevert(exchange.pause({ from: verifier }), 'ACLPausable: Only PAUSER allowed');
+                await assertRevert(exchange.unpause({ from: verifier }), 'ACLPausable: Only PAUSER allowed');
             });
         });
     });
@@ -426,7 +425,7 @@ describe('YALLExchange Unit tests', () => {
             });
 
             it('should deny non-operator closing an order', async function() {
-                await assertRevert(exchange.closeOrder(orderId, 'blah', { from: superOperator }), 'YALLExchange: Only operator role allowed');
+                await assertRevert(exchange.closeOrder(orderId, 'blah', { from: superOperator }), 'YALLExchange: Only OPERATOR allowed');
             });
         });
 
@@ -478,7 +477,7 @@ describe('YALLExchange Unit tests', () => {
             });
 
             it('should deny non-operator cancelling an order', async function() {
-                await assertRevert(exchange.cancelOrder(orderId, 'blah', { from: superOperator }), 'YALLExchange: Only operator role allowed');
+                await assertRevert(exchange.cancelOrder(orderId, 'blah', { from: superOperator }), 'YALLExchange: Only OPERATOR allowed');
             });
         });
     });
@@ -554,7 +553,7 @@ describe('YALLExchange Unit tests', () => {
                 });
 
                 it('should deny non-superOperator voiding an order', async function() {
-                    await assertRevert(exchange.voidOrder(orderId, { from: operator }), 'YALLExchange: Only super operator role allowed');
+                    await assertRevert(exchange.voidOrder(orderId, { from: operator }), 'YALLExchange: Only SUPER_OPERATOR allowed');
                 })
             })
 

@@ -12,7 +12,6 @@ pragma solidity ^0.5.13;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
-import "@galtproject/libs/contracts/traits/Permissionable.sol";
 import "./interfaces/IYALLDistributor.sol";
 import "./GSNRecipientSigned.sol";
 import "./registry/YALLRegistry.sol";
@@ -24,15 +23,15 @@ contract YALLToken is
   ERC20,
   ERC20Pausable,
   ERC20Detailed,
-  Permissionable,
-  GSNRecipientSigned {
+  GSNRecipientSigned
+{
   uint256 public constant INITIAL_SUPPLY = 0;
 
-  string public constant MINTER_ROLE = "minter";
-  string public constant BURNER_ROLE = "burner";
-  string public constant PAUSER_ROLE = "pauser";
-  string public constant FEE_MANAGER_ROLE = "fee_manager";
-  string public constant TRANSFER_WL_MANAGER_ROLE = "transfer_wl_manager";
+  bytes32 public constant YALL_TOKEN_MINTER_ROLE = bytes32("YALL_TOKEN_MINTER");
+  bytes32 public constant YALL_TOKEN_BURNER_ROLE = bytes32("YALL_TOKEN_BURNER");
+  bytes32 public constant YALL_TOKEN_WHITELIST_MANAGER_ROLE = bytes32("YALL_TOKEN_WHITELIST_MANAGER");
+  bytes32 public constant PAUSER_ROLE = bytes32("PAUSER");
+  bytes32 public constant FEE_MANAGER_ROLE = bytes32("FEE_MANAGER");
 
   uint256 public constant HUNDRED_PCT = 100 ether;
 
@@ -61,43 +60,36 @@ contract YALLToken is
   )
     public
     ERC20Detailed(_name, _symbol, _decimals)
-    Permissionable()
     GSNRecipientSigned()
   {
     yallRegistry = YALLRegistry(_yallRegistry);
-
-    // ROLE_MANAGER is assigned to the msg.sender in Permissionable()
   }
 
   modifier onlyMinter() {
-    require(hasRole(msg.sender, MINTER_ROLE), "Only minter allowed");
+    require(yallRegistry.hasRole(msg.sender, YALL_TOKEN_MINTER_ROLE), "YALLToken: Only YALL_TOKEN_MINTER allowed");
     _;
   }
   
   modifier onlyBurner() {
-    require(hasRole(msg.sender, BURNER_ROLE), "Only burner allowed");
+    require(yallRegistry.hasRole(msg.sender, YALL_TOKEN_BURNER_ROLE), "YALLToken: Only YALL_TOKEN_BURNER allowed");
     _;
   }
 
   modifier onlyFeeManager() {
-    require(hasRole(msg.sender, FEE_MANAGER_ROLE), "Only fee manager allowed");
+    require(yallRegistry.hasRole(msg.sender, FEE_MANAGER_ROLE), "YALLToken: Only FEE_MANAGER allowed");
     _;
   }
 
   modifier onlyTransferWLManager() {
-    require(hasRole(msg.sender, TRANSFER_WL_MANAGER_ROLE), "Only transfer_wl_manager allowed");
+    require(
+      yallRegistry.hasRole(msg.sender, YALL_TOKEN_WHITELIST_MANAGER_ROLE),
+      "YALLToken: Only YALL_TOKEN_WHITELIST_MANAGER allowed"
+    );
     _;
   }
 
-  modifier onlyRoleManager() {
-    require(hasRole(msg.sender, ROLE_ROLE_MANAGER), "Only role manager allowed");
-    _;
-  }
-
-  // Uses Permissionable PAUSER_ROLE instead of PauserRole from OZ since
-  // the last one has no explicit removeRole method.
   modifier onlyPauser() {
-    require(hasRole(msg.sender, PAUSER_ROLE), "Only pauser allowed");
+    require(yallRegistry.hasRole(msg.sender, PAUSER_ROLE), "YALLToken: Only PAUSER allowed");
     _;
   }
 

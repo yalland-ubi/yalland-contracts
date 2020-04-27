@@ -34,15 +34,17 @@ describe('YALLReferralPayouts Unit tests', () => {
     let referral;
 
     beforeEach(async function () {
-        [ ,yallToken, dist, , genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, alice);
+        [ ,yallToken, dist, , genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, {
+            governance: alice,
+            yallMinter: minter,
+            feeManager,
+            yallWLManager: transferWlManager,
+            periodVolume: ether(250)
+        });
 
         referral = await YALLReferralPayouts.new();
 
         referral.initialize(bob, yallToken.address);
-
-        await yallToken.addRoleTo(minter, 'minter');
-        await yallToken.addRoleTo(feeManager, 'fee_manager');
-        await yallToken.addRoleTo(transferWlManager, 'transfer_wl_manager');
 
         await yallToken.mint(alice, ether(1000), { from: minter });
         await yallToken.setTransferFee(ether('0.02'), { from: feeManager });
