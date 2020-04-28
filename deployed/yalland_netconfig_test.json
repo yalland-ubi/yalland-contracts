@@ -3921,7 +3921,7 @@
       "signature": "0xae2f5d93"
     }
   ],
-  "addressUpgraderAddress": "0xa5CE4F099F37C02ac67DFbc7B35027A1bd0c66E0",
+  "addressUpgraderAddress": "0x993c506126395098Ef804735A49fB7dAB6B5bcC8",
   "addressUpgraderAbi": [
     {
       "inputs": [
@@ -3952,12 +3952,6 @@
           "type": "address"
         },
         {
-          "indexed": true,
-          "internalType": "bytes32",
-          "name": "tariff",
-          "type": "bytes32"
-        },
-        {
           "indexed": false,
           "internalType": "address",
           "name": "superuser",
@@ -3966,7 +3960,7 @@
       ],
       "name": "ChangeAddress",
       "type": "event",
-      "signature": "0x2803d78f8f00a82246339f20e8b1ed2ecf942790d4ebbe26721b1dbac89f3344"
+      "signature": "0xe21b242fff9d76d376a4be8d78c17cddf3dc2ea34ebc633c29c0a0c3a1f62c2c"
     },
     {
       "anonymous": false,
@@ -3982,17 +3976,11 @@
           "internalType": "address",
           "name": "to",
           "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "bytes32",
-          "name": "tariff",
-          "type": "bytes32"
         }
       ],
       "name": "MigrateMyAddress",
       "type": "event",
-      "signature": "0x943acdbf7133cb3f241e7cdeed28056c03c6dbd7143f6fb99f3858be0bd81c05"
+      "signature": "0x99d6e459b7436c033fe3a5987827a442c33fe2b4b32305343ae1de6793657970"
     },
     {
       "anonymous": false,
@@ -4184,11 +4172,6 @@
           "internalType": "address payable",
           "name": "_to",
           "type": "address"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "_tariff",
-          "type": "bytes32"
         }
       ],
       "name": "migrateUserAddress",
@@ -4196,7 +4179,7 @@
       "payable": false,
       "stateMutability": "nonpayable",
       "type": "function",
-      "signature": "0xd14fc65e"
+      "signature": "0xf90af14f"
     },
     {
       "constant": false,
@@ -4210,11 +4193,6 @@
           "internalType": "address payable[]",
           "name": "_to",
           "type": "address[]"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "_tariff",
-          "type": "bytes32"
         }
       ],
       "name": "migrateMultipleUserAddresses",
@@ -4222,7 +4200,1020 @@
       "payable": false,
       "stateMutability": "nonpayable",
       "type": "function",
-      "signature": "0x4e335b47"
+      "signature": "0x74db4aec"
+    }
+  ],
+  "cityAddress": "0x463f8834c322d9e56e2409e562a635dfd5967092",
+  "cityAbi": [
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "MEMBER_LEAVE_MANAGER_ROLE",
+      "outputs": [
+        {
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "name",
+      "outputs": [
+        {
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_operator",
+          "type": "address"
+        },
+        {
+          "name": "_role",
+          "type": "string"
+        }
+      ],
+      "name": "checkRole",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "participants",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_operator",
+          "type": "address"
+        },
+        {
+          "name": "_role",
+          "type": "string"
+        }
+      ],
+      "name": "hasRole",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "confirmsToParticipation",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "symbol",
+      "outputs": [
+        {
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "MEMBER_JOIN_MANAGER_ROLE",
+      "outputs": [
+        {
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "RATE_MANAGER_ROLE",
+      "outputs": [
+        {
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "maxSupply",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "name": "_maxSupply",
+          "type": "uint256"
+        },
+        {
+          "name": "_name",
+          "type": "string"
+        },
+        {
+          "name": "_symbol",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "payable": true,
+      "stateMutability": "payable",
+      "type": "fallback"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "name": "payment",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "paymentPeriod",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "currency",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "name": "currencyAddress",
+          "type": "address"
+        }
+      ],
+      "name": "TariffCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "name": "payment",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "paymentPeriod",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "currency",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "name": "currencyAddress",
+          "type": "address"
+        }
+      ],
+      "name": "TariffEdited",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "active",
+          "type": "bool"
+        }
+      ],
+      "name": "TariffActiveChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "requested",
+          "type": "address"
+        }
+      ],
+      "name": "ParticipationRequest",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "requested",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "confirmed",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "fully",
+          "type": "bool"
+        }
+      ],
+      "name": "ParticipationConfirm",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "cityManager",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "member",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "tariff",
+          "type": "bytes32"
+        }
+      ],
+      "name": "ParticipationAdded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "cityManager",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "member",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "tariff",
+          "type": "bytes32"
+        }
+      ],
+      "name": "ParticipationTariffRemoved",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "previousOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipRenounced",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "operator",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "role",
+          "type": "string"
+        }
+      ],
+      "name": "RoleAdded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "operator",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "role",
+          "type": "string"
+        }
+      ],
+      "name": "RoleRemoved",
+      "type": "event"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_title",
+          "type": "string"
+        },
+        {
+          "name": "_payment",
+          "type": "uint256"
+        },
+        {
+          "name": "_paymentPeriod",
+          "type": "uint256"
+        },
+        {
+          "name": "_mintForPeriods",
+          "type": "uint256"
+        },
+        {
+          "name": "_currency",
+          "type": "uint8"
+        },
+        {
+          "name": "_currencyAddress",
+          "type": "address"
+        }
+      ],
+      "name": "createTariff",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_id",
+          "type": "bytes32"
+        },
+        {
+          "name": "_active",
+          "type": "bool"
+        }
+      ],
+      "name": "setTariffActive",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_id",
+          "type": "bytes32"
+        },
+        {
+          "name": "_title",
+          "type": "string"
+        },
+        {
+          "name": "_payment",
+          "type": "uint256"
+        },
+        {
+          "name": "_paymentPeriod",
+          "type": "uint256"
+        },
+        {
+          "name": "_mintForPeriods",
+          "type": "uint256"
+        },
+        {
+          "name": "_currency",
+          "type": "uint8"
+        },
+        {
+          "name": "_currencyAddress",
+          "type": "address"
+        }
+      ],
+      "name": "editTariff",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_maxSupply",
+          "type": "uint256"
+        }
+      ],
+      "name": "setMaxSupply",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_confirmsToParticipation",
+          "type": "uint256"
+        }
+      ],
+      "name": "setConfirmsToParticipation",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_claimFor",
+          "type": "address"
+        },
+        {
+          "name": "_tariffId",
+          "type": "bytes32"
+        },
+        {
+          "name": "_periodsNumber",
+          "type": "uint256"
+        }
+      ],
+      "name": "claimPayment",
+      "outputs": [
+        {
+          "name": "nextDate",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_address",
+          "type": "address"
+        },
+        {
+          "name": "_tariff",
+          "type": "bytes32"
+        }
+      ],
+      "name": "addParticipation",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_tariffId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "requestParticipation",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_requested",
+          "type": "address"
+        },
+        {
+          "name": "_tariffId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "confirmParticipation",
+      "outputs": [
+        {
+          "name": "count",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_requested",
+          "type": "address"
+        },
+        {
+          "name": "_tariffId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "confirmsOf",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_member",
+          "type": "address"
+        }
+      ],
+      "name": "kickAllParticipation",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_member",
+          "type": "address"
+        },
+        {
+          "name": "_tariffId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "kickTariffParticipation",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "leaveAllParticipation",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_tariffId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "leaveAllParticipation",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_operator",
+          "type": "address"
+        },
+        {
+          "name": "_role",
+          "type": "string"
+        }
+      ],
+      "name": "addRoleTo",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_operator",
+          "type": "address"
+        },
+        {
+          "name": "_role",
+          "type": "string"
+        }
+      ],
+      "name": "removeRoleFrom",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getAllTariffs",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32[]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getActiveTariffs",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32[]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getTariff",
+      "outputs": [
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "active",
+          "type": "bool"
+        },
+        {
+          "name": "payment",
+          "type": "uint256"
+        },
+        {
+          "name": "paymentPeriod",
+          "type": "uint256"
+        },
+        {
+          "name": "mintForPeriods",
+          "type": "uint256"
+        },
+        {
+          "name": "totalMinted",
+          "type": "uint256"
+        },
+        {
+          "name": "totalBurned",
+          "type": "uint256"
+        },
+        {
+          "name": "paymentSent",
+          "type": "uint256"
+        },
+        {
+          "name": "currency",
+          "type": "uint8"
+        },
+        {
+          "name": "currencyAddress",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getAllParticipants",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getActiveParticipants",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getActiveParticipantsCount",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_tariffId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getTariffActiveParticipants",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_tariffId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getTariffActiveParticipantsCount",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_address",
+          "type": "address"
+        }
+      ],
+      "name": "isParticipant",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_member",
+          "type": "address"
+        }
+      ],
+      "name": "getParticipantInfo",
+      "outputs": [
+        {
+          "name": "active",
+          "type": "bool"
+        },
+        {
+          "name": "tariffs",
+          "type": "bytes32[]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_member",
+          "type": "address"
+        },
+        {
+          "name": "_tariff",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getParticipantTariffInfo",
+      "outputs": [
+        {
+          "name": "active",
+          "type": "bool"
+        },
+        {
+          "name": "claimed",
+          "type": "uint256"
+        },
+        {
+          "name": "minted",
+          "type": "uint256"
+        },
+        {
+          "name": "lastTimestamp",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
     }
   ]
 }
