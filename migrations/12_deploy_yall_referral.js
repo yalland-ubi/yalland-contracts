@@ -26,7 +26,8 @@ module.exports = async function(deployer, network, accounts) {
     const coreTeam = accounts[0];
     console.log('coreTeam', coreTeam);
 
-    const data = JSON.parse(fs.readFileSync(`${__dirname}/../deployed/yalland_netconfig.json`).toString());
+    const networkFile = process.env.RESULT_FILE || 'yalland_netconfig';
+    const data = JSON.parse(fs.readFileSync(`${__dirname}/../deployed/${networkFile}.json`).toString());
     console.log('Create contract instances...');
     const referralProxy = await deployer.deploy(Proxy);
 
@@ -49,7 +50,7 @@ module.exports = async function(deployer, network, accounts) {
         fs.mkdirSync(deployDirectory);
       }
 
-      const deployFile = `${deployDirectory}/yalland_netconfig.json`;
+      const deployFile = `${deployDirectory}/${networkFile}.json`;
       console.log(`saved to ${deployFile}`);
 
       fs.writeFile(
