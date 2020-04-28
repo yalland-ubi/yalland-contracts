@@ -18,8 +18,8 @@ contract AddressUpgraderL is Permissionable {
 
   string public constant SUPERUSER_ROLE = "superuser";
 
-  event MigrateMyAddress(address indexed from, address indexed to, bytes32 indexed tariff);
-  event ChangeAddress(address indexed from, address indexed to, bytes32 indexed tariff, address superuser);
+  event MigrateMyAddress(address indexed from, address indexed to);
+  event ChangeAddress(address indexed from, address indexed to, address superuser);
 
   address public erc20Token;
 
@@ -32,15 +32,14 @@ contract AddressUpgraderL is Permissionable {
     erc20Token = _erc20Token;
   }
 
-  function migrateUserAddress(address _from, address payable _to, bytes32 _tariff) external onlySuperuser {
-    _migrate(_from, _to, _tariff);
-    emit ChangeAddress(_from, _to, _tariff, msg.sender);
+  function migrateUserAddress(address _from, address payable _to) external onlySuperuser {
+    _migrate(_from, _to);
+    emit ChangeAddress(_from, _to, msg.sender);
   }
 
   function migrateMultipleUserAddresses(
     address[] calldata _from,
-    address payable[]  calldata _to,
-    bytes32 _tariff
+    address payable[]  calldata _to
   )
     external
     onlySuperuser
@@ -50,14 +49,14 @@ contract AddressUpgraderL is Permissionable {
     uint256 len = _from.length;
 
     for (uint256 i = 0; i < len; i++) {
-      _migrate(_from[i], _to[i], _tariff);
-      emit ChangeAddress(_from[i], _to[i], _tariff, msg.sender);
+      _migrate(_from[i], _to[i]);
+      emit ChangeAddress(_from[i], _to[i], msg.sender);
     }
   }
 
   // INTERNAL
 
-  function _migrate(address _from, address payable _to, bytes32 _tariff) internal {
+  function _migrate(address _from, address payable _to) internal {
     require(_to != address(0), "_to can't be 0x0 address");
 
     uint256 balance = IERC20(erc20Token).balanceOf(_from);

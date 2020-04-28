@@ -8,6 +8,7 @@
  */
 
 const AddressUpgrader = artifacts.require('./AddressUpgraderL');
+const CoinToken = artifacts.require('./CoinTokenL');
 
 const fs = require('fs');
 const _ = require('lodash');
@@ -30,6 +31,12 @@ module.exports = async function(deployer, network, accounts) {
     console.log('Create contract instances...');
     const addressUpgader = await deployer.deploy(AddressUpgrader, data.coinTokenAddress);
 
+    const coinToken = await CoinToken.at(data.coinTokenAddress);
+
+    // manual transactions
+    // await coinToken.addRoleTo(addressUpgader.address, 'minter');
+    // await coinToken.addRoleTo(addressUpgader.address, 'burner');
+    // await addressUpgader.addRoleTo('...', 'superuser');
 
     console.log('Save addresses and abi to deployed folder...');
 
