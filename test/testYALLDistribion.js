@@ -77,6 +77,7 @@ describe('YALLDistribution Integration Tests', () => {
             dist.claimFunds({ from: bob, useGSN: true }),
             'Contract not initiated yet',
         );
+        await assertRevert(dist.requireCanClaimFundsByAddress(bob), 'Contract not initiated yet');
         await assertRevert(dist.claimFunds({ from: bob, useGSN: false }), 'Contract not initiated yet');
 
         const member = await dist.getMemberByAddress(bob);
@@ -89,6 +90,10 @@ describe('YALLDistribution Integration Tests', () => {
         assert.equal(await dist.getCurrentPeriodId(), 0);
 
         await dist.claimFunds({ from: bob, useGSN: true });
+        await assertRevert(
+            dist.requireCanClaimFundsByAddress(bob),
+            'Already claimed for the current period'
+        );
         await assertRevert(dist.claimFunds({ from: bob }), 'Already claimed for the current period');
 
         let res = await dist.period(0);
@@ -213,6 +218,10 @@ describe('YALLDistribution Integration Tests', () => {
             await dist.enableMembers([bob], { from: verifier });
 
             await assertRevert(
+                dist.requireCanClaimFundsByAddress(bob),
+                'One period should be skipped after re-enabling'
+            );
+            await assertRevert(
                 dist.claimFunds({ from: bob }),
                'One period should be skipped after re-enabling'
             );
@@ -252,6 +261,10 @@ describe('YALLDistribution Integration Tests', () => {
             assert.equal(await dist.getCurrentPeriodId(), 2);
 
             await assertRevert(
+                dist.requireCanClaimFundsByAddress(bob),
+                'Not active member'
+            );
+            await assertRevert(
                 dist.claimFunds({ from: bob }),
                 'Not active member'
             );
@@ -266,6 +279,10 @@ describe('YALLDistribution Integration Tests', () => {
             // enable at P3
             await dist.enableMembers([bob], { from: verifier });
 
+            await assertRevert(
+                dist.requireCanClaimFundsByAddress(bob),
+                'One period should be skipped after re-enabling'
+            );
             await assertRevert(
                 dist.claimFunds({ from: bob }),
                 'One period should be skipped after re-enabling'
@@ -361,6 +378,10 @@ describe('YALLDistribution Integration Tests', () => {
 
             assert.equal(await dist.getCurrentPeriodId(), 1);
 
+            await assertRevert(
+                dist.requireCanClaimFundsByAddress(bob),
+                'ACLPausable: paused'
+            );
             await assertRevert(
                 dist.claimFunds({ from: bob }),
                 'ACLPausable: paused'

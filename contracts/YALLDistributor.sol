@@ -527,6 +527,32 @@ contract YALLDistributor is
   )
     internal
   {
+    _requireCanClaimFunds(
+      _memberAddress,
+      _currentPeriodId,
+      _currentPeriodStart
+    );
+
+    bytes32 memberId = memberAddress2Id[_memberAddress];
+    Member storage m = member[memberId];
+
+    m.claimedPeriods[_currentPeriodId] = true;
+
+    m.totalClaimed = m.totalClaimed.add(_rewardPerMember);
+
+    emit ClaimFunds(memberId, _memberAddress, _currentPeriodId, _rewardPerMember);
+
+    _yallToken().mint(_memberAddress, _rewardPerMember);
+  }
+
+  function _requireCanClaimFunds(
+    address _memberAddress,
+    uint256 _currentPeriodId,
+    uint256 _currentPeriodStart
+  )
+    internal
+    view
+  {
     bytes32 memberId = memberAddress2Id[_memberAddress];
     Member storage m = member[memberId];
 
@@ -547,20 +573,13 @@ contract YALLDistributor is
         // both disabled and enabled in the current period
         (ld >= _currentPeriodStart && le >= _currentPeriodStart)
         // both disabled and enabled in the previous period
+        // TODO: check that this line is still required
         || (ld >= previousPeriodStart && le >= previousPeriodStart && ld < _currentPeriodStart && le < _currentPeriodStart)
         // both disabled and enabled before the current period started
         || (ld < _currentPeriodStart && le < _currentPeriodStart),
         "YALLDistributor: One period should be skipped after re-enabling"
       );
     }
-
-    m.claimedPeriods[_currentPeriodId] = true;
-
-    m.totalClaimed = m.totalClaimed.add(_rewardPerMember);
-
-    emit ClaimFunds(memberId, _memberAddress, _currentPeriodId, _rewardPerMember);
-
-    _yallToken().mint(_memberAddress, _rewardPerMember);
   }
 
   /*
@@ -614,6 +633,14 @@ contract YALLDistributor is
   function getCurrentPeriodBeginsAt() public view returns (uint256) {
     // return (getCurrentPeriod() * periodLength) + genesisTimestamp;
     return (getCurrentPeriodId().mul(periodLength)).add(genesisTimestamp);
+  }
+
+  function requireCanClaimFundsByAddress(address _memberAddress) external view whenNotPaused {
+    _requireCanClaimFunds(
+      _memberAddress,
+      getCurrentPeriodId(),
+      getCurrentPeriodBeginsAt()
+    );
   }
 
   function getActiveAddressList() external view returns (address[] memory) {
