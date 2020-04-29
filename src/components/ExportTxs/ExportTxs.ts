@@ -38,19 +38,11 @@ export default {
 		},
 		async runExport() {
 			if(!this.$backend.isAuthorized()) {
-				try {
-					const authMessage = await this.$backend.generateAuthMessage(this.user_wallet);
-					const fieldName = 'key';
-
-					const signature = await GaltData.signMessage(authMessage.message, this.user_wallet, fieldName);
-
-					await this.$backend.loginAuthMessage(authMessage.id, this.user_wallet, signature, { fieldName });
-				} catch (e) {
-					console.error(e);
-					this.$notify({
+				const authorized = await this.$backend.authorize(this.user_wallet);
+				if(!authorized) {
+					return this.$notify({
 						type: 'error',
-						title: 'Not authorized',
-						text: e.message
+						title: 'Not authorized'
 					})
 				}
 			}

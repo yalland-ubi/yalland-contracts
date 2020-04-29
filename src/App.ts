@@ -186,6 +186,9 @@ export default {
             addExchangeRole: (address, role) => {
                 return this.$galtUser.addExchangeRole(address, role);
             },
+            addReferralRole: (address, role) => {
+                return this.$galtUser.addReferralRole(address, role);
+            },
             sendCityContractMethod: (methodName, args = []) => {
                 return this.$galtUser.sendCityContractMethod(methodName, args);
             },

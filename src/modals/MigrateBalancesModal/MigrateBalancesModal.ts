@@ -24,40 +24,25 @@ export default {
 
 	},
 	methods: {
-		migrateBalances() {
-			this.sending = true;
-			this.$galtUser.sendUpgraderContractMethod('migrateMultipleUserAddresses', [
-				this.addressesToMigrate.map(item => item.old),
-				this.addressesToMigrate.map(item => item.new),
-				GaltData.contractsConfig.yalTariffId
-			]).then(() => {
-				this.state = 'migrated';
-				this.sending = false;
-			}).catch(() => {
-				this.sending = false;
-			});
+		async migrateBalances() {
+			if(!this.$backend.isAuthorized()) {
+				const authorized = await this.$backend.authorize(this.user_wallet);
+				if(!authorized) {
+					return this.$notify({
+						type: 'error',
+						title: 'Not authorized'
+					})
+				}
+			}
+			const postData = {
+				old: this.addressesToMigrate.map(item => item.old),
+				new: this.addressesToMigrate.map(item => item.new)
+			};
 
-			this.checkingGas = true;
-			pIteration.forEach(this.addressesToMigrate, item => {
-				return this.$cityContract.isMemberHaveTariff(item.new, GaltData.contractsConfig.gasTariffId).then(inGasTariff => {
-					item.inGasTariff = inGasTariff;
-				})
-			}).then(() => {
-				this.checkingGas = false;
-			})
-		},
-		addToGasTariff() {
-			this.sending = true;
-			this.$galtUser.sendTariffAdderContractMethod('migrateMultipleUserAddresses', [
-				this.addressesToMigrate.filter(item => !item.inGasTariff).map(item => item.new),
-				GaltData.contractsConfig.gasTariffId
-			]).then(() => {
-				this.sending = false;
-				this.state = 'gasAdded';
-				this.close();
-			}).catch(() => {
-				this.sending = false;
-			})
+			this.$backend.migrateAddresses(postData)
+				.then((data) => {
+					this.close();
+				});
 		},
 		close() {
 			this.$root.$asyncModal.close('migrate-balances-modal');
@@ -106,6 +91,11 @@ export default {
 				this.addressesToMigrate = this.addressesToMigrate.filter(item => item.haveEnoughYal);
 			})
 		}
+	},
+	computed: {
+		user_wallet() {
+			return this.$store.state.user_wallet;
+		},
 	},
 	data: function () {
 		return {

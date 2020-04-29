@@ -7,6 +7,8 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
+import GaltData from "./galtData";
+
 const axios = require('axios');
 const config = require('../../config');
 
@@ -19,6 +21,20 @@ export default {
 			init() {
 				if (localStorage.getItem('apiKey')) {
 					this.setApiKey(localStorage.getItem('apiKey'))
+				}
+			},
+			async authorize(userWallet) {
+				try {
+					const authMessage = await this.generateAuthMessage(userWallet);
+					const fieldName = 'key';
+
+					const signature = await GaltData.signMessage(authMessage.message, userWallet, fieldName);
+
+					await this.loginAuthMessage(authMessage.id, userWallet, signature, { fieldName });
+					return true;
+				} catch (e) {
+					console.error(e);
+					return false;
 				}
 			},
 			setApiKey(_apiKey) {
@@ -59,6 +75,12 @@ export default {
 			initExportTxs: function (postData) {
 				return axios
 					.post(config.helpersBackendUrl + 'v1/admin/init-export-txs/', postData)
+					.then(res => res.data)
+					.catch(e => this.handleError(e));
+			},
+			migrateAddresses: function (postData) {
+				return axios
+					.post(config.helpersBackendUrl + 'v1/admin/migrate-addresses/', postData)
 					.then(res => res.data)
 					.catch(e => this.handleError(e));
 			}

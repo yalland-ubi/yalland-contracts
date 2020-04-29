@@ -48,6 +48,5 @@
   <template slot="footer">
     <md-button @click="close" class="md-raised">Закрыть</md-button>
     <md-button @click="migrateBalances" class="md-raised md-accent" :disabled="!addressesToMigrate.length || state !== 'input' || sending || checkingBalance">Мигрировать YAL балансы({{addressesToMigrate.length}})</md-button>
-    <md-button @click="addToGasTariff" class="md-raised md-accent" :disabled="!addressesToMigrate.length || state !== 'migrated' || checkingGas || sending">Добавить в GAS тариф</md-button>
   </template>
 </modal-item>

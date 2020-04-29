@@ -21,7 +21,8 @@ export default {
             'addressUpgrader': CityContract,
             'yalDistributor': CityContract,
             'tariffAdder': CityContract,
-            'yalExchange': CityContract
+            'yalExchange': CityContract,
+            'yalReferralPayouts': CityContract
         };
 
         Vue.prototype.$contracts = {};

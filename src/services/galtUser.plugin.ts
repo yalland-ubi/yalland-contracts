@@ -226,6 +226,10 @@ export default {
                 return $contracts.$yalExchange.addRoleTo(sendOptions(), address, role);
             },
 
+            addReferralRole(address, role) {
+                return $contracts.$yalReferralPayouts.addRoleTo(sendOptions(), address, role);
+            },
+
             async sendCityContractMethod(methodName, args) {
                 return $contracts.$city.sendMethodWithArgs(sendOptions(), methodName, args);
             },
