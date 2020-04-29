@@ -35,7 +35,7 @@ describe('YALLDistribution Integration Tests', () => {
     const memberId3 = keccak256('dan');
     const memberId4 = keccak256('eve');
     const baseAliceBalance = 10000000;
-    const verifierRewardShare = ether(10);
+    const emissionPoolRewardShare = ether(10);
 
     beforeEach(async function () {
         [ registry, yallToken, dist,, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, {
@@ -60,7 +60,7 @@ describe('YALLDistribution Integration Tests', () => {
         await assertRevert(
             dist.initialize(
             periodVolume,
-            verifierRewardShare,
+            emissionPoolRewardShare,
 
             registry.address,
             periodLength,
@@ -92,7 +92,7 @@ describe('YALLDistribution Integration Tests', () => {
         await assertRevert(dist.claimFunds({ from: bob }), 'Already claimed for the current period');
 
         let res = await dist.period(0);
-        assert.equal(res.verifierReward, ether(25 * 1000));
+        assert.equal(res.emissionPoolReward, ether(25 * 1000));
         assert.equal(res.rewardPerMember, ether(225 * 1000));
 
         // period #1
@@ -106,7 +106,7 @@ describe('YALLDistribution Integration Tests', () => {
         );
 
         res = await dist.period(1);
-        assert.equal(res.verifierReward, ether(25 * 1000));
+        assert.equal(res.emissionPoolReward, ether(25 * 1000));
         assert.equal(res.rewardPerMember, ether(225 * 1000));
     });
 
@@ -124,17 +124,17 @@ describe('YALLDistribution Integration Tests', () => {
         await assertRevert(dist.claimFunds({ from: bob }), 'Already claimed for the current period');
 
         let res = await dist.period(0);
-        assert.equal(res.verifierReward, ether(25 * 1000));
+        assert.equal(res.emissionPoolReward, ether(25 * 1000));
         assert.equal(res.rewardPerMember, ether(225 * 1000));
 
         // add 2 more
         await dist.addMembers([memberId2, memberId3], [dan, charlie], { from: verifier });
         // change verifier reward
-        await dist.setVerifierRewardShare(ether(25));
+        await dist.setEmissionPoolRewardShare(ether(25));
 
         // check this doesn't affect the already calculated rewards
         res = await dist.period(0);
-        assert.equal(res.verifierReward, ether(25 * 1000));
+        assert.equal(res.emissionPoolReward, ether(25 * 1000));
         assert.equal(res.rewardPerMember, ether(225 * 1000));
 
         // period #1
@@ -144,7 +144,7 @@ describe('YALLDistribution Integration Tests', () => {
         await assertRevert(dist.claimFunds({ from: bob }), 'Already claimed for the current period');
 
         res = await dist.period(1);
-        assert.equal(res.verifierReward, ether(62.5 * 1000));
+        assert.equal(res.emissionPoolReward, ether(62.5 * 1000));
         assert.equal(res.rewardPerMember, ether(62.5 * 1000));
     });
 
@@ -327,14 +327,14 @@ describe('YALLDistribution Integration Tests', () => {
 
             assert.equal(getEventArg(res, 'PeriodChange', 'newPeriodId'), 0);
             assert.equal(getEventArg(res, 'PeriodChange', 'volume'), ether(250 * 1000));
-            assert.equal(getEventArg(res, 'PeriodChange', 'verifierReward'), ether(25 * 1000));
+            assert.equal(getEventArg(res, 'PeriodChange', 'emissionPoolReward'), ether(25 * 1000));
             assert.equal(getEventArg(res, 'PeriodChange', 'rewardPerMember'), ether(112.5 * 1000));
             assert.equal(getEventArg(res, 'PeriodChange', 'activeMemberCount'), 2);
 
             // change verifier reward
-            await dist.setVerifierRewardShare(ether(40));
+            await dist.setEmissionPoolRewardShare(ether(40));
             await dist.setPeriodVolume(ether(1000 * 1000));
-            assert.equal(await dist.verifierRewardShare(), ether(40));
+            assert.equal(await dist.emissionPoolRewardShare(), ether(40));
             assert.equal(await dist.periodVolume(), ether(1000 * 1000));
 
             // P1
@@ -345,7 +345,7 @@ describe('YALLDistribution Integration Tests', () => {
 
             assert.equal(getEventArg(res, 'PeriodChange', 'newPeriodId'), 1);
             assert.equal(getEventArg(res, 'PeriodChange', 'volume'), ether(1000 * 1000));
-            assert.equal(getEventArg(res, 'PeriodChange', 'verifierReward'), ether(400 * 1000));
+            assert.equal(getEventArg(res, 'PeriodChange', 'emissionPoolReward'), ether(400 * 1000));
             assert.equal(getEventArg(res, 'PeriodChange', 'rewardPerMember'), ether(200 * 1000));
             assert.equal(getEventArg(res, 'PeriodChange', 'activeMemberCount'), 3);
         })
@@ -366,7 +366,7 @@ describe('YALLDistribution Integration Tests', () => {
                 'ACLPausable: paused'
             );
             await assertRevert(
-                dist.claimVerifierReward(0, bob, { from: verifier }),
+                dist.claimEmissionPoolReward(0, bob, { from: verifier }),
                 'ACLPausable: paused'
             );
             await assertRevert(

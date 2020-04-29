@@ -27,12 +27,12 @@ const { ether, now, int, increaseTime, assertRevert, assertGsnReject, zeroAddres
 const keccak256 = web3.utils.soliditySha3;
 
 describe('YALLDistributor Unit tests', () => {
-    const [verifier, alice, bob, charlie, dan, eve, minter, burner, feeManager, transferWlManager, pauser] = accounts;
+    const [verifier, alice, bob, charlie, dan, eve, minter, burner, feeManager, transferWlManager, pauser, emissionPoolRewardManager] = accounts;
 
     // 7 days
     const periodLength = 7 * 24 * 60 * 60;
     const periodVolume = ether(250 * 1000);
-    const verifierRewardShare = ether(10);
+    const emissionPoolRewardShare = ether(10);
     const baseAliceBalance = 10000000;
     const feePercent = 0.02;
     const startAfter = 10;
@@ -52,6 +52,7 @@ describe('YALLDistributor Unit tests', () => {
             yallBurner: burner,
             feeManager,
             pauser,
+            emissionPoolRewardManager,
             yallWLManager: transferWlManager
         });
 
@@ -499,8 +500,8 @@ describe('YALLDistributor Unit tests', () => {
             });
         });
 
-        describe('#claimVerifierReward', () => {
-            it('should allow verifier claiming reward', async function() {
+        describe('#claimEmissionPoolReward', () => {
+            it('should allow emissionPool claiming reward', async function() {
                 await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
 
                 await increaseTime(11);
@@ -509,26 +510,29 @@ describe('YALLDistributor Unit tests', () => {
                 assert.equal(await dist.getCurrentPeriodId(), 0);
 
                 const charlieBalanceBefore = await yallToken.balanceOf(charlie);
-                await dist.claimVerifierReward(0, charlie, { from: verifier });
+                await dist.claimEmissionPoolReward(0, charlie, { from: emissionPoolRewardManager });
                 const charlieBalanceAfter = await yallToken.balanceOf(charlie);
 
                 let res = await dist.period(0);
-                assert.equal(res.verifierReward, ether(25 * 1000));
+                assert.equal(res.emissionPoolReward, ether(25 * 1000));
 
                 assertErc20BalanceChanged(charlieBalanceBefore, charlieBalanceAfter, ether(25 * 1000))
             });
 
-            it('should deny verifier claiming reward twice', async function() {
+            it('should deny emissionPool claiming reward twice', async function() {
                 await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
                 await increaseTime(11);
 
                 // P0
                 assert.equal(await dist.getCurrentPeriodId(), 0);
-                await dist.claimVerifierReward(0, charlie, { from: verifier });
-                await assertRevert(dist.claimVerifierReward(0, charlie, { from: verifier }));
+                await dist.claimEmissionPoolReward(0, charlie, { from: emissionPoolRewardManager });
+                await assertRevert(
+                    dist.claimEmissionPoolReward(0, charlie, { from: emissionPoolRewardManager }),
+                    'YALLDistributor: Already claimed for given period'
+                );
             });
 
-            it('should not assign P0 verifier reward if there were no users at genesisTimestamp', async function() {
+            it('should not assign P0 emissionPool reward if there were no users at genesisTimestamp', async function() {
                 await increaseTime(11);
 
                 // P0
@@ -537,33 +541,46 @@ describe('YALLDistributor Unit tests', () => {
                 await dist.addMember(memberId1, bob, { from: verifier });
 
                 let res = await dist.period(0);
-                assert.equal(res.verifierReward, 0);
+                assert.equal(res.emissionPoolReward, 0);
 
-                await dist.claimVerifierReward(0, charlie, { from: verifier });
+                await dist.claimEmissionPoolReward(0, charlie, { from: emissionPoolRewardManager });
+            });
+
+            it('should deny non-emissionPoolRewardManager claiming reward', async function() {
+                await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
+
+                await increaseTime(11);
+
+                // P0
+                assert.equal(await dist.getCurrentPeriodId(), 0);
+                await assertRevert(
+                    dist.claimEmissionPoolReward(0, charlie, { from: verifier }),
+                    'YALLDistributor: Only EMISSION_REWARD_MANAGER allowed'
+                );
             });
         });
     });
 
     describe('Owner Interface', () => {
-        describe('#setVerifierRewardShare()', () => {
-            it('should allow owner setting a new verifierRewardShare', async function() {
-                assert.equal(await dist.verifierRewardShare(), ether(10));
-                await dist.setVerifierRewardShare(ether(15));
-                assert.equal(await dist.verifierRewardShare(), ether(15));
+        describe('#setEmissionPoolRewardShare()', () => {
+            it('should allow owner setting a new emissionPoolRewardShare', async function() {
+                assert.equal(await dist.emissionPoolRewardShare(), ether(10));
+                await dist.setEmissionPoolRewardShare(ether(15));
+                assert.equal(await dist.emissionPoolRewardShare(), ether(15));
             });
 
-            it('should allow owner setting a 0 verifierRewardShare', async function() {
-                await dist.setVerifierRewardShare(ether(0));
-                assert.equal(await dist.verifierRewardShare(), 0);
+            it('should allow owner setting a 0 emissionPoolRewardShare', async function() {
+                await dist.setEmissionPoolRewardShare(ether(0));
+                assert.equal(await dist.emissionPoolRewardShare(), 0);
             });
 
-            it('should deny owner setting a verifierRewardShare greater than 100%', async function() {
-                await assertRevert(dist.setVerifierRewardShare(ether(100)), 'Can\'t be >= 100%');
-                await assertRevert(dist.setVerifierRewardShare(ether(101)), 'Can\'t be >= 100%');
+            it('should deny owner setting a emissionPoolRewardShare greater than 100%', async function() {
+                await assertRevert(dist.setEmissionPoolRewardShare(ether(100)), 'Can\'t be >= 100%');
+                await assertRevert(dist.setEmissionPoolRewardShare(ether(101)), 'Can\'t be >= 100%');
             });
 
-            it('should deny non-owner setting a new verifierRewardShare', async function() {
-                await assertRevert(dist.setVerifierRewardShare(ether(15), { from: alice }), 'Ownable: caller is not the owner');
+            it('should deny non-owner setting a new emissionPoolRewardShare', async function() {
+                await assertRevert(dist.setEmissionPoolRewardShare(ether(15), { from: alice }), 'Ownable: caller is not the owner');
             });
         });
 
@@ -1025,8 +1042,8 @@ describe('YALLDistributor Unit tests', () => {
 
         describe('#getDataSignature', async function() {
             it('should return correct values', async function() {
-                const data = dist.contract.methods.setVerifierRewardShare(123).encodeABI();
-                assert.equal(await dist.getDataSignature(data), '0x517e12a4');
+                const data = dist.contract.methods.setEmissionPoolRewardShare(123).encodeABI();
+                assert.equal(await dist.getDataSignature(data), '0x97688923');
             });
         })
     })
