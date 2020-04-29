@@ -84,6 +84,12 @@ async function buildCoinDistAndExchange(web3, governance, config) {
     config.pauser && await registry.setRole(config.pauser, await dist.PAUSER_ROLE(), true);
     config.feeManager && await registry.setRole(config.feeManager, await yall.FEE_MANAGER_ROLE(), true);
 
+    config.emissionPoolRewardManager && await registry.setRole(
+        config.emissionPoolRewardManager,
+        await dist.EMISSION_REWARD_MANAGER_ROLE(),
+        true
+    );
+
     config.fundManager && await registry.setRole(config.fundManager, await exchange.FUND_MANAGER_ROLE(), true);
     config.operator && await registry.setRole(config.operator, await exchange.OPERATOR_ROLE(), true);
     config.superOperator && await registry.setRole(config.superOperator, await exchange.SUPER_OPERATOR_ROLE(), true);
@@ -91,6 +97,7 @@ async function buildCoinDistAndExchange(web3, governance, config) {
     config.yallMinter && await registry.setRole(config.yallMinter, await yall.YALL_TOKEN_MINTER_ROLE(), true);
     config.yallBurner && await registry.setRole(config.yallBurner, await yall.YALL_TOKEN_BURNER_ROLE(), true);
     config.yallWLManager && await registry.setRole(config.yallWLManager, await yall.YALL_TOKEN_WHITELIST_MANAGER_ROLE(), true);
+
 
     return [
         registry,

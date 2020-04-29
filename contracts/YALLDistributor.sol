@@ -36,6 +36,7 @@ contract YALLDistributor is
   using EnumerableSet for EnumerableSet.AddressSet;
 
   bytes32 public constant VERIFIER_ROLE = bytes32("VERIFIER_ROLE");
+  bytes32 public constant EMISSION_REWARD_MANAGER_ROLE = bytes32("EMISSION_REWARD_MANAGER");
 
   uint256 public constant HUNDRED_PCT = 100 ether;
 
@@ -44,23 +45,23 @@ contract YALLDistributor is
   event ChangeMemberAddress(bytes32 indexed memberId, address from, address to);
   event ChangeMyAddress(bytes32 indexed memberId, address from, address to);
   event ClaimFunds(bytes32 indexed memberId, address indexed addr, uint256 indexed periodId, uint256 amount);
-  event ClaimVerifierReward(uint256 indexed periodId, address to);
+  event ClaimEmissionPoolReward(uint256 indexed periodId, address to);
   event EnableMember(bytes32 indexed memberId, address indexed memberAddress);
   event DisableMember(bytes32 indexed memberId, address indexed memberAddress);
   event PeriodChange(
     uint256 newPeriodId,
     uint256 volume,
     uint256 rewardPerMember,
-    uint256 verifierReward,
+    uint256 emissionPoolReward,
     uint256 activeMemberCount
   );
   event SetGsnFee(uint256 value);
   event SetPeriodVolume(uint256 oldPeriodVolume, uint256 newPeriodVolume);
-  event SetVerifierRewardShare(uint256 rewardShare);
+  event SetEmissionPoolRewardShare(uint256 rewardShare);
 
   struct Period {
     uint256 rewardPerMember;
-    uint256 verifierReward;
+    uint256 emissionPoolReward;
     bool verifierClaimedReward;
   }
 
@@ -82,7 +83,7 @@ contract YALLDistributor is
   uint256 public activeMemberCount;
 
   // 100% == 100 ether
-  uint256 public verifierRewardShare;
+  uint256 public emissionPoolRewardShare;
   // in YALL wei
   uint256 public gsnFee = 0;
 
@@ -101,6 +102,15 @@ contract YALLDistributor is
     _;
   }
 
+  modifier onlyEmissionRewardManager() {
+    require(
+      yallRegistry.hasRole(msg.sender, EMISSION_REWARD_MANAGER_ROLE),
+      "YALLDistributor: Only EMISSION_REWARD_MANAGER allowed"
+    );
+
+    _;
+  }
+
   // Mints tokens, assigns the verifier reward and caches reward per member
   modifier triggerTransition() {
     uint256 currentPeriodId = getCurrentPeriodId();
@@ -108,11 +118,11 @@ contract YALLDistributor is
     Period storage currentPeriod = period[currentPeriodId];
 
     if (currentPeriod.rewardPerMember == 0 && activeMemberCount > 0) {
-      currentPeriod.verifierReward = periodVolume.mul(verifierRewardShare) / HUNDRED_PCT;
+      currentPeriod.emissionPoolReward = periodVolume.mul(emissionPoolRewardShare) / HUNDRED_PCT;
 
       // imbalance will be left at the contract
-      // uint256 currentPeriodRewardPerMember = (periodVolume * (100 ether - verifierRewardShare)) / (activeMemberCount * 100 ether);
-      uint256 currentPeriodRewardPerMember = (periodVolume.mul(HUNDRED_PCT.sub(verifierRewardShare)))
+      // uint256 currentPeriodRewardPerMember = (periodVolume * (100 ether - emissionPoolRewardShare)) / (activeMemberCount * 100 ether);
+      uint256 currentPeriodRewardPerMember = (periodVolume.mul(HUNDRED_PCT.sub(emissionPoolRewardShare)))
         .div(activeMemberCount.mul(HUNDRED_PCT));
 
       assert(currentPeriodRewardPerMember > 0);
@@ -122,7 +132,7 @@ contract YALLDistributor is
         currentPeriodId,
         periodVolume,
         currentPeriodRewardPerMember,
-        currentPeriod.verifierReward,
+        currentPeriod.emissionPoolReward,
         activeMemberCount
       );
     }
@@ -136,7 +146,7 @@ contract YALLDistributor is
   function initialize(
     // can be changed later:
     uint256 _periodVolume,
-    uint256 _verifierRewardShare,
+    uint256 _emissionPoolRewardShare,
 
     // can't be changed later:
     address _yallRegistry,
@@ -147,7 +157,7 @@ contract YALLDistributor is
     isInitializer
   {
     periodVolume = _periodVolume;
-    verifierRewardShare = _verifierRewardShare;
+    emissionPoolRewardShare = _emissionPoolRewardShare;
 
     yallRegistry = YALLRegistry(_yallRegistry);
     periodLength = _periodLength;
@@ -197,15 +207,15 @@ contract YALLDistributor is
 
   /*
    * @dev Changes a verifier reward share to a new one.
-   * @param _verifierRewardShare a new verifier reward share, 0 if there should be no reward for
+   * @param _emissionPoolRewardShare a new verifier reward share, 0 if there should be no reward for
    * a verifier; 100% == 100 ether
    */
-  function setVerifierRewardShare(uint256 _verifierRewardShare) external onlyOwner {
-    require(_verifierRewardShare < 100 ether, "YALLDistributor: Can't be >= 100%");
+  function setEmissionPoolRewardShare(uint256 _emissionPoolRewardShare) external onlyOwner {
+    require(_emissionPoolRewardShare < 100 ether, "YALLDistributor: Can't be >= 100%");
 
-    verifierRewardShare = _verifierRewardShare;
+    emissionPoolRewardShare = _emissionPoolRewardShare;
 
-    emit SetVerifierRewardShare(_verifierRewardShare);
+    emit SetEmissionPoolRewardShare(_emissionPoolRewardShare);
   }
 
   /*
@@ -359,7 +369,13 @@ contract YALLDistributor is
    * @param _fromAddresses to change from
    * @param _toAddresses to change to
    */
-  function changeMemberAddresses(address[] calldata _fromAddresses, address[] calldata _toAddresses) external onlyVerifier {
+  function changeMemberAddresses(
+    address[] calldata _fromAddresses,
+    address[] calldata _toAddresses
+  )
+    external
+    onlyVerifier
+  {
     uint256 len = _fromAddresses.length;
     require(len == _toAddresses.length, "YALLDistributor: Both ids and addresses array should have the same size");
 
@@ -382,14 +398,14 @@ contract YALLDistributor is
    * @param _periodId to claim reward for
    * @param _to address to send reward to
    */
-  function claimVerifierReward(
+  function claimEmissionPoolReward(
     uint256 _periodId,
     address _to
   )
     external
     triggerTransition
     whenNotPaused
-    onlyVerifier
+    onlyEmissionRewardManager
   {
     Period storage givenPeriod = period[_periodId];
 
@@ -397,9 +413,9 @@ contract YALLDistributor is
 
     givenPeriod.verifierClaimedReward = true;
 
-    emit ClaimVerifierReward(_periodId, _to);
+    emit ClaimEmissionPoolReward(_periodId, _to);
 
-    _yallToken().mint(_to, givenPeriod.verifierReward);
+    _yallToken().mint(_to, givenPeriod.emissionPoolReward);
   }
 
   // VERIFIER INTERNAL METHODS
