@@ -16,6 +16,7 @@ import "./interfaces/IYALLDistributor.sol";
 import "./GSNRecipientSigned.sol";
 import "./registry/YALLRegistry.sol";
 import "./interfaces/IYALLToken.sol";
+import "./registry/YALLRegistryHelpers.sol";
 
 
 contract YALLToken is
@@ -23,15 +24,10 @@ contract YALLToken is
   ERC20,
   ERC20Pausable,
   ERC20Detailed,
+  YALLRegistryHelpers,
   GSNRecipientSigned
 {
   uint256 public constant INITIAL_SUPPLY = 0;
-
-  bytes32 public constant YALL_TOKEN_MINTER_ROLE = bytes32("YALL_TOKEN_MINTER");
-  bytes32 public constant YALL_TOKEN_BURNER_ROLE = bytes32("YALL_TOKEN_BURNER");
-  bytes32 public constant YALL_TOKEN_WHITELIST_MANAGER_ROLE = bytes32("YALL_TOKEN_WHITELIST_MANAGER");
-  bytes32 public constant PAUSER_ROLE = bytes32("PAUSER");
-  bytes32 public constant FEE_MANAGER_ROLE = bytes32("FEE_MANAGER");
 
   uint256 public constant HUNDRED_PCT = 100 ether;
 
@@ -48,8 +44,6 @@ contract YALLToken is
   // in YALL wei
   uint256 public gsnFee = 0;
 
-  YALLRegistry public yallRegistry;
-
   mapping(address => bool) public opsWhitelist;
 
   constructor(
@@ -63,34 +57,6 @@ contract YALLToken is
     GSNRecipientSigned()
   {
     yallRegistry = YALLRegistry(_yallRegistry);
-  }
-
-  modifier onlyMinter() {
-    require(yallRegistry.hasRole(msg.sender, YALL_TOKEN_MINTER_ROLE), "YALLToken: Only YALL_TOKEN_MINTER allowed");
-    _;
-  }
-  
-  modifier onlyBurner() {
-    require(yallRegistry.hasRole(msg.sender, YALL_TOKEN_BURNER_ROLE), "YALLToken: Only YALL_TOKEN_BURNER allowed");
-    _;
-  }
-
-  modifier onlyFeeManager() {
-    require(yallRegistry.hasRole(msg.sender, FEE_MANAGER_ROLE), "YALLToken: Only FEE_MANAGER allowed");
-    _;
-  }
-
-  modifier onlyTransferWLManager() {
-    require(
-      yallRegistry.hasRole(msg.sender, YALL_TOKEN_WHITELIST_MANAGER_ROLE),
-      "YALLToken: Only YALL_TOKEN_WHITELIST_MANAGER allowed"
-    );
-    _;
-  }
-
-  modifier onlyPauser() {
-    require(yallRegistry.hasRole(msg.sender, PAUSER_ROLE), "YALLToken: Only PAUSER allowed");
-    _;
   }
 
   function _handleRelayedCall(
@@ -165,7 +131,7 @@ contract YALLToken is
     emit SetGsnFee(msg.sender, _gsnFee);
   }
 
-  function withdrawFee() public onlyFeeManager {
+  function withdrawFee() public onlyFeeClaimer {
     address _this = address(this);
     uint256 _payout = balanceOf(_this);
 

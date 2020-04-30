@@ -11,7 +11,7 @@ pragma solidity ^0.5.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
+import "@galtproject/libs/contracts/traits/Initializable.sol";
 import "./interfaces/IYALLDistributor.sol";
 import "./interfaces/IYALLToken.sol";
 import "./GSNRecipientSigned.sol";
@@ -25,16 +25,12 @@ import "./traits/ACLPausable.sol";
  * @notice Exchange YALL to another currency
  **/
 contract YALLExchange is
-  OwnableAndInitializable,
+  Initializable,
   YALLRegistryHelpers,
   ACLPausable,
   GSNRecipientSigned
 {
   using SafeMath for uint256;
-
-  bytes32 public constant FUND_MANAGER_ROLE = bytes32("EXCHANGE_FUND_MANAGER");
-  bytes32 public constant OPERATOR_ROLE = bytes32("EXCHANGE_OPERATOR");
-  bytes32 public constant SUPER_OPERATOR_ROLE = bytes32("EXCHANGE_SUPER_OPERATOR");
 
   uint256 public constant RATE_DIVIDER = 100 ether;
 
@@ -97,24 +93,6 @@ contract YALLExchange is
   // periodId => totalExchanged
   mapping(uint256 => uint256) public yallExchangedByPeriod;
 
-  modifier onlyFundManager() {
-    require(yallRegistry.hasRole(msg.sender, FUND_MANAGER_ROLE), "YALLExchange: Only FUND_MANAGER allowed");
-
-    _;
-  }
-
-  modifier onlyOperator() {
-    require(yallRegistry.hasRole(msg.sender, OPERATOR_ROLE), "YALLExchange: Only OPERATOR allowed");
-
-    _;
-  }
-
-  modifier onlySuperOperator() {
-    require(yallRegistry.hasRole(msg.sender, SUPER_OPERATOR_ROLE), "YALLExchange: Only SUPER_OPERATOR allowed");
-
-    _;
-  }
-
   constructor() public {
   }
 
@@ -174,7 +152,7 @@ contract YALLExchange is
    * @dev Sets a default exchange rate
    * @param _defaultExchangeRate 100% == 100 ETH
    */
-  function setDefaultExchangeRate(uint256 _defaultExchangeRate) external onlyFundManager {
+  function setDefaultExchangeRate(uint256 _defaultExchangeRate) external onlyExchangeFundManager {
     require(_defaultExchangeRate > 0, "YALLExchange: Default rate can't be 0");
 
     defaultExchangeRate = _defaultExchangeRate;
@@ -187,7 +165,7 @@ contract YALLExchange is
    * @param _memberId to set exchange rate for
    * @param _customExchangeRate 100% == 100 ETH; set to 0 to disable custom rate and use the default one
    */
-  function setCustomExchangeRate(bytes32 _memberId, uint256 _customExchangeRate) external onlyFundManager {
+  function setCustomExchangeRate(bytes32 _memberId, uint256 _customExchangeRate) external onlyExchangeFundManager {
     members[_memberId].customExchangeRate = _customExchangeRate;
 
     emit SetCustomExchangeRate(msg.sender, _memberId, _customExchangeRate);
@@ -197,7 +175,7 @@ contract YALLExchange is
    * @dev Sets a total period exchange limit for all users
    * @param _totalPeriodLimit in YALL
    */
-  function setTotalPeriodLimit(uint256 _totalPeriodLimit) external onlyFundManager {
+  function setTotalPeriodLimit(uint256 _totalPeriodLimit) external onlyExchangeFundManager {
     totalPeriodLimit = _totalPeriodLimit;
 
     emit SetTotalPeriodLimit(msg.sender, _totalPeriodLimit);
@@ -207,7 +185,7 @@ contract YALLExchange is
    * @dev Sets a member exchange limit for a period
    * @param _defaultMemberPeriodLimit in YALL; set to 0 to disable member limit
    */
-  function setDefaultMemberPeriodLimit(uint256 _defaultMemberPeriodLimit) external onlyFundManager {
+  function setDefaultMemberPeriodLimit(uint256 _defaultMemberPeriodLimit) external onlyExchangeFundManager {
     defaultMemberPeriodLimit = _defaultMemberPeriodLimit;
 
     emit SetDefaultMemberPeriodLimit(msg.sender, _defaultMemberPeriodLimit);
@@ -218,7 +196,7 @@ contract YALLExchange is
    * @param _memberId to set limit for
    * @param _customPeriodLimit in YALL; set to 0 to disable custom limit and use the default one
    */
-  function setCustomPeriodLimit(bytes32 _memberId, uint256 _customPeriodLimit) external onlyFundManager {
+  function setCustomPeriodLimit(bytes32 _memberId, uint256 _customPeriodLimit) external onlyExchangeFundManager {
     members[_memberId].customPeriodLimit = _customPeriodLimit;
 
     emit SetCustomPeriodLimit(msg.sender, _memberId, _customPeriodLimit);
@@ -227,7 +205,7 @@ contract YALLExchange is
   /**
    * @dev Sets a default GSN fee
    */
-  function setGsnFee(uint256 _gsnFee) public onlyFundManager {
+  function setGsnFee(uint256 _gsnFee) public onlyFeeManager {
     gsnFee = _gsnFee;
 
     emit SetGsnFee(msg.sender, _gsnFee);
@@ -237,7 +215,7 @@ contract YALLExchange is
    * @dev Withdraws almost all YALL tokens
    * It keeps a small percent of tokens to reduce gas cost for further transfer operations with this address using GSN.
    */
-  function withdrawYALLs() public onlyFundManager {
+  function withdrawYALLs() public onlyFeeClaimer {
     address tokenAddress = _yallTokenAddress();
     uint256 payout = IERC20(tokenAddress).balanceOf(address(this));
 
@@ -254,7 +232,7 @@ contract YALLExchange is
    * @param _orderId to close
    * @param _paymentDetails like bank tx number
    */
-  function closeOrder(uint256 _orderId, string calldata _paymentDetails) external onlyOperator {
+  function closeOrder(uint256 _orderId, string calldata _paymentDetails) external onlyExchangeOperator {
     Order storage o = orders[_orderId];
 
     require(o.status == OrderStatus.OPEN, "YALLExchange: Order should be open");
@@ -272,7 +250,7 @@ contract YALLExchange is
    * @param _orderId to cancel
    * @param _cancelReason description
    */
-  function cancelOrder(uint256 _orderId, string calldata _cancelReason) external onlyOperator {
+  function cancelOrder(uint256 _orderId, string calldata _cancelReason) external onlyExchangeOperator {
     Order storage o = orders[_orderId];
     Member storage m = members[o.memberId];
 
@@ -297,7 +275,7 @@ contract YALLExchange is
    * @dev A super operator voids an already closed order and refunds deposited YALLs
    * @param _orderId to void
    */
-  function voidOrder(uint256 _orderId) external onlySuperOperator {
+  function voidOrder(uint256 _orderId) external onlyExchangeSuperOperator {
     Order storage o = orders[_orderId];
     address memberAddress = _getMemberAddress(o.memberId);
     uint256 yallAmount = o.yallAmount;

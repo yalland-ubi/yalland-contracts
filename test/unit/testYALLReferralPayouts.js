@@ -24,7 +24,7 @@ const { ether, now, assertRevert, assertErc20BalanceChanged } = require('@galtpr
 
 
 describe('YALLReferralPayouts Unit tests', () => {
-    const [alice, bob, charlie, superOperator, minter, operator, feeManager, transferWlManager] = accounts;
+    const [alice, bob, charlie, superOperator, yallMinter, operator, feeManager, yallWLManager] = accounts;
 
     // 7 days
     const startAfter = 10;
@@ -36,9 +36,9 @@ describe('YALLReferralPayouts Unit tests', () => {
     beforeEach(async function () {
         [ ,yallToken, dist, , genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, {
             governance: alice,
-            yallMinter: minter,
+            yallMinter,
             feeManager,
-            yallWLManager: transferWlManager,
+            yallWLManager: yallWLManager,
             periodVolume: ether(250)
         });
 
@@ -46,15 +46,15 @@ describe('YALLReferralPayouts Unit tests', () => {
 
         referral.initialize(bob, yallToken.address);
 
-        await yallToken.mint(alice, ether(1000), { from: minter });
+        await yallToken.mint(alice, ether(1000), { from: yallMinter });
         await yallToken.setTransferFee(ether('0.02'), { from: feeManager });
         await yallToken.setGsnFee(ether('1.7'), { from: feeManager });
 
-        await yallToken.setWhitelistAddress(referral.address, true, { from: transferWlManager });
-        await yallToken.setWhitelistAddress(operator, true, { from: transferWlManager });
-        await yallToken.setWhitelistAddress(superOperator, true, { from: transferWlManager });
-        await yallToken.setWhitelistAddress(charlie, true, { from: transferWlManager });
-        await yallToken.setWhitelistAddress(alice, true, { from: transferWlManager });
+        await yallToken.setWhitelistAddress(referral.address, true, { from: yallWLManager });
+        await yallToken.setWhitelistAddress(operator, true, { from: yallWLManager });
+        await yallToken.setWhitelistAddress(superOperator, true, { from: yallWLManager });
+        await yallToken.setWhitelistAddress(charlie, true, { from: yallWLManager });
+        await yallToken.setWhitelistAddress(alice, true, { from: yallWLManager });
     });
 
     it('should deny second initialization', async function() {

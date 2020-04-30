@@ -4,8 +4,6 @@ import "../registry/YALLRegistryHelpers.sol";
 
 
 contract ACLPausable is YALLRegistryHelpers {
-  bytes32 public constant PAUSER_ROLE = bytes32("PAUSER");
-
   event Paused(address account);
   event Unpaused(address account);
 
@@ -24,14 +22,6 @@ contract ACLPausable is YALLRegistryHelpers {
    */
   function paused() public view returns (bool) {
     return _paused;
-  }
-
-  /**
-   * @dev Modifier to make sure the caller has pauser role.
-   */
-  modifier onlyPauser() {
-    require(yallRegistry.hasRole(msg.sender, PAUSER_ROLE), "ACLPausable: Only PAUSER allowed");
-    _;
   }
 
   /**

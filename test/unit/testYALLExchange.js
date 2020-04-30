@@ -31,13 +31,13 @@ const OrderStatus = {
 };
 
 describe('YALLExchange Unit tests', () => {
-    const [verifier, alice, bob, charlie, dan, superOperator, pauser, minter, burner, operator, fundManager, feeManager, transferWlManager] = accounts;
+    const [distributorVerifier, alice, bob, charlie, dan, exchangeSuperOperator, pauser, yallMinter, yallBurner, exchangeOperator, exchangeManager, feeManager, feeClaimer, yallWLManager] = accounts;
     const owner = defaultSender;
 
     // 7 days
     const periodLength = 7 * 24 * 60 * 60;
     const periodVolume = ether(250);
-    const verifierRewardShare = ether(10);
+    const distributorVerifierRewardShare = ether(10);
     const baseAliceBalance = 10000000;
     const feePercent = 0.02;
     const startAfter = 10;
@@ -52,32 +52,33 @@ describe('YALLExchange Unit tests', () => {
 
     beforeEach(async function () {
         [ ,yallToken, dist, exchange, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, {
-            verifier,
             periodVolume,
-            yallMinter: minter,
-            yallBurner: burner,
-            fundManager,
             feeManager,
-            operator,
-            superOperator,
+            feeClaimer,
             pauser,
-            yallWLManager: transferWlManager
+            yallMinter,
+            yallBurner,
+            yallWLManager,
+            distributorVerifier,
+            exchangeManager,
+            exchangeOperator,
+            exchangeSuperOperator,
         });
 
-        await yallToken.mint(alice, ether(baseAliceBalance), { from: minter });
+        await yallToken.mint(alice, ether(baseAliceBalance), { from: yallMinter });
         await yallToken.setTransferFee(ether('0.02'), { from: feeManager });
         await yallToken.setGsnFee(ether('1.7'), { from: feeManager });
 
-        await yallToken.setWhitelistAddress(dist.address, true, { from: transferWlManager });
-        await yallToken.setWhitelistAddress(exchange.address, true, { from: transferWlManager });
-        await yallToken.setWhitelistAddress(operator, true, { from: transferWlManager });
-        await yallToken.setWhitelistAddress(superOperator, true, { from: transferWlManager });
+        await yallToken.setWhitelistAddress(dist.address, true, { from: yallWLManager });
+        await yallToken.setWhitelistAddress(exchange.address, true, { from: yallWLManager });
+        await yallToken.setWhitelistAddress(exchangeOperator, true, { from: yallWLManager });
+        await yallToken.setWhitelistAddress(exchangeSuperOperator, true, { from: yallWLManager });
 
-        await dist.setGsnFee(ether('4.2'));
+        await dist.setGsnFee(ether('4.2'), { from: feeManager });
 
-        await exchange.setDefaultMemberPeriodLimit(ether(30), { from: fundManager });
-        await exchange.setTotalPeriodLimit(ether(70), { from: fundManager });
-        await exchange.setGsnFee(ether('3'), { from: fundManager });
+        await exchange.setDefaultMemberPeriodLimit(ether(30), { from: exchangeManager });
+        await exchange.setTotalPeriodLimit(ether(70), { from: exchangeManager });
+        await exchange.setGsnFee(ether('3'), { from: feeManager });
 
         // this will affect on dist provider too
         yallToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
@@ -86,101 +87,103 @@ describe('YALLExchange Unit tests', () => {
         await fundRecipient(web3, { recipient: exchange.address, amount: ether(1) });
     });
 
-    describe('FundManager Interface', () => {
+    describe('ExchangeManager Interface', () => {
         describe('#setDefaultExchangeRate()', () => {
-            it('should allow a fund manager setting the default exchange rate', async function() {
-                await exchange.setDefaultExchangeRate(ether(123), { from: fundManager });
+            it('should allow a exchange manager setting the default exchange rate', async function() {
+                await exchange.setDefaultExchangeRate(ether(123), { from: exchangeManager });
                 assert.equal(await exchange.defaultExchangeRate(), ether(123));
             });
 
             it('should deny 0 exchange rate', async function() {
                 await assertRevert(
-                    exchange.setDefaultExchangeRate(0, { from: fundManager }),
+                    exchange.setDefaultExchangeRate(0, { from: exchangeManager }),
                     'Default rate can\'t be 0'
                 );
             });
 
-            it('should deny a non-fund manager setting the default exchange rate', async function() {
+            it('should deny a non-exchange manager setting the default exchange rate', async function() {
                 await assertRevert(
                     exchange.setDefaultExchangeRate(ether(123), { from: owner }),
-                    'YALLExchange: Only FUND_MANAGER allowed'
+                    'YALLExchange: Only EXCHANGE_MANAGER allowed'
                 );
             });
         });
 
         describe('#setCustomExchangeRate()', () => {
-            it('should allow a fund manager setting the default exchange rate', async function() {
-                await exchange.setCustomExchangeRate(memberId2, ether(42), { from: fundManager });
+            it('should allow a exchange manager setting the default exchange rate', async function() {
+                await exchange.setCustomExchangeRate(memberId2, ether(42), { from: exchangeManager });
                 assert.equal(await exchange.getCustomExchangeRate(memberId2), ether(42));
             });
 
-            it('should deny a non-fund manager setting the default exchange rate', async function() {
+            it('should deny a non-exchange manager setting a custom exchange rate', async function() {
                 await assertRevert(
                     exchange.setCustomExchangeRate(memberId2, ether(123), { from: owner }),
-                    'YALLExchange: Only FUND_MANAGER allowed'
+                    'YALLExchange: Only EXCHANGE_MANAGER allowed'
                 );
             });
         });
 
         describe('#setTotalPeriodLimit()', () => {
-            it('should allow a fund manager setting the default exchange rate', async function() {
-                await exchange.setTotalPeriodLimit(ether(123), { from: fundManager });
+            it('should allow a exchange manager setting the default exchange rate', async function() {
+                await exchange.setTotalPeriodLimit(ether(123), { from: exchangeManager });
                 assert.equal(await exchange.totalPeriodLimit(), ether(123));
             });
 
-            it('should deny a non-fund manager setting the default exchange rate', async function() {
+            it('should deny a non-exchange manager setting the total period limit', async function() {
                 await assertRevert(
                     exchange.setTotalPeriodLimit(ether(123), { from: owner }),
-                    'YALLExchange: Only FUND_MANAGER allowed'
+                    'YALLExchange: Only EXCHANGE_MANAGER allowed'
                 );
             });
         });
 
         describe('#setDefaultMemberPeriodLimit()', () => {
-            it('should allow a fund manager setting the default member limit', async function() {
-                await exchange.setDefaultMemberPeriodLimit(ether(123), { from: fundManager });
+            it('should allow a exchange manager setting the default member limit', async function() {
+                await exchange.setDefaultMemberPeriodLimit(ether(123), { from: exchangeManager });
                 assert.equal(await exchange.defaultMemberPeriodLimit(), ether(123));
             });
 
-            it('should deny a non-fund manager setting the default member limit', async function() {
+            it('should deny a non-exchange manager setting the default member limit', async function() {
                 await assertRevert(
                     exchange.setDefaultMemberPeriodLimit(ether(123), { from: owner }),
-                    'YALLExchange: Only FUND_MANAGER allowed'
+                    'YALLExchange: Only EXCHANGE_MANAGER allowed'
                 );
             });
         });
 
         describe('#setCustomPeriodLimit()', () => {
-            it('should allow a fund manager setting the custom period limit', async function() {
-                await exchange.setCustomPeriodLimit(memberId2, ether(42), { from: fundManager });
+            it('should allow a exchange manager setting the custom period limit', async function() {
+                await exchange.setCustomPeriodLimit(memberId2, ether(42), { from: exchangeManager });
                 assert.equal(await exchange.getCustomPeriodLimit(memberId2), ether(42));
             });
 
-            it('should deny a non-fund manager setting the custom period limit', async function() {
+            it('should deny a non-exchange manager setting the custom period limit', async function() {
                 await assertRevert(
                     exchange.setCustomPeriodLimit(memberId2, ether(123), { from: owner }),
-                    'YALLExchange: Only FUND_MANAGER allowed'
+                    'YALLExchange: Only EXCHANGE_MANAGER allowed'
                 );
             });
         });
+    });
 
+    describe('FeeClaimer Interface', () => {
         describe('#withdrawYALLs()', () => {
             beforeEach(async function() {
                 await increaseTime(11);
-                await dist.addMembers([keccak256('bob')], [bob], { from: verifier })
-                await dist.addMembers([keccak256('alice')], [alice], { from: verifier })
-                await yallToken.setWhitelistAddress(exchange.address, true, { from: transferWlManager });
-                await yallToken.setWhitelistAddress(fundManager, true, { from: transferWlManager });
+                await dist.addMembers([keccak256('bob')], [bob], { from: distributorVerifier })
+                await dist.addMembers([keccak256('alice')], [alice], { from: distributorVerifier })
+                await yallToken.setWhitelistAddress(exchange.address, true, { from: yallWLManager });
+                await yallToken.setWhitelistAddress(feeClaimer, true, { from: yallWLManager });
 
                 await yallToken.transfer(exchange.address, ether(42), { from: alice })
             })
 
-            it('should allow fund manager withdrawing fee', async function() {
-                const fundManagerBalanceBefore = await yallToken.balanceOf(fundManager);
-                await exchange.withdrawYALLs({ from: fundManager });
-                const fundManagerBalanceAfter = await yallToken.balanceOf(fundManager);
+            it('should allow feeClaimer withdrawing fee', async function() {
+                const feeClaimerBalanceBefore = await yallToken.balanceOf(feeClaimer);
+                await exchange.withdrawYALLs({ from: feeClaimer });
+                const feeClaimerBalanceAfter = await yallToken.balanceOf(feeClaimer);
 
-                assertErc20BalanceChanged(fundManagerBalanceBefore, fundManagerBalanceAfter, ether('41.98'))
+                assertErc20BalanceChanged(feeClaimerBalanceBefore, feeClaimerBalanceAfter, ether('41.98'))
 
                 const fortyTwo = new BigNumber(42);
                 const withdrawn = new BigNumber('41.98');
@@ -190,11 +193,13 @@ describe('YALLExchange Unit tests', () => {
                 );
             });
 
-            it('should deny non-fund manager withdrawing fee', async function() {
-                await assertRevert(exchange.withdrawYALLs({ from: owner }), 'YALLExchange: Only FUND_MANAGER allowed');
+            it('should deny non-feeClaimer withdrawing fee', async function() {
+                await assertRevert(exchange.withdrawYALLs({ from: feeManager }), 'YALLHelpers: Only FEE_CLAIMER allowed');
             });
         });
+    });
 
+    describe('Pauser Interface', () => {
         describe('#pause()/#unpause()', () => {
             it('should allow a pauser pausing/unpausing contract', async function() {
                 assert.equal(await exchange.paused(), false);
@@ -204,16 +209,16 @@ describe('YALLExchange Unit tests', () => {
                 assert.equal(await exchange.paused(), false);
             });
 
-            it('should deny non-owner pausing/unpausing contract', async function() {
-                await assertRevert(exchange.pause({ from: verifier }), 'ACLPausable: Only PAUSER allowed');
-                await assertRevert(exchange.unpause({ from: verifier }), 'ACLPausable: Only PAUSER allowed');
+            it('should deny non-pauser pausing/unpausing contract', async function() {
+                await assertRevert(exchange.pause({ from: distributorVerifier }), 'YALLHelpers: Only PAUSER allowed');
+                await assertRevert(exchange.unpause({ from: distributorVerifier }), 'YALLHelpers: Only PAUSER allowed');
             });
         });
     });
 
     describe('Member Interface', () => {
         beforeEach(async function() {
-            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [bob, charlie, dan], { from: verifier });
+            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [bob, charlie, dan], { from: distributorVerifier });
             await increaseTime(11);
         });
 
@@ -223,7 +228,7 @@ describe('YALLExchange Unit tests', () => {
             });
 
             it('should deny creating order for non-active member', async function() {
-                await dist.disableMembers([bob], { from: verifier });
+                await dist.disableMembers([bob], { from: distributorVerifier });
                 await assertRevert(exchange.createOrder(1, { from: bob }), 'YALLExchange: Member isn\'t active');
             });
 
@@ -369,7 +374,7 @@ describe('YALLExchange Unit tests', () => {
 
                     it('should deny creating a new order without sufficient funds using GSN', async function() {
                         await yallToken.approve(dist.address, ether(12), { from: bob });
-                        await yallToken.burn(bob, ether(62), { from: burner });
+                        await yallToken.burn(bob, ether(62), { from: yallBurner });
                         assert.equal(await yallToken.balanceOf(bob), ether(1));
                         assert.equal(await yallToken.allowance(bob, dist.address), ether(12));
 
@@ -389,7 +394,7 @@ describe('YALLExchange Unit tests', () => {
         let orderId;
 
         beforeEach(async function() {
-            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [alice, bob, charlie], { from: verifier });
+            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [alice, bob, charlie], { from: distributorVerifier });
             await increaseTime(12);
 
             await dist.claimFunds({ from: bob });
@@ -405,33 +410,33 @@ describe('YALLExchange Unit tests', () => {
 
         describe('#closeOrder()', () => {
             it('should change corresponding oder information', async function() {
-                await exchange.closeOrder(orderId, 'blah', { from: operator });
+                await exchange.closeOrder(orderId, 'blah', { from: exchangeOperator });
                 const res = await exchange.orders(orderId);
                 assert.equal(res.status, OrderStatus.CLOSED);
                 assert.equal(res.paymentDetails, 'blah');
             });
 
-            it('should transfer YALLs to an operator', async function() {
-                const operatorBalanceBefore = await yallToken.balanceOf(operator);
-                await exchange.closeOrder(orderId, 'blah', { from: operator });
-                const operatorBalanceAfter = await yallToken.balanceOf(operator);
+            it('should transfer YALLs to an exchangeOperator', async function() {
+                const exchangeOperatorBalanceBefore = await yallToken.balanceOf(exchangeOperator);
+                await exchange.closeOrder(orderId, 'blah', { from: exchangeOperator });
+                const exchangeOperatorBalanceAfter = await yallToken.balanceOf(exchangeOperator);
 
-                assertErc20BalanceChanged(operatorBalanceBefore, operatorBalanceAfter, ether(12));
+                assertErc20BalanceChanged(exchangeOperatorBalanceBefore, exchangeOperatorBalanceAfter, ether(12));
             });
 
             it('should deny closing second time', async function() {
-                await exchange.closeOrder(orderId, 'blah', { from: operator });
-                await assertRevert(exchange.closeOrder(orderId, 'blah', { from: operator }), 'YALLExchange: Order should be open');
+                await exchange.closeOrder(orderId, 'blah', { from: exchangeOperator });
+                await assertRevert(exchange.closeOrder(orderId, 'blah', { from: exchangeOperator }), 'YALLExchange: Order should be open');
             });
 
-            it('should deny non-operator closing an order', async function() {
-                await assertRevert(exchange.closeOrder(orderId, 'blah', { from: superOperator }), 'YALLExchange: Only OPERATOR allowed');
+            it('should deny non-exchangeOperator closing an order', async function() {
+                await assertRevert(exchange.closeOrder(orderId, 'blah', { from: exchangeSuperOperator }), 'YALLExchange: Only EXCHANGE_OPERATOR allowed');
             });
         });
 
         describe('#cancelOrder()', () => {
             it('should change corresponding order information', async function() {
-                let res = await exchange.cancelOrder(orderId, 'blah', { from: operator });
+                let res = await exchange.cancelOrder(orderId, 'blah', { from: exchangeOperator });
                 assert.equal(getEventArg(res, 'CancelOrder', 'reason'), 'blah');
                 res = await exchange.orders(orderId);
                 assert.equal(res.status, OrderStatus.CANCELLED);
@@ -440,7 +445,7 @@ describe('YALLExchange Unit tests', () => {
 
             it('should transfer YALLs back to a member', async function() {
                 const bobsBalanceBefore = await yallToken.balanceOf(bob);
-                await exchange.cancelOrder(orderId, 'blah', { from: operator });
+                await exchange.cancelOrder(orderId, 'blah', { from: exchangeOperator });
                 const bobsBalanceAfter = await yallToken.balanceOf(bob);
 
                 assertErc20BalanceChanged(bobsBalanceBefore, bobsBalanceAfter, ether(12));
@@ -456,7 +461,7 @@ describe('YALLExchange Unit tests', () => {
                 const bobsYallExchangedByPeriodBefore = (await exchange.members(memberId2)).totalExchanged;
                 const bobsTotalExchangedYallBefore = await exchange.getMemberYallExchangedInCurrentPeriod(memberId2);
 
-                await exchange.cancelOrder(orderId, 'blah', { from: operator });
+                await exchange.cancelOrder(orderId, 'blah', { from: exchangeOperator });
 
                 const totalExchangedYallAfter = await exchange.totalExchangedYall();
                 const yallExchangedByPeriodAfter = await exchange.yallExchangedByPeriod(currentPeriod);
@@ -472,12 +477,12 @@ describe('YALLExchange Unit tests', () => {
             });
 
             it('should deny cancelling second time', async function() {
-                await exchange.cancelOrder(orderId, 'blah', { from: operator });
-                await assertRevert(exchange.cancelOrder(orderId, 'blah', { from: operator }), 'YALLExchange: Order should be open');
+                await exchange.cancelOrder(orderId, 'blah', { from: exchangeOperator });
+                await assertRevert(exchange.cancelOrder(orderId, 'blah', { from: exchangeOperator }), 'YALLExchange: Order should be open');
             });
 
-            it('should deny non-operator cancelling an order', async function() {
-                await assertRevert(exchange.cancelOrder(orderId, 'blah', { from: superOperator }), 'YALLExchange: Only OPERATOR allowed');
+            it('should deny non-exchangeOperator cancelling an order', async function() {
+                await assertRevert(exchange.cancelOrder(orderId, 'blah', { from: exchangeSuperOperator }), 'YALLExchange: Only EXCHANGE_OPERATOR allowed');
             });
         });
     });
@@ -486,7 +491,7 @@ describe('YALLExchange Unit tests', () => {
         let orderId;
 
         beforeEach(async function() {
-            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [alice, bob, charlie], { from: verifier });
+            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [alice, bob, charlie], { from: distributorVerifier });
             await increaseTime(12);
 
             await dist.claimFunds({ from: bob });
@@ -498,75 +503,75 @@ describe('YALLExchange Unit tests', () => {
 
             // for erc20 fees
             await yallToken.transfer(exchange.address, ether(1), { from: bob });
-            await yallToken.transfer(superOperator, ether(1), { from: bob });
+            await yallToken.transfer(exchangeSuperOperator, ether(1), { from: bob });
         });
 
         describe('#voidOrder()', () => {
             describe('for closed orders', () => {
                 beforeEach(async function() {
-                    await exchange.closeOrder(orderId, 'blah', { from: operator });
+                    await exchange.closeOrder(orderId, 'blah', { from: exchangeOperator });
 
                     // to refund the bobs order
                     await dist.claimFunds({ from: alice });
-                    await yallToken.transfer(superOperator, ether(13), { from: alice });
+                    await yallToken.transfer(exchangeSuperOperator, ether(13), { from: alice });
                 });
 
-                it('should allow a super_operator role voiding an order', async function() {
-                    await yallToken.approve(exchange.address, ether(12), { from: superOperator });
-                    await exchange.voidOrder(orderId, { from: superOperator })
+                it('should allow a super_exchangeOperator role voiding an order', async function() {
+                    await yallToken.approve(exchange.address, ether(12), { from: exchangeSuperOperator });
+                    await exchange.voidOrder(orderId, { from: exchangeSuperOperator })
 
                     const res = await exchange.orders(orderId);
                     assert.equal(res.status, OrderStatus.VOIDED);
                 });
 
-                it('should transfer a refund from super operator to an order creator', async function() {
-                    const operatorBalanceBefore = await yallToken.balanceOf(superOperator);
+                it('should transfer a refund from super exchangeOperator to an order creator', async function() {
+                    const exchangeOperatorBalanceBefore = await yallToken.balanceOf(exchangeSuperOperator);
                     const bobsBalanceBefore = await yallToken.balanceOf(bob);
 
-                    await yallToken.approve(exchange.address, ether(12), { from: superOperator });
-                    await exchange.voidOrder(orderId, { from: superOperator })
+                    await yallToken.approve(exchange.address, ether(12), { from: exchangeSuperOperator });
+                    await exchange.voidOrder(orderId, { from: exchangeSuperOperator })
 
-                    const operatorBalanceAfter = await yallToken.balanceOf(superOperator);
+                    const exchangeOperatorBalanceAfter = await yallToken.balanceOf(exchangeSuperOperator);
                     const bobsBalanceAfter = await yallToken.balanceOf(bob);
 
-                    assertErc20BalanceChanged(operatorBalanceBefore, operatorBalanceAfter, ether(-12));
+                    assertErc20BalanceChanged(exchangeOperatorBalanceBefore, exchangeOperatorBalanceAfter, ether(-12));
                     assertErc20BalanceChanged(bobsBalanceBefore, bobsBalanceAfter, ether(12));
                 });
 
-                it('should transfer a refund from super operator to a changed member address', async function() {
+                it('should transfer a refund from super exchangeOperator to a changed member address', async function() {
                     await dist.changeMyAddress(dan, { from: bob });
 
-                    const operatorBalanceBefore = await yallToken.balanceOf(superOperator);
+                    const exchangeOperatorBalanceBefore = await yallToken.balanceOf(exchangeSuperOperator);
                     const bobsBalanceBefore = await yallToken.balanceOf(bob);
                     const dansBalanceBefore = await yallToken.balanceOf(dan);
 
-                    await yallToken.approve(exchange.address, ether(12), { from: superOperator });
-                    await exchange.voidOrder(orderId, { from: superOperator })
+                    await yallToken.approve(exchange.address, ether(12), { from: exchangeSuperOperator });
+                    await exchange.voidOrder(orderId, { from: exchangeSuperOperator })
 
-                    const operatorBalanceAfter = await yallToken.balanceOf(superOperator);
+                    const exchangeOperatorBalanceAfter = await yallToken.balanceOf(exchangeSuperOperator);
                     const bobsBalanceAfter = await yallToken.balanceOf(bob);
                     const dansBalanceAfter = await yallToken.balanceOf(dan);
 
-                    assertErc20BalanceChanged(operatorBalanceBefore, operatorBalanceAfter, ether(-12));
+                    assertErc20BalanceChanged(exchangeOperatorBalanceBefore, exchangeOperatorBalanceAfter, ether(-12));
                     assertErc20BalanceChanged(bobsBalanceBefore, bobsBalanceAfter, ether(0));
                     assertErc20BalanceChanged(dansBalanceBefore, dansBalanceAfter, ether(12));
                 });
 
-                it('should deny non-superOperator voiding an order', async function() {
-                    await assertRevert(exchange.voidOrder(orderId, { from: operator }), 'YALLExchange: Only SUPER_OPERATOR allowed');
+                it('should deny non-exchangeSuperOperator voiding an order', async function() {
+                    await assertRevert(exchange.voidOrder(orderId, { from: exchangeOperator }), 'YALLExchange: Only EXCHANGE_SUPER_OPERATOR allowed');
                 })
             })
 
             it('should deny voiding an order if its not closed', async function() {
-                await exchange.cancelOrder(orderId, 'blah', { from: operator });
-                await assertRevert(exchange.voidOrder(orderId, { from: superOperator }), 'YALLExchange: Order should be closed');
+                await exchange.cancelOrder(orderId, 'blah', { from: exchangeOperator });
+                await assertRevert(exchange.voidOrder(orderId, { from: exchangeSuperOperator }), 'YALLExchange: Order should be closed');
             })
         });
     });
 
     describe('Limits', () => {
         beforeEach(async function() {
-            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [alice, bob, charlie], { from: verifier });
+            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [alice, bob, charlie], { from: distributorVerifier });
             await increaseTime(12);
         });
 
@@ -613,10 +618,10 @@ describe('YALLExchange Unit tests', () => {
 
                 assert.equal(await exchange.calculateMaxYallToSell(memberId2), ether(55));
 
-                await exchange.closeOrder(1, 'foo', { from: operator });
+                await exchange.closeOrder(1, 'foo', { from: exchangeOperator });
                 assert.equal(await exchange.calculateMaxYallToSell(memberId2), ether(55));
 
-                await exchange.cancelOrder(2, 'bar', { from: operator });
+                await exchange.cancelOrder(2, 'bar', { from: exchangeOperator });
                 assert.equal(await exchange.calculateMaxYallToSell(memberId2), ether(65));
             });
         });
@@ -626,8 +631,8 @@ describe('YALLExchange Unit tests', () => {
 
             beforeEach(async function() {
                 currentPeriodId = await dist.getCurrentPeriodId();
-                await exchange.setDefaultMemberPeriodLimit(ether(40), { from: fundManager });
-                await exchange.setCustomPeriodLimit(memberId1, ether(30), { from: fundManager });
+                await exchange.setDefaultMemberPeriodLimit(ether(40), { from: exchangeManager });
+                await exchange.setCustomPeriodLimit(memberId1, ether(30), { from: exchangeManager });
             });
 
             it('should use default member limit if no personal set', async function() {
@@ -661,7 +666,7 @@ describe('YALLExchange Unit tests', () => {
             });
 
             it('should not apply any limits if both personal and custom are 0', async function() {
-                await exchange.setDefaultMemberPeriodLimit(ether(0), { from: fundManager });
+                await exchange.setDefaultMemberPeriodLimit(ether(0), { from: exchangeManager });
                 assert.equal(
                     await exchange.checkExchangeFitsLimit2(memberId2, ether(30), currentPeriodId),
                     true
@@ -678,7 +683,7 @@ describe('YALLExchange Unit tests', () => {
 
             beforeEach(async function() {
                 currentPeriodId = await dist.getCurrentPeriodId();
-                await exchange.setTotalPeriodLimit(ether(100), { from: fundManager });
+                await exchange.setTotalPeriodLimit(ether(100), { from: exchangeManager });
             });
 
             it('should use non-zero period limit', async function() {
@@ -693,7 +698,7 @@ describe('YALLExchange Unit tests', () => {
             });
 
             it('should ignore zero period limit', async function() {
-                await exchange.setTotalPeriodLimit(ether(0), { from: fundManager });
+                await exchange.setTotalPeriodLimit(ether(0), { from: exchangeManager });
                 assert.equal(
                     await exchange.checkExchangeFitsLimit3(ether(100), currentPeriodId),
                     true

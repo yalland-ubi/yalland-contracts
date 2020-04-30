@@ -21,7 +21,7 @@ const { approveFunction, GSNRecipientSignatureErrorCodes } = require('./helpers'
 const keccak256 = web3.utils.soliditySha3;
 
 describe('YALLDistribution Integration Tests', () => {
-    const [verifier, alice, bob, charlie, dan, eve, minter, feeManager, pauser] = accounts;
+    const [distributorVerifier, distributorManager, alice, bob, charlie, dan, eve, yallMinter, feeManager, pauser] = accounts;
 
     let registry;
     let yallToken;
@@ -39,15 +39,16 @@ describe('YALLDistribution Integration Tests', () => {
 
     beforeEach(async function () {
         [ registry, yallToken, dist,, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, {
-            yallMinter: minter,
+            yallMinter,
             feeManager,
-            verifier,
+            distributorVerifier,
+            distributorManager,
             pauser,
             periodVolume
         });
 
         await yallToken.setTransferFee(ether(10), { from: feeManager });
-        await yallToken.mint(alice, ether(baseAliceBalance), { from: minter });
+        await yallToken.mint(alice, ether(baseAliceBalance), { from: yallMinter });
 
         // this will affect on dist provider too
         yallToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
@@ -71,7 +72,7 @@ describe('YALLDistribution Integration Tests', () => {
     });
 
     it('should allow single member claiming his funds', async function() {
-        await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
+        await dist.addMembersBeforeGenesis([memberId1], [bob], { from: distributorVerifier });
 
         await assertRevert(
             dist.claimFunds({ from: bob, useGSN: true }),
@@ -118,14 +119,14 @@ describe('YALLDistribution Integration Tests', () => {
     it('should allow increasing number of members claiming their funds', async function() {
         // before genesis
         await assertRevert(dist.claimFunds({ from: bob }), 'Contract not initiated yet');
-        await dist.addMembersBeforeGenesis([memberId1], [bob], { from: verifier });
+        await dist.addMembersBeforeGenesis([memberId1], [bob], { from: distributorVerifier });
 
         await increaseTime(11);
 
         // period #0
         assert.equal(await dist.getCurrentPeriodId(), 0);
 
-        await dist.claimFundsMultiple([bob], { from: verifier });
+        await dist.claimFundsMultiple([bob], { from: distributorVerifier });
         await assertRevert(dist.claimFunds({ from: bob }), 'Already claimed for the current period');
 
         let res = await dist.period(0);
@@ -133,9 +134,9 @@ describe('YALLDistribution Integration Tests', () => {
         assert.equal(res.rewardPerMember, ether(225 * 1000));
 
         // add 2 more
-        await dist.addMembers([memberId2, memberId3], [dan, charlie], { from: verifier });
-        // change verifier reward
-        await dist.setEmissionPoolRewardShare(ether(25));
+        await dist.addMembers([memberId2, memberId3], [dan, charlie], { from: distributorVerifier });
+        // change distributorVerifier reward
+        await dist.setEmissionPoolRewardShare(ether(25), { from: distributorManager });
 
         // check this doesn't affect the already calculated rewards
         res = await dist.period(0);
@@ -155,7 +156,7 @@ describe('YALLDistribution Integration Tests', () => {
 
     describe('activate/deactivate', () => {
         beforeEach(async function() {
-            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [bob, charlie, dan], { from: verifier });
+            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [bob, charlie, dan], { from: distributorVerifier });
             await increaseTime(15 + 1 * periodLength);
         })
 
@@ -167,9 +168,9 @@ describe('YALLDistribution Integration Tests', () => {
             let res = await dist.period(1);
             assert.equal(res.rewardPerMember, ether(75 * 1000));
 
-            await dist.disableMembers([bob], { from: verifier });
+            await dist.disableMembers([bob], { from: distributorVerifier });
             await increaseTime(0.5 * periodLength);
-            await dist.enableMembers([bob], { from: verifier });
+            await dist.enableMembers([bob], { from: distributorVerifier });
 
             await assertRevert(dist.claimFunds({ from: bob }), 'Already claimed for the current period');
 
@@ -188,8 +189,8 @@ describe('YALLDistribution Integration Tests', () => {
             let res = await dist.period(1);
             assert.equal(res.rewardPerMember, ether(75 * 1000));
 
-            await dist.disableMembers([bob], { from: verifier });
-            await dist.enableMembers([bob], { from: verifier });
+            await dist.disableMembers([bob], { from: distributorVerifier });
+            await dist.enableMembers([bob], { from: distributorVerifier });
             await increaseTime(0.5 * periodLength);
 
             await assertRevert(dist.claimFunds({ from: bob }), 'Already claimed for the current period');
@@ -207,7 +208,7 @@ describe('YALLDistribution Integration Tests', () => {
             assert.equal(await dist.getCurrentPeriodId(), 1);
             await dist.claimFunds({ from: bob, useGSN: true });
 
-            await dist.disableMembers([bob], { from: verifier });
+            await dist.disableMembers([bob], { from: distributorVerifier });
             await increaseTime(periodLength);
 
             let res = await dist.period(1);
@@ -215,7 +216,7 @@ describe('YALLDistribution Integration Tests', () => {
 
             // P2
             assert.equal(await dist.getCurrentPeriodId(), 2);
-            await dist.enableMembers([bob], { from: verifier });
+            await dist.enableMembers([bob], { from: distributorVerifier });
 
             await assertRevert(
                 dist.requireCanClaimFundsByAddress(bob),
@@ -251,7 +252,7 @@ describe('YALLDistribution Integration Tests', () => {
             assert.equal(await dist.getCurrentPeriodId(), 1);
             await dist.claimFunds({ from: bob });
 
-            await dist.disableMembers([bob], { from: verifier });
+            await dist.disableMembers([bob], { from: distributorVerifier });
 
             let res = await dist.period(1);
             assert.equal(res.rewardPerMember, ether(75 * 1000));
@@ -277,7 +278,7 @@ describe('YALLDistribution Integration Tests', () => {
             await increaseTime(periodLength);
             assert.equal(await dist.getCurrentPeriodId(), 3);
             // enable at P3
-            await dist.enableMembers([bob], { from: verifier });
+            await dist.enableMembers([bob], { from: distributorVerifier });
 
             await assertRevert(
                 dist.requireCanClaimFundsByAddress(bob),
@@ -303,29 +304,29 @@ describe('YALLDistribution Integration Tests', () => {
 
     describe('Active member caching', () => {
         it('should correctly cache active member addresses', async function() {
-            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [bob, charlie, dan], { from: verifier });
+            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [bob, charlie, dan], { from: distributorVerifier });
             assert.sameMembers(await dist.getActiveAddressList(), [bob, charlie, dan]);
             assert.equal(await dist.getActiveAddressSize(), 3);
 
             await increaseTime(11);
 
-            await dist.disableMembers([bob, charlie], { from: verifier });
+            await dist.disableMembers([bob, charlie], { from: distributorVerifier });
             assert.sameMembers(await dist.getActiveAddressList(), [dan]);
             assert.equal(await dist.getActiveAddressSize(), 1);
 
-            await dist.disableMembers([dan], { from: verifier });
+            await dist.disableMembers([dan], { from: distributorVerifier });
             assert.sameMembers(await dist.getActiveAddressList(), []);
             assert.equal(await dist.getActiveAddressSize(), 0);
 
-            await dist.addMember(memberId0, alice, { from: verifier });
+            await dist.addMember(memberId0, alice, { from: distributorVerifier });
             assert.sameMembers(await dist.getActiveAddressList(), [alice]);
             assert.equal(await dist.getActiveAddressSize(), 1);
 
-            await dist.enableMembers([bob, charlie, dan], { from: verifier });
+            await dist.enableMembers([bob, charlie, dan], { from: distributorVerifier });
             assert.sameMembers(await dist.getActiveAddressList(), [alice, bob, charlie, dan]);
             assert.equal(await dist.getActiveAddressSize(), 4);
 
-            await dist.addMembers([memberId4], [eve], { from: verifier });
+            await dist.addMembers([memberId4], [eve], { from: distributorVerifier });
             assert.sameMembers(await dist.getActiveAddressList(), [alice, bob, charlie, dan, eve]);
             assert.equal(await dist.getActiveAddressSize(), 5);
         })
@@ -334,13 +335,13 @@ describe('YALLDistribution Integration Tests', () => {
     describe('Active member caching', () => {
         it('should emit event on a period change', async function() {
             // PG
-            await dist.addMembersBeforeGenesis([memberId1, memberId2], [bob, charlie], { from: verifier });
+            await dist.addMembersBeforeGenesis([memberId1, memberId2], [bob, charlie], { from: distributorVerifier });
 
             // P0
             await increaseTime(12);
             assert.equal(await dist.getCurrentPeriodId(), 0);
 
-            let res = await dist.addMember(memberId3, dan, { from: verifier });
+            let res = await dist.addMember(memberId3, dan, { from: distributorVerifier });
 
             assert.equal(getEventArg(res, 'PeriodChange', 'newPeriodId'), 0);
             assert.equal(getEventArg(res, 'PeriodChange', 'volume'), ether(250 * 1000));
@@ -348,9 +349,9 @@ describe('YALLDistribution Integration Tests', () => {
             assert.equal(getEventArg(res, 'PeriodChange', 'rewardPerMember'), ether(112.5 * 1000));
             assert.equal(getEventArg(res, 'PeriodChange', 'activeMemberCount'), 2);
 
-            // change verifier reward
-            await dist.setEmissionPoolRewardShare(ether(40));
-            await dist.setPeriodVolume(ether(1000 * 1000));
+            // change distributorVerifier reward
+            await dist.setEmissionPoolRewardShare(ether(40), { from: distributorManager });
+            await dist.setPeriodVolume(ether(1000 * 1000), { from: distributorManager });
             assert.equal(await dist.emissionPoolRewardShare(), ether(40));
             assert.equal(await dist.periodVolume(), ether(1000 * 1000));
 
@@ -370,7 +371,7 @@ describe('YALLDistribution Integration Tests', () => {
 
     describe('When paused', () => {
         it('should deny executing contracts', async function() {
-            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [bob, charlie, dan], { from: verifier });
+            await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [bob, charlie, dan], { from: distributorVerifier });
             await increaseTime(15 + 1 * periodLength);
 
             await dist.pause({ from: pauser });
@@ -387,7 +388,7 @@ describe('YALLDistribution Integration Tests', () => {
                 'ACLPausable: paused'
             );
             await assertRevert(
-                dist.claimEmissionPoolReward(0, bob, { from: verifier }),
+                dist.claimEmissionPoolReward(0, bob, { from: distributorVerifier }),
                 'ACLPausable: paused'
             );
             await assertRevert(

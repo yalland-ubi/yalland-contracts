@@ -17,10 +17,117 @@ import "../interfaces/IYALLToken.sol";
 /**
  * @title YALLRegistry contract
  * @author Galt Project
- * @notice Contract address and ACL registry
+ * @notice Contains exposed system role constants, modifiers and getters for registered contracts.
  **/
 contract YALLRegistryHelpers {
   YALLRegistry public yallRegistry;
+
+  // Common Role Constants
+  bytes32 public constant FEE_CLAIMER_ROLE = bytes32("FEE_CLAIMER");
+  bytes32 public constant FEE_MANAGER_ROLE = bytes32("FEE_MANAGER");
+  bytes32 public constant PAUSER_ROLE = bytes32("PAUSER");
+  // YALLToken Role Constants
+  bytes32 public constant YALL_TOKEN_MINTER_ROLE = bytes32("YALL_TOKEN_MINTER");
+  bytes32 public constant YALL_TOKEN_BURNER_ROLE = bytes32("YALL_TOKEN_BURNER");
+  bytes32 public constant YALL_TOKEN_WHITELIST_MANAGER_ROLE = bytes32("YALL_TOKEN_WHITELIST_MANAGER");
+  // YALLDistributor Role Constants
+  bytes32 public constant DISTRIBUTOR_MANAGER_ROLE = bytes32("DISTRIBUTOR_MANAGER");
+  bytes32 public constant DISTRIBUTOR_VERIFIER_ROLE = bytes32("DISTRIBUTOR_VERIFIER");
+  bytes32 public constant DISTRIBUTOR_EMISSION_CLAIMER_ROLE = bytes32("DISTRIBUTOR_EMISSION_CLAIMER");
+  // YALLExchange Role Constants
+  bytes32 public constant EXCHANGE_MANAGER_ROLE = bytes32("EXCHANGE_MANAGER");
+  bytes32 public constant EXCHANGE_OPERATOR_ROLE = bytes32("EXCHANGE_OPERATOR");
+  bytes32 public constant EXCHANGE_SUPER_OPERATOR_ROLE = bytes32("EXCHANGE_SUPER_OPERATOR");
+
+  // Common Role Checkers
+
+  modifier onlyFeeClaimer() {
+    require(yallRegistry.hasRole(msg.sender, FEE_CLAIMER_ROLE), "YALLHelpers: Only FEE_CLAIMER allowed");
+    _;
+  }
+
+  modifier onlyFeeManager() {
+    require(yallRegistry.hasRole(msg.sender, FEE_MANAGER_ROLE), "YALLHelpers: Only FEE_MANAGER allowed");
+    _;
+  }
+
+  modifier onlyPauser() {
+    require(yallRegistry.hasRole(msg.sender, PAUSER_ROLE), "YALLHelpers: Only PAUSER allowed");
+    _;
+  }
+
+  // YALLToken Role Checkers
+
+  modifier onlyMinter() {
+    require(yallRegistry.hasRole(msg.sender, YALL_TOKEN_MINTER_ROLE), "YALLToken: Only YALL_TOKEN_MINTER allowed");
+    _;
+  }
+
+  modifier onlyBurner() {
+    require(yallRegistry.hasRole(msg.sender, YALL_TOKEN_BURNER_ROLE), "YALLToken: Only YALL_TOKEN_BURNER allowed");
+    _;
+  }
+
+  modifier onlyTransferWLManager() {
+    require(
+      yallRegistry.hasRole(msg.sender, YALL_TOKEN_WHITELIST_MANAGER_ROLE),
+      "YALLToken: Only YALL_TOKEN_WHITELIST_MANAGER allowed"
+    );
+    _;
+  }
+
+  // YALLDistributor Role Checkers
+
+  modifier onlyDistributorManager() {
+    require(
+      yallRegistry.hasRole(msg.sender, DISTRIBUTOR_MANAGER_ROLE),
+      "YALLDistributor: Only DISTRIBUTOR_MANAGER allowed"
+    );
+
+    _;
+  }
+
+  modifier onlyDistributorVerifier() {
+    require(
+      yallRegistry.hasRole(msg.sender, DISTRIBUTOR_VERIFIER_ROLE),
+      "YALLDistributor: Only DISTRIBUTOR_VERIFIER allowed"
+    );
+    _;
+  }
+
+  modifier onlyDistributorEmissionClaimer() {
+    require(
+      yallRegistry.hasRole(msg.sender, DISTRIBUTOR_EMISSION_CLAIMER_ROLE),
+      "YALLDistributor: Only DISTRIBUTOR_EMISSION_CLAIMER allowed"
+    );
+
+    _;
+  }
+
+  // YALLExchange Role Checkers
+
+  modifier onlyExchangeFundManager() {
+    require(
+      yallRegistry.hasRole(msg.sender, EXCHANGE_MANAGER_ROLE),
+      "YALLExchange: Only EXCHANGE_MANAGER allowed"
+    );
+    _;
+  }
+
+  modifier onlyExchangeOperator() {
+    require(yallRegistry.hasRole(msg.sender, EXCHANGE_OPERATOR_ROLE), "YALLExchange: Only EXCHANGE_OPERATOR allowed");
+    _;
+  }
+
+  modifier onlyExchangeSuperOperator() {
+    require(
+      yallRegistry.hasRole(msg.sender, EXCHANGE_SUPER_OPERATOR_ROLE),
+      "YALLExchange: Only EXCHANGE_SUPER_OPERATOR allowed"
+    );
+    _;
+  }
+
+  // CONTRACT GETTERS
 
   function _yallTokenAddress() internal view returns (address) {
     return yallRegistry.getYallTokenAddress();
