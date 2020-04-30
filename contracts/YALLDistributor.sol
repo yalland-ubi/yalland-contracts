@@ -12,7 +12,7 @@ pragma solidity ^0.5.13;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
-import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
+import "@galtproject/libs/contracts/traits/Initializable.sol";
 import "./interfaces/IYALLToken.sol";
 import "./interfaces/IYALLDistributor.sol";
 import "./GSNRecipientSigned.sol";
@@ -27,16 +27,13 @@ import "./traits/ACLPausable.sol";
  **/
 contract YALLDistributor is
   IYALLDistributor,
+  Initializable,
   YALLRegistryHelpers,
-  OwnableAndInitializable,
   ACLPausable,
   GSNRecipientSigned
 {
   using SafeMath for uint256;
   using EnumerableSet for EnumerableSet.AddressSet;
-
-  bytes32 public constant VERIFIER_ROLE = bytes32("VERIFIER_ROLE");
-  bytes32 public constant EMISSION_REWARD_MANAGER_ROLE = bytes32("EMISSION_REWARD_MANAGER");
 
   uint256 public constant HUNDRED_PCT = 100 ether;
 
@@ -96,20 +93,6 @@ contract YALLDistributor is
 
   EnumerableSet.AddressSet internal activeAddressesCache;
 
-  modifier onlyVerifier() {
-    require(yallRegistry.hasRole(msg.sender, VERIFIER_ROLE), "YALLDistributor: Only VERIFIER allowed");
-
-    _;
-  }
-
-  modifier onlyEmissionRewardManager() {
-    require(
-      yallRegistry.hasRole(msg.sender, EMISSION_REWARD_MANAGER_ROLE),
-      "YALLDistributor: Only EMISSION_REWARD_MANAGER allowed"
-    );
-
-    _;
-  }
 
   // Mints tokens, assigns the verifier reward and caches reward per member
   modifier triggerTransition() {
@@ -140,7 +123,7 @@ contract YALLDistributor is
     _;
   }
 
-  constructor() public GSNRecipientSigned() {
+  constructor() public {
   }
 
   function initialize(
@@ -210,7 +193,7 @@ contract YALLDistributor is
    * @param _emissionPoolRewardShare a new verifier reward share, 0 if there should be no reward for
    * a verifier; 100% == 100 ether
    */
-  function setEmissionPoolRewardShare(uint256 _emissionPoolRewardShare) external onlyOwner {
+  function setEmissionPoolRewardShare(uint256 _emissionPoolRewardShare) external onlyDistributorManager {
     require(_emissionPoolRewardShare < 100 ether, "YALLDistributor: Can't be >= 100%");
 
     emissionPoolRewardShare = _emissionPoolRewardShare;
@@ -222,7 +205,7 @@ contract YALLDistributor is
    * @dev Changes a periodVolume to a new value.
    * @param _periodVolume a new periodVolume value, 0 if the distribution should be disabled
    */
-  function setPeriodVolume(uint256 _periodVolume) external onlyOwner {
+  function setPeriodVolume(uint256 _periodVolume) external onlyDistributorManager {
     uint256 oldPeriodVolume = periodVolume;
 
     periodVolume = _periodVolume;
@@ -230,13 +213,13 @@ contract YALLDistributor is
     emit SetPeriodVolume(oldPeriodVolume, _periodVolume);
   }
 
-  function setGsnFee(uint256 _gsnFee) public onlyOwner {
+  function setGsnFee(uint256 _gsnFee) public onlyFeeManager {
     gsnFee = _gsnFee;
 
     emit SetGsnFee(_gsnFee);
   }
 
-  function withdrawFee() external onlyOwner {
+  function withdrawFee() external onlyFeeClaimer {
     address tokenAddress = _yallTokenAddress();
     uint256 payout = IERC20(tokenAddress).balanceOf(address(this));
 
@@ -257,7 +240,7 @@ contract YALLDistributor is
     address[] calldata _memberAddresses
   )
     external
-    onlyVerifier
+    onlyDistributorVerifier
   {
     require(now < genesisTimestamp, "YALLDistributor: Can be called before genesis only");
 
@@ -275,7 +258,7 @@ contract YALLDistributor is
   )
     external
     triggerTransition
-    onlyVerifier
+    onlyDistributorVerifier
   {
     _addMembers(_memberIds, _memberAddresses);
   }
@@ -291,7 +274,7 @@ contract YALLDistributor is
   )
     external
     triggerTransition
-    onlyVerifier
+    onlyDistributorVerifier
   {
     _addMember(_memberId, _memberAddress);
 
@@ -307,7 +290,7 @@ contract YALLDistributor is
   )
     external
     triggerTransition
-    onlyVerifier
+    onlyDistributorVerifier
   {
     uint256 len = _memberAddresses.length;
 
@@ -340,7 +323,7 @@ contract YALLDistributor is
   )
     external
     triggerTransition
-    onlyVerifier
+    onlyDistributorVerifier
   {
     uint256 len = _memberAddresses.length;
 
@@ -374,7 +357,7 @@ contract YALLDistributor is
     address[] calldata _toAddresses
   )
     external
-    onlyVerifier
+    onlyDistributorVerifier
   {
     uint256 len = _fromAddresses.length;
     require(len == _toAddresses.length, "YALLDistributor: Both ids and addresses array should have the same size");
@@ -389,33 +372,8 @@ contract YALLDistributor is
    * @param _from address to change from
    * @param _to address to change to
    */
-  function changeMemberAddress(address _from, address _to) external onlyVerifier {
+  function changeMemberAddress(address _from, address _to) external onlyDistributorVerifier {
     _changeMemberAddress(_from, _to);
-  }
-
-  /*
-   * @dev Verifier claims their reward for the given period.
-   * @param _periodId to claim reward for
-   * @param _to address to send reward to
-   */
-  function claimEmissionPoolReward(
-    uint256 _periodId,
-    address _to
-  )
-    external
-    triggerTransition
-    whenNotPaused
-    onlyEmissionRewardManager
-  {
-    Period storage givenPeriod = period[_periodId];
-
-    require(givenPeriod.verifierClaimedReward == false, "YALLDistributor: Already claimed for given period");
-
-    givenPeriod.verifierClaimedReward = true;
-
-    emit ClaimEmissionPoolReward(_periodId, _to);
-
-    _yallToken().mint(_to, givenPeriod.emissionPoolReward);
   }
 
   // VERIFIER INTERNAL METHODS
@@ -490,6 +448,33 @@ contract YALLDistributor is
     emit ActiveMemberCountChanged(newActiveMemberCount);
   }
 
+  // EMISSION CLAIMER INTERFACE
+
+  /*
+   * @dev Emission claimer claims their reward for the given period.
+   * @param _periodId to claim reward for
+   * @param _to address to send reward to
+   */
+  function claimEmissionPoolReward(
+    uint256 _periodId,
+    address _to
+  )
+    external
+    triggerTransition
+    whenNotPaused
+    onlyDistributorEmissionClaimer
+  {
+    Period storage givenPeriod = period[_periodId];
+
+    require(givenPeriod.verifierClaimedReward == false, "YALLDistributor: Already claimed for given period");
+
+    givenPeriod.verifierClaimedReward = true;
+
+    emit ClaimEmissionPoolReward(_periodId, _to);
+
+    _yallToken().mint(_to, givenPeriod.emissionPoolReward);
+  }
+
   // MEMBER INTERFACE
 
   /*
@@ -502,7 +487,7 @@ contract YALLDistributor is
     external
     triggerTransition
     whenNotPaused
-    onlyVerifier
+    onlyDistributorVerifier
   {
     uint256 currentPeriodId = getCurrentPeriodId();
     uint256 rewardPerMember = period[currentPeriodId].rewardPerMember;

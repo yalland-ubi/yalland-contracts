@@ -31,7 +31,7 @@ const OrderStatus = {
 const keccak256 = web3.utils.soliditySha3;
 
 describe('YALLExchange Integration tests', () => {
-    const [verifier, alice, bob, charlie, dan, minter, operator, superOperator, fundManager, feeManager, transferWlManager] = accounts;
+    const [distributorVerifier, alice, bob, charlie, dan, yallMinter, exchangeOperator, exchangeSuperOperator, exchangeManager, feeManager, yallWLManager] = accounts;
 
     let registry;
     let yallToken;
@@ -45,33 +45,33 @@ describe('YALLExchange Integration tests', () => {
 
     beforeEach(async function () {
         [ registry, yallToken, dist, exchange ] = await buildCoinDistAndExchange(web3, defaultSender, {
-            verifier,
-            yallMinter: minter,
+            distributorVerifier,
+            yallMinter,
             feeManager,
-            fundManager,
-            operator,
-            superOperator,
-            yallWLManager: transferWlManager
+            exchangeManager,
+            exchangeOperator,
+            exchangeSuperOperator,
+            yallWLManager
         });
 
         await yallToken.setTransferFee(ether('0.02'), { from: feeManager });
         await yallToken.setGsnFee(ether('1.7'), { from: feeManager });
 
-        await yallToken.setWhitelistAddress(dist.address, true, { from: transferWlManager });
-        await yallToken.setWhitelistAddress(exchange.address, true, { from: transferWlManager });
-        await yallToken.setWhitelistAddress(operator, true, { from: transferWlManager });
-        await yallToken.setWhitelistAddress(superOperator, true, { from: transferWlManager });
-        await yallToken.setWhitelistAddress(dan, true, { from: transferWlManager });
+        await yallToken.setWhitelistAddress(dist.address, true, { from: yallWLManager });
+        await yallToken.setWhitelistAddress(exchange.address, true, { from: yallWLManager });
+        await yallToken.setWhitelistAddress(exchangeOperator, true, { from: yallWLManager });
+        await yallToken.setWhitelistAddress(exchangeSuperOperator, true, { from: yallWLManager });
+        await yallToken.setWhitelistAddress(dan, true, { from: yallWLManager });
 
-        await dist.addMembersBeforeGenesis([memberId1], [alice], { from: verifier })
-        await dist.addMembersBeforeGenesis([memberId2], [bob], { from: verifier })
+        await dist.addMembersBeforeGenesis([memberId1], [alice], { from: distributorVerifier })
+        await dist.addMembersBeforeGenesis([memberId2], [bob], { from: distributorVerifier })
 
-        await dist.setGsnFee(ether('4.2'));
+        await dist.setGsnFee(ether('4.2'), { from: feeManager });
 
-        await exchange.setDefaultMemberPeriodLimit(ether(30), { from: fundManager });
-        await exchange.setTotalPeriodLimit(ether(70), { from: fundManager });
+        await exchange.setDefaultMemberPeriodLimit(ether(30), { from: exchangeManager });
+        await exchange.setTotalPeriodLimit(ether(70), { from: exchangeManager });
 
-        await yallToken.mint(dan, ether(11), { from: minter });
+        await yallToken.mint(dan, ether(11), { from: yallMinter });
         await yallToken.transfer(exchange.address, ether(10), { from: dan });
 
         // this will affect on dist provider too
@@ -88,7 +88,7 @@ describe('YALLExchange Integration tests', () => {
 
         assert.equal(await yallToken.balanceOf(alice), ether( 112.5));
 
-        await exchange.setDefaultExchangeRate(ether(350), { from: fundManager });
+        await exchange.setDefaultExchangeRate(ether(350), { from: exchangeManager });
 
         // Create an order
         await yallToken.approve(exchange.address, ether(12), { from: alice });
@@ -103,24 +103,24 @@ describe('YALLExchange Integration tests', () => {
         assert.equal(res.memberId, memberId1);
 
         // Close an order
-        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: superOperator }), 'YALLExchange: Only OPERATOR allowed');
-        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: alice }), 'YALLExchange: Only OPERATOR allowed');
-        await exchange.closeOrder(orderId, 'foo', { from: operator });
+        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: exchangeSuperOperator }), 'YALLExchange: Only EXCHANGE_OPERATOR allowed');
+        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: alice }), 'YALLExchange: Only EXCHANGE_OPERATOR allowed');
+        await exchange.closeOrder(orderId, 'foo', { from: exchangeOperator });
 
         res = await exchange.orders(orderId);
         assert.equal(res.status, OrderStatus.CLOSED);
 
         // Can't close again
-        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: operator }), 'YALLExchange: Order should be open');
+        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: exchangeOperator }), 'YALLExchange: Order should be open');
 
         // Can't cancel
-        await assertRevert(exchange.cancelOrder(orderId, 'foo', { from: operator }), 'YALLExchange: Order should be open');
+        await assertRevert(exchange.cancelOrder(orderId, 'foo', { from: exchangeOperator }), 'YALLExchange: Order should be open');
 
         // But can void
-        await assertRevert(exchange.voidOrder(orderId, { from: operator }), 'YALLExchange: Only SUPER_OPERATOR allowed');
-        await yallToken.mint(superOperator, ether(12), { from: minter });
-        await yallToken.approve(exchange.address, ether(12), { from: superOperator });
-        await exchange.voidOrder(orderId, { from: superOperator });
+        await assertRevert(exchange.voidOrder(orderId, { from: exchangeOperator }), 'YALLExchange: Only EXCHANGE_SUPER_OPERATOR allowed');
+        await yallToken.mint(exchangeSuperOperator, ether(12), { from: yallMinter });
+        await yallToken.approve(exchange.address, ether(12), { from: exchangeSuperOperator });
+        await exchange.voidOrder(orderId, { from: exchangeSuperOperator });
 
         res = await exchange.orders(orderId);
         assert.equal(res.status, OrderStatus.VOIDED);
@@ -131,7 +131,7 @@ describe('YALLExchange Integration tests', () => {
 
         assert.equal(await yallToken.balanceOf(alice), ether( 112.5));
 
-        await exchange.setDefaultExchangeRate(ether(350), { from: fundManager });
+        await exchange.setDefaultExchangeRate(ether(350), { from: exchangeManager });
 
         // Create an order
         await yallToken.approve(exchange.address, ether(12), { from: alice });
@@ -144,26 +144,26 @@ describe('YALLExchange Integration tests', () => {
         assert.equal(res.status, OrderStatus.OPEN);
 
         // Close an order
-        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: superOperator }), 'YALLExchange: Only OPERATOR allowed');
-        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: alice }), 'YALLExchange: Only OPERATOR allowed');
-        await exchange.cancelOrder(orderId, 'foo', { from: operator });
+        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: exchangeSuperOperator }), 'YALLExchange: Only EXCHANGE_OPERATOR allowed');
+        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: alice }), 'YALLExchange: Only EXCHANGE_OPERATOR allowed');
+        await exchange.cancelOrder(orderId, 'foo', { from: exchangeOperator });
 
         res = await exchange.orders(orderId);
         assert.equal(res.status, OrderStatus.CANCELLED);
 
         // Can't cancel again
-        await assertRevert(exchange.cancelOrder(orderId, 'foo', { from: operator }), 'YALLExchange: Order should be open');
+        await assertRevert(exchange.cancelOrder(orderId, 'foo', { from: exchangeOperator }), 'YALLExchange: Order should be open');
 
         // Can't close
-        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: operator }), 'YALLExchange: Order should be open');
+        await assertRevert(exchange.closeOrder(orderId, 'foo', { from: exchangeOperator }), 'YALLExchange: Order should be open');
 
         // Can't void
-        await assertRevert(exchange.voidOrder(orderId, { from: superOperator }), 'YALLExchange: Order should be closed');
+        await assertRevert(exchange.voidOrder(orderId, { from: exchangeSuperOperator }), 'YALLExchange: Order should be closed');
     });
 
     describe('Limits', () => {
         beforeEach(async function() {
-            await dist.addMembers([memberId3], [charlie], { from: verifier });
+            await dist.addMembers([memberId3], [charlie], { from: distributorVerifier });
             await increaseTime(periodLength);
         });
 
@@ -177,8 +177,8 @@ describe('YALLExchange Integration tests', () => {
 
             const firstPeriod = await dist.getCurrentPeriodId();
 
-            await exchange.setDefaultMemberPeriodLimit(ether(30), { from: fundManager });
-            await exchange.setTotalPeriodLimit(ether(70), { from: fundManager });
+            await exchange.setDefaultMemberPeriodLimit(ether(30), { from: exchangeManager });
+            await exchange.setTotalPeriodLimit(ether(70), { from: exchangeManager });
 
             // >>> Step 1
 
@@ -221,8 +221,8 @@ describe('YALLExchange Integration tests', () => {
             assert.equal(await exchange.checkExchangeFitsLimit3(ether(51), firstPeriod), false);
 
             // >>> Step 3
-            await exchange.closeOrder(1, 'foo', { from: operator });
-            await exchange.cancelOrder(2, 'bar', { from: operator });
+            await exchange.closeOrder(1, 'foo', { from: exchangeOperator });
+            await exchange.cancelOrder(2, 'bar', { from: exchangeOperator });
 
             // limit #1
             assert.equal(await exchange.calculateMaxYallToSell(memberId2), ether(65));
