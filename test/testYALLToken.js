@@ -106,12 +106,21 @@ describe('YALLToken', () => {
             // approve before paused
             await yallToken.approve(bob, ether(10), { from: alice });
 
+            await yallToken.transfer(bob, ether(1), { from: alice });
+            await yallToken.transferWithMemo(bob, ether(1), 'hey', { from: alice });
+            await yallToken.transferFrom(alice, charlie, ether(1), { from: bob });
+            await yallToken.approve(bob, ether(10), { from: alice });
+            await yallToken.increaseAllowance(bob, ether(2), { from: alice });
+            await yallToken.decreaseAllowance(bob, ether(2), { from: alice });
+
             await yallToken.pause({ from: pauser });
 
             await assertRevert(yallToken.transfer(bob, ether(1), { from: alice }), 'paused');
             await assertRevert(yallToken.transferWithMemo(bob, ether(1), 'hey', { from: alice }), 'paused');
             await assertRevert(yallToken.transferFrom(alice, charlie, ether(1), { from: bob }), 'paused');
             await assertRevert(yallToken.approve(alice, ether(1), { from: bob }), 'paused');
+            await assertRevert(yallToken.increaseAllowance(alice, ether(1), { from: bob }), 'paused');
+            await assertRevert(yallToken.decreaseAllowance(alice, ether(1), { from: bob }), 'paused');
 
             await yallToken.unpause({ from: pauser });
 
@@ -119,6 +128,8 @@ describe('YALLToken', () => {
             await yallToken.transferWithMemo(bob, ether(1), 'hey', { from: alice });
             await yallToken.transferFrom(alice, charlie, ether(1), { from: bob });
             await yallToken.approve(bob, ether(10), { from: alice });
+            await yallToken.increaseAllowance(bob, ether(2), { from: alice });
+            await yallToken.decreaseAllowance(bob, ether(2), { from: alice });
         });
     });
 

@@ -10,21 +10,21 @@
 pragma solidity ^0.5.13;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "./interfaces/IYALLDistributor.sol";
 import "./GSNRecipientSigned.sol";
 import "./registry/YALLRegistry.sol";
 import "./interfaces/IYALLToken.sol";
 import "./registry/YALLRegistryHelpers.sol";
+import "./traits/ACLPausable.sol";
 
 
 contract YALLToken is
   IYALLToken,
   ERC20,
-  ERC20Pausable,
   ERC20Detailed,
   YALLRegistryHelpers,
+  ACLPausable,
   GSNRecipientSigned
 {
   uint256 public constant INITIAL_SUPPLY = 0;
@@ -142,18 +142,18 @@ contract YALLToken is
 
   // USER INTERFACE
 
-  function approve(address _spender, uint256 _amount) public returns (bool) {
+  function approve(address _spender, uint256 _amount) public whenNotPaused returns (bool) {
     _requireMemberIsValid(_msgSender());
     _requireMemberIsValid(_spender);
 
     return super.approve(_spender, _amount);
   }
 
-  function transfer(address _to, uint256 _value) public returns (bool) {
+  function transfer(address _to, uint256 _value) public whenNotPaused returns (bool) {
     _requireMemberIsValid(_to);
     _requireMemberIsValid(_msgSender());
 
-    bool result = super.transfer(_to, _value);
+    bool result = ERC20.transfer(_to, _value);
 
     _chargeTransferFee(_msgSender(), _value);
 
@@ -170,11 +170,19 @@ contract YALLToken is
     _requireMemberIsValid(_to);
     _requireMemberIsValid(_msgSender());
 
-    bool result = super.transferFrom(_from, _to, _value);
+    bool result = ERC20.transferFrom(_from, _to, _value);
 
     _chargeTransferFee(_msgSender(), _value);
 
     return result;
+  }
+
+  function increaseAllowance(address _spender, uint256 _addedValue) public whenNotPaused returns (bool) {
+    return ERC20.increaseAllowance(_spender, _addedValue);
+  }
+
+  function decreaseAllowance(address _spender, uint256 _subtractedValue) public whenNotPaused returns (bool) {
+    return ERC20.decreaseAllowance(_spender, _subtractedValue);
   }
 
   // INTERNAL
