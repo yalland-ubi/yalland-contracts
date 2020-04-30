@@ -4,13 +4,14 @@ const YALLToken = contract.fromArtifact('YALLToken');
 const YALLRegistry = contract.fromArtifact('YALLRegistry');
 const YALLDistributor = contract.fromArtifact('YALLDistributor');
 const YALLExchange = contract.fromArtifact('YALLExchange');
-const Proxy = contract.fromArtifact('OwnedUpgradeabilityProxy');
+const Proxy = contract.fromArtifact('AdminUpgradeabilityProxy');
+const ProxyAdmin = contract.fromArtifact('ProxyAdmin');
 
 YALLToken.numberFormat = 'String';
 YALLExchange.numberFormat = 'String';
 YALLDistributor.numberFormat = 'String';
 
-const { ether, now } = require('@galtproject/solidity-test-chest')(web3);
+const { ether, now, zeroAddress } = require('@galtproject/solidity-test-chest')(web3);
 
 async function buildCoinDistAndExchange(web3, governance, config) {
     const bytes32 = web3.utils.utf8ToHex;
@@ -30,37 +31,43 @@ async function buildCoinDistAndExchange(web3, governance, config) {
     const memberId4 = keccak256('eve');
     const genesisTimestamp = parseInt(await now(), 10) + startAfter;
 
-    const registryProxy = await Proxy.new();
-    const distProxy = await Proxy.new();
-    const exchangeProxy = await Proxy.new();
-
     const registryImplementation = await YALLRegistry.new();
     const distImplementation = await YALLDistributor.new();
     const exchangeImplementation = await YALLExchange.new();
+    const proxyAdmin = await ProxyAdmin.new();
+
+    const registryProxy = await Proxy.new(
+        registryImplementation.address,
+        defaultSender,
+        registryImplementation.contract.methods.initialize().encodeABI()
+    );
+    const distProxy = await Proxy.new(
+        distImplementation.address,
+        defaultSender,
+        distImplementation.contract.methods.initialize(
+            periodVolume,
+            verifierRewardShare,
+
+            registryProxy.address,
+            periodLength,
+            genesisTimestamp
+        ).encodeABI()
+    );
+    const exchangeProxy = await Proxy.new(
+        exchangeImplementation.address,
+        defaultSender,
+        exchangeImplementation.contract.methods.initialize(
+            registryProxy.address,
+            // defaultExchangeRate numerator
+            ether(42)
+        ).encodeABI()
+    );
+
+    await registryProxy.changeAdmin(proxyAdmin.address);
+    await distProxy.changeAdmin(proxyAdmin.address);
+    await exchangeProxy.changeAdmin(proxyAdmin.address);
 
     const yall = await YALLToken.new(registryProxy.address, "Coin token", "COIN", 18);
-
-    const registryInitTx = registryImplementation.contract.methods.initialize(
-    ).encodeABI();
-
-    const distInitTx = distImplementation.contract.methods.initialize(
-        periodVolume,
-        verifierRewardShare,
-
-        registryProxy.address,
-        periodLength,
-        genesisTimestamp
-    ).encodeABI();
-
-    const exchangeInitTx = exchangeImplementation.contract.methods.initialize(
-        registryProxy.address,
-        // defaultExchangeRate numerator
-        ether(42)
-    ).encodeABI();
-
-    await registryProxy.upgradeToAndCall(registryImplementation.address, registryInitTx);
-    await distProxy.upgradeToAndCall(distImplementation.address, distInitTx);
-    await exchangeProxy.upgradeToAndCall(exchangeImplementation.address, exchangeInitTx);
 
     const registry = await YALLRegistry.at(registryProxy.address);
     const dist = await YALLDistributor.at(distProxy.address);
@@ -72,6 +79,7 @@ async function buildCoinDistAndExchange(web3, governance, config) {
     await registry.setContract(await registry.YALL_EXCHANGE_KEY(), exchange.address);
 
     await registry.transferOwnership(governance);
+    await proxyAdmin.transferOwnership(governance);
 
     if (!config.onlyCustomACL) {
         await registry.setRole(dist.address, await yall.YALL_TOKEN_MINTER_ROLE(), true);

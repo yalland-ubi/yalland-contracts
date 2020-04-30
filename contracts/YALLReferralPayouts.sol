@@ -10,7 +10,7 @@
 pragma solidity ^0.5.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
+import "@openzeppelin/upgrades/contracts/Initializable.sol";
 import "./traits/OwnedAccessControl.sol";
 
 
@@ -18,7 +18,7 @@ import "./traits/OwnedAccessControl.sol";
  * @title YALLReferralPayouts contract
  * @author Galt Project
  **/
-contract YALLReferralPayouts is OwnableAndInitializable, OwnedAccessControl {
+contract YALLReferralPayouts is Initializable, OwnedAccessControl {
   string public constant OPERATOR_ROLE = "operator";
 
   IERC20 public yallToken;
@@ -36,11 +36,12 @@ contract YALLReferralPayouts is OwnableAndInitializable, OwnedAccessControl {
     address _yallToken
   )
     external
-    initializeWithOwner(_initialOwner)
+    initializer
   {
     require(_yallToken != address(0), "YALLReferralPayouts: YALLToken address can't be 0");
 
     yallToken = IERC20(_yallToken);
+    _transferOwnership(_initialOwner);
   }
 
   // OPERATOR INTERFACE
