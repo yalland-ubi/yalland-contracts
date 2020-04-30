@@ -78,9 +78,6 @@ async function buildCoinDistAndExchange(web3, governance, config) {
     await registry.setContract(await registry.YALL_DISTRIBUTOR_KEY(), dist.address);
     await registry.setContract(await registry.YALL_EXCHANGE_KEY(), exchange.address);
 
-    await registry.transferOwnership(governance);
-    await proxyAdmin.transferOwnership(governance);
-
     if (!config.onlyCustomACL) {
         await registry.setRole(dist.address, await yall.YALL_TOKEN_MINTER_ROLE(), true);
         await registry.setRole(dist.address, await yall.YALL_TOKEN_BURNER_ROLE(), true);
@@ -130,6 +127,9 @@ async function buildCoinDistAndExchange(web3, governance, config) {
         await exchange.EXCHANGE_SUPER_OPERATOR_ROLE(),
         true
     );
+
+    await registry.transferOwnership(governance);
+    await proxyAdmin.transferOwnership(governance);
 
     return [
         registry,
