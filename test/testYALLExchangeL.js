@@ -13,7 +13,7 @@ const { assert } = require('chai');
 const YALLToken = contract.fromArtifact('CoinTokenL');
 const YALLDistributor = contract.fromArtifact('YALLDistributorL');
 const YALLExchange = contract.fromArtifact('YALLExchange');
-const Proxy = contract.fromArtifact('OwnedUpgradeabilityProxy');
+const Proxy = contract.fromArtifact('BaseAdminUpgradeabilityProxy');
 
 YALLToken.numberFormat = 'String';
 YALLExchange.numberFormat = 'String';

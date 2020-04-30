@@ -9,7 +9,8 @@
 
 pragma solidity ^0.5.13;
 
-import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
+import "@openzeppelin/upgrades/contracts/Initializable.sol";
+import "@openzeppelin/contracts/ownership/Ownable.sol";
 
 
 /**
@@ -17,7 +18,7 @@ import "@galtproject/libs/contracts/traits/OwnableAndInitializable.sol";
  * @author Galt Project
  * @notice Contract address and ACL registry
  **/
-contract YALLRegistryCore is OwnableAndInitializable {
+contract YALLRegistryCore is Initializable, Ownable {
   address internal constant ZERO_ADDRESS = address(0);
 
   event SetContract(bytes32 indexed key, address addr);
@@ -29,7 +30,9 @@ contract YALLRegistryCore is OwnableAndInitializable {
   mapping(bytes32 => mapping(address => bool)) internal roles;
 
   // @dev owner is set to tx.origin
-  function initialize() public isInitializer {
+  function initialize() public initializer {
+    // solhint-disable-next-line avoid-tx-origin
+    _transferOwnership(tx.origin);
   }
 
   /**

@@ -11,7 +11,7 @@ pragma solidity ^0.5.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@galtproject/libs/contracts/traits/Initializable.sol";
+import "@openzeppelin/upgrades/contracts/Initializable.sol";
 import "./interfaces/IYALLDistributor.sol";
 import "./interfaces/IYALLToken.sol";
 import "./GSNRecipientSigned.sol";
@@ -101,7 +101,7 @@ contract YALLExchange is
     uint256 _defaultExchangeRate
   )
     external
-    isInitializer
+    initializer
   {
     require(_defaultExchangeRate > 0, "YALLExchange: Default rate can't be 0");
     require(_yallRegistry != address(0), "YALLExchange: YALLRegistry address can't be 0");

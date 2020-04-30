@@ -12,7 +12,7 @@ pragma solidity ^0.5.13;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
-import "@galtproject/libs/contracts/traits/Initializable.sol";
+import "@openzeppelin/upgrades/contracts/Initializable.sol";
 import "./interfaces/IYALLToken.sol";
 import "./interfaces/IYALLDistributor.sol";
 import "./GSNRecipientSigned.sol";
@@ -137,7 +137,7 @@ contract YALLDistributor is
     uint256 _genesisTimestamp
   )
     external
-    isInitializer
+    initializer
   {
     periodVolume = _periodVolume;
     emissionPoolRewardShare = _emissionPoolRewardShare;

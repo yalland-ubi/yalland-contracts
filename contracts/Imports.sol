@@ -1,6 +1,7 @@
 pragma solidity ^0.5.13;
 
-import "@galtproject/libs/contracts/proxy/unstructured-storage/OwnedUpgradeabilityProxy.sol";
+import "@openzeppelin/upgrades/contracts/upgradeability/AdminUpgradeabilityProxy.sol";
+import "@openzeppelin/upgrades/contracts/upgradeability/ProxyAdmin.sol";
 
 
 contract Imports {
