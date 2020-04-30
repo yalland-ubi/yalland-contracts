@@ -31,6 +31,7 @@ contract YALLRegistryCore is Initializable, Ownable {
 
   // @dev owner is set to tx.origin
   function initialize() public initializer {
+    // solhint-disable-next-line avoid-tx-origin
     _transferOwnership(tx.origin);
   }
 
