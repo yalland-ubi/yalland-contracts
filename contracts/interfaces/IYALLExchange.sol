@@ -42,7 +42,7 @@ interface IYALLExchange {
       uint256 totalVoided
     );
 
-  function orders(bytes32 _memberId)
+  function orders(uint256 _orderId)
     external
     view
     returns (
