@@ -12,6 +12,7 @@ pragma solidity ^0.5.13;
 
 interface IYALLToken {
   // CONSTANTS
+  // solhint-disable-next-line func-name-mixedcase
   function HUNDRED_PCT() external pure returns (uint256);
 
   // PUBLIC VARIABLES

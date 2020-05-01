@@ -20,6 +20,7 @@ interface IYALLExchange {
   }
 
   // CONSTANTS
+  // solhint-disable-next-line func-name-mixedcase
   function RATE_DIVIDER() external pure returns (uint256);
 
   // PUBLIC VARIABLES

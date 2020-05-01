@@ -9,13 +9,10 @@
 
 pragma solidity ^0.5.13;
 
-/**
- * @title YALLDistributor contract
- * @author Galt Project
- * @notice Mints YALL tokens on request according pre-configured formula
- **/
+
 interface IYALLDistributor {
   // CONSTANTS
+  // solhint-disable-next-line func-name-mixedcase
   function HUNDRED_PCT() external pure returns (uint256);
 
   // PUBLIC VARIABLES
