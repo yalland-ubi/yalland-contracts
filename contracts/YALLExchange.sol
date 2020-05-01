@@ -17,6 +17,7 @@ import "./interfaces/IYALLToken.sol";
 import "./GSNRecipientSigned.sol";
 import "./registry/YALLRegistryHelpers.sol";
 import "./traits/ACLPausable.sol";
+import "./interfaces/IYALLExchange.sol";
 
 
 /**
@@ -25,6 +26,7 @@ import "./traits/ACLPausable.sol";
  * @notice Exchange YALL to another currency
  **/
 contract YALLExchange is
+  IYALLExchange,
   Initializable,
   YALLRegistryHelpers,
   ACLPausable,
@@ -44,14 +46,6 @@ contract YALLExchange is
   event SetCustomPeriodLimit(address indexed fundManager, bytes32 indexed memberId, uint256 memberPeriodLimit);
   event SetGsnFee(address indexed fundManager, uint256 value);
   event VoidOrder(uint256 indexed orderId, address operator);
-
-  enum OrderStatus {
-    NULL,
-    OPEN,
-    CLOSED,
-    CANCELLED,
-    VOIDED
-  }
 
   struct Order {
     OrderStatus status;
@@ -146,7 +140,7 @@ contract YALLExchange is
     }
   }
 
-  // FUND MANAGER INTERFACE
+  // EXCHANGE MANAGER INTERFACE
 
   /**
    * @dev Sets a default exchange rate
@@ -202,6 +196,8 @@ contract YALLExchange is
     emit SetCustomPeriodLimit(msg.sender, _memberId, _customPeriodLimit);
   }
 
+  // FEE MANAGER INTERFACE
+
   /**
    * @dev Sets a default GSN fee
    */
@@ -210,6 +206,8 @@ contract YALLExchange is
 
     emit SetGsnFee(msg.sender, _gsnFee);
   }
+
+  // FEE CLAIMER INTERFACE
 
   /**
    * @dev Withdraws almost all YALL tokens

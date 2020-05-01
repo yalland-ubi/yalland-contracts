@@ -95,7 +95,7 @@ contract YALLToken is
     _transfer(from, address(this), gsnFee);
   }
 
-  // MANAGER INTERFACE
+  // MINTER INTERFACE
 
   function mint(address _account, uint256 _amount) public whenNotPaused onlyMinter returns (bool) {
     _mint(_account, _amount);
@@ -105,17 +105,23 @@ contract YALLToken is
     return true;
   }
 
+  // BURNER INTERFACE
+
   function burn(address _account, uint256 _amount) public whenNotPaused onlyBurner {
     _burn(_account, _amount);
 
     emit Burn(msg.sender, _account, _amount);
   }
 
+  // WHITELIST MANAGER INTERFACE
+
   function setWhitelistAddress(address _addr, bool _isActive) public onlyTransferWLManager {
     opsWhitelist[_addr] = _isActive;
 
     emit SetWhitelistAddress(_addr, _isActive);
   }
+
+  // FEE MANAGER INTERFACE
 
   function setTransferFee(uint256 _transferFee) public onlyFeeManager {
     require(_transferFee < HUNDRED_PCT, "Invalid fee value");
@@ -130,6 +136,8 @@ contract YALLToken is
 
     emit SetGsnFee(msg.sender, _gsnFee);
   }
+
+  // FEE CLAIMER INTERFACE
 
   function withdrawFee() public onlyFeeClaimer {
     address _this = address(this);
@@ -186,6 +194,7 @@ contract YALLToken is
   }
 
   // INTERNAL
+
   function _requireMemberIsValid(address _member) internal view {
     require(isMemberValid(_member), "YALLToken: Member is invalid");
   }
