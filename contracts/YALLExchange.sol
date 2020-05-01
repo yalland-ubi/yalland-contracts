@@ -201,7 +201,7 @@ contract YALLExchange is
   /**
    * @dev Sets a default GSN fee
    */
-  function setGsnFee(uint256 _gsnFee) public onlyFeeManager {
+  function setGsnFee(uint256 _gsnFee) external onlyFeeManager {
     gsnFee = _gsnFee;
 
     emit SetGsnFee(msg.sender, _gsnFee);
@@ -213,7 +213,7 @@ contract YALLExchange is
    * @dev Withdraws almost all YALL tokens
    * It keeps a small percent of tokens to reduce gas cost for further transfer operations with this address using GSN.
    */
-  function withdrawYALLs() public onlyFeeClaimer {
+  function withdrawYALLs() external onlyFeeClaimer {
     address tokenAddress = _yallTokenAddress();
     uint256 payout = IERC20(tokenAddress).balanceOf(address(this));
 

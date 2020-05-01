@@ -13,7 +13,7 @@ import "./MockRegistryV2.sol";
 
 
 contract MockRegistryV3 is MockRegistryV2 {
-  function whoAmI() external view returns (string memory) {
+  function whoAmI() external pure returns (string memory) {
     return "im a mock v3";
   }
 }

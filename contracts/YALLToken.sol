@@ -97,7 +97,7 @@ contract YALLToken is
 
   // MINTER INTERFACE
 
-  function mint(address _account, uint256 _amount) public whenNotPaused onlyMinter returns (bool) {
+  function mint(address _account, uint256 _amount) external whenNotPaused onlyMinter returns (bool) {
     _mint(_account, _amount);
 
     emit Mint(msg.sender, _account, _amount);
@@ -107,7 +107,7 @@ contract YALLToken is
 
   // BURNER INTERFACE
 
-  function burn(address _account, uint256 _amount) public whenNotPaused onlyBurner {
+  function burn(address _account, uint256 _amount) external whenNotPaused onlyBurner {
     _burn(_account, _amount);
 
     emit Burn(msg.sender, _account, _amount);
@@ -115,7 +115,7 @@ contract YALLToken is
 
   // WHITELIST MANAGER INTERFACE
 
-  function setWhitelistAddress(address _addr, bool _isActive) public onlyTransferWLManager {
+  function setWhitelistAddress(address _addr, bool _isActive) external onlyTransferWLManager {
     opsWhitelist[_addr] = _isActive;
 
     emit SetWhitelistAddress(_addr, _isActive);
@@ -123,7 +123,7 @@ contract YALLToken is
 
   // FEE MANAGER INTERFACE
 
-  function setTransferFee(uint256 _transferFee) public onlyFeeManager {
+  function setTransferFee(uint256 _transferFee) external onlyFeeManager {
     require(_transferFee < HUNDRED_PCT, "Invalid fee value");
 
     transferFee = _transferFee;
@@ -131,7 +131,7 @@ contract YALLToken is
     emit SetTransferFee(msg.sender, _transferFee);
   }
 
-  function setGsnFee(uint256 _gsnFee) public onlyFeeManager {
+  function setGsnFee(uint256 _gsnFee) external onlyFeeManager {
     gsnFee = _gsnFee;
 
     emit SetGsnFee(msg.sender, _gsnFee);
@@ -139,7 +139,7 @@ contract YALLToken is
 
   // FEE CLAIMER INTERFACE
 
-  function withdrawFee() public onlyFeeClaimer {
+  function withdrawFee() external onlyFeeClaimer {
     address _this = address(this);
     uint256 _payout = balanceOf(_this);
 

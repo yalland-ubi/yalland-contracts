@@ -214,7 +214,7 @@ contract YALLDistributor is
 
   // FEE MANAGER INTERFACE
 
-  function setGsnFee(uint256 _gsnFee) public onlyFeeManager {
+  function setGsnFee(uint256 _gsnFee) external onlyFeeManager {
     gsnFee = _gsnFee;
 
     emit SetGsnFee(_gsnFee);
@@ -455,14 +455,14 @@ contract YALLDistributor is
     activeAddressesCache.remove(from);
     activeAddressesCache.add(_to);
 
+    emit ChangeMemberAddress(memberId, from, _to);
+
     uint256 memberBalance = _yallTokenIERC20().balanceOf(from);
     if (memberBalance > 0) {
       IYALLToken token = _yallToken();
       token.burn(_from, memberBalance);
       token.mint(_to, memberBalance);
     }
-
-    emit ChangeMemberAddress(memberId, from, _to);
   }
 
   function _incrementActiveMemberCount(uint256 _n) internal {
@@ -595,9 +595,9 @@ contract YALLDistributor is
     Member storage m = member[memberId];
     require(m.addr == _msgSender(), "YALLDistributor: Only the member allowed");
 
-    _changeMemberAddress(_msgSender(), _to);
-
     emit ChangeMyAddress(memberId, _msgSender(), _to);
+
+    _changeMemberAddress(_msgSender(), _to);
   }
 
   // PERMISSIONLESS INTERFACE

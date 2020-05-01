@@ -19,7 +19,7 @@ contract MockRegistryV2 is YALLRegistryCore {
     theAnswer = _theAnswer;
   }
 
-  function whoAmI() external view returns (string memory) {
+  function whoAmI() external pure returns (string memory) {
     return "im a mock v2";
   }
 }
