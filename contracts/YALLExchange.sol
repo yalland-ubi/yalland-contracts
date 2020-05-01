@@ -349,24 +349,15 @@ contract YALLExchange is
   }
 
   function _isActiveAddress(address _addr) internal view returns(bool) {
-    // return yallDistributor.isActive(_addr);
-    // solhint-disable-next-line space-after-comma
-    (,bool isActive,,,,,) = _yallDistributor().getMemberByAddress(_addr);
-    return isActive;
+    return _yallDistributor().isActive(_addr);
   }
 
   function _getTotalClaimed(bytes32 _memberId) internal view returns(uint256) {
-    // return yallDistributor.getTotalClaimed(_memberId);
-    // solhint-disable-next-line space-after-comma
-    (,,,,,uint256 totalClaimed) = _yallDistributor().member(_memberId);
-    return totalClaimed;
+    return _yallDistributor().getTotalClaimed(_memberId);
   }
 
   function _getMemberAddress(bytes32 _memberId) internal view returns(address) {
-    // return yallDistributor.getMemberAddress(_memberId);
-    // solhint-disable-next-line space-after-comma
-    (,address addr,,,,) = _yallDistributor().member(_memberId);
-    return addr;
+    return _yallDistributor().getMemberAddress(_memberId);
   }
 
   function requireLimit1NotReached(bytes32 _memberId, uint256 _yallAmount) internal view {
