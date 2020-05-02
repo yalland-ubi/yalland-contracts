@@ -23,7 +23,7 @@ contract YALLRegistry is YALLRegistryCore {
   bytes32 public constant YALL_DISTRIBUTOR_KEY = bytes32("YALL_DISTRIBUTOR");
   bytes32 public constant YALL_EXCHANGE_KEY = bytes32("YALL_EXCHANGE");
 
-  function getYallTokenAddress() public view returns (address) {
+  function getYallTokenAddress() external view returns (address) {
     require(contracts[YALL_TOKEN_KEY] != ZERO_ADDRESS, "YALLRegistry: YALL_TOKEN not set");
     return contracts[YALL_TOKEN_KEY];
   }

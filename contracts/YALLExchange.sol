@@ -17,6 +17,7 @@ import "./interfaces/IYALLToken.sol";
 import "./GSNRecipientSigned.sol";
 import "./registry/YALLRegistryHelpers.sol";
 import "./traits/ACLPausable.sol";
+import "./interfaces/IYALLExchange.sol";
 
 
 /**
@@ -25,6 +26,7 @@ import "./traits/ACLPausable.sol";
  * @notice Exchange YALL to another currency
  **/
 contract YALLExchange is
+  IYALLExchange,
   Initializable,
   YALLRegistryHelpers,
   ACLPausable,
@@ -44,14 +46,6 @@ contract YALLExchange is
   event SetCustomPeriodLimit(address indexed fundManager, bytes32 indexed memberId, uint256 memberPeriodLimit);
   event SetGsnFee(address indexed fundManager, uint256 value);
   event VoidOrder(uint256 indexed orderId, address operator);
-
-  enum OrderStatus {
-    NULL,
-    OPEN,
-    CLOSED,
-    CANCELLED,
-    VOIDED
-  }
 
   struct Order {
     OrderStatus status;
@@ -146,7 +140,7 @@ contract YALLExchange is
     }
   }
 
-  // FUND MANAGER INTERFACE
+  // EXCHANGE MANAGER INTERFACE
 
   /**
    * @dev Sets a default exchange rate
@@ -202,20 +196,24 @@ contract YALLExchange is
     emit SetCustomPeriodLimit(msg.sender, _memberId, _customPeriodLimit);
   }
 
+  // FEE MANAGER INTERFACE
+
   /**
    * @dev Sets a default GSN fee
    */
-  function setGsnFee(uint256 _gsnFee) public onlyFeeManager {
+  function setGsnFee(uint256 _gsnFee) external onlyFeeManager {
     gsnFee = _gsnFee;
 
     emit SetGsnFee(msg.sender, _gsnFee);
   }
 
+  // FEE CLAIMER INTERFACE
+
   /**
    * @dev Withdraws almost all YALL tokens
    * It keeps a small percent of tokens to reduce gas cost for further transfer operations with this address using GSN.
    */
-  function withdrawYALLs() public onlyFeeClaimer {
+  function withdrawYALLs() external onlyFeeClaimer {
     address tokenAddress = _yallTokenAddress();
     uint256 payout = IERC20(tokenAddress).balanceOf(address(this));
 
@@ -351,24 +349,15 @@ contract YALLExchange is
   }
 
   function _isActiveAddress(address _addr) internal view returns(bool) {
-    // return yallDistributor.isActive(_addr);
-    // solhint-disable-next-line space-after-comma
-    (,bool isActive,,,,,) = _yallDistributor().getMemberByAddress(_addr);
-    return isActive;
+    return _yallDistributor().isActive(_addr);
   }
 
   function _getTotalClaimed(bytes32 _memberId) internal view returns(uint256) {
-    // return yallDistributor.getTotalClaimed(_memberId);
-    // solhint-disable-next-line space-after-comma
-    (,,,,,uint256 totalClaimed) = _yallDistributor().member(_memberId);
-    return totalClaimed;
+    return _yallDistributor().getTotalClaimed(_memberId);
   }
 
   function _getMemberAddress(bytes32 _memberId) internal view returns(address) {
-    // return yallDistributor.getMemberAddress(_memberId);
-    // solhint-disable-next-line space-after-comma
-    (,address addr,,,,) = _yallDistributor().member(_memberId);
-    return addr;
+    return _yallDistributor().getMemberAddress(_memberId);
   }
 
   function requireLimit1NotReached(bytes32 _memberId, uint256 _yallAmount) internal view {

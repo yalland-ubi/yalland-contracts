@@ -82,7 +82,7 @@ contract YALLDistributor is
   // 100% == 100 ether
   uint256 public emissionPoolRewardShare;
   // in YALL wei
-  uint256 public gsnFee = 0;
+  uint256 public gsnFee;
 
   // credentialsHash => memberDetails
   mapping(bytes32 => Member) public member;
@@ -92,7 +92,6 @@ contract YALLDistributor is
   mapping(uint256 => Period) public period;
 
   EnumerableSet.AddressSet internal activeAddressesCache;
-
 
   // Mints tokens, assigns the verifier reward and caches reward per member
   modifier triggerTransition() {
@@ -186,7 +185,7 @@ contract YALLDistributor is
     }
   }
 
-  // OWNER INTERFACE
+  // DISTRIBUTOR MANAGER INTERFACE
 
   /*
    * @dev Changes a verifier reward share to a new one.
@@ -213,11 +212,15 @@ contract YALLDistributor is
     emit SetPeriodVolume(oldPeriodVolume, _periodVolume);
   }
 
-  function setGsnFee(uint256 _gsnFee) public onlyFeeManager {
+  // FEE MANAGER INTERFACE
+
+  function setGsnFee(uint256 _gsnFee) external onlyFeeManager {
     gsnFee = _gsnFee;
 
     emit SetGsnFee(_gsnFee);
   }
+
+  // FEE CLAIMER INTERFACE
 
   function withdrawFee() external onlyFeeClaimer {
     address tokenAddress = _yallTokenAddress();
@@ -376,7 +379,35 @@ contract YALLDistributor is
     _changeMemberAddress(_from, _to);
   }
 
-  // VERIFIER INTERNAL METHODS
+  /*
+   * @dev Acts on behalf of multiple fund members, distributes funds to their corresponding addresses
+   * @params _memberAddresses to claim funds for
+   */
+  function claimFundsMultiple(
+    address[] calldata _memberAddresses
+  )
+    external
+    triggerTransition
+    whenNotPaused
+    onlyDistributorVerifier
+  {
+    uint256 currentPeriodId = getCurrentPeriodId();
+    uint256 rewardPerMember = period[currentPeriodId].rewardPerMember;
+    uint256 currentPeriodBeginsAt = getCurrentPeriodBeginsAt();
+
+    uint256 len = _memberAddresses.length;
+
+    for (uint256 i = 0; i < len; i++) {
+      _claimFunds(
+        _memberAddresses[i],
+        rewardPerMember,
+        currentPeriodId,
+        currentPeriodBeginsAt
+      );
+    }
+  }
+
+  // VERIFIER INTERNAL INTERFACE
 
   function _addMembers(bytes32[] memory _memberIds, address[] memory _memberAddresses) internal {
     uint256 len = _memberIds.length;
@@ -424,14 +455,14 @@ contract YALLDistributor is
     activeAddressesCache.remove(from);
     activeAddressesCache.add(_to);
 
+    emit ChangeMemberAddress(memberId, from, _to);
+
     uint256 memberBalance = _yallTokenIERC20().balanceOf(from);
     if (memberBalance > 0) {
       IYALLToken token = _yallToken();
       token.burn(_from, memberBalance);
       token.mint(_to, memberBalance);
     }
-
-    emit ChangeMemberAddress(memberId, from, _to);
   }
 
   function _incrementActiveMemberCount(uint256 _n) internal {
@@ -476,34 +507,6 @@ contract YALLDistributor is
   }
 
   // MEMBER INTERFACE
-
-  /*
-   * @dev Claims multiple member funds
-   * @params _memberAddresses to claim funds for
-   */
-  function claimFundsMultiple(
-    address[] calldata _memberAddresses
-  )
-    external
-    triggerTransition
-    whenNotPaused
-    onlyDistributorVerifier
-  {
-    uint256 currentPeriodId = getCurrentPeriodId();
-    uint256 rewardPerMember = period[currentPeriodId].rewardPerMember;
-    uint256 currentPeriodBeginsAt = getCurrentPeriodBeginsAt();
-
-    uint256 len = _memberAddresses.length;
-
-    for (uint256 i = 0; i < len; i++) {
-      _claimFunds(
-        _memberAddresses[i],
-        rewardPerMember,
-        currentPeriodId,
-        currentPeriodBeginsAt
-      );
-    }
-  }
 
   /*
    * @dev Claims member funds
@@ -592,12 +595,12 @@ contract YALLDistributor is
     Member storage m = member[memberId];
     require(m.addr == _msgSender(), "YALLDistributor: Only the member allowed");
 
-    _changeMemberAddress(_msgSender(), _to);
-
     emit ChangeMyAddress(memberId, _msgSender(), _to);
+
+    _changeMemberAddress(_msgSender(), _to);
   }
 
-  // PERMISSIONLESS METHODS
+  // PERMISSIONLESS INTERFACE
 
   /*
    * @dev Anyone can trigger period transition
@@ -606,7 +609,7 @@ contract YALLDistributor is
     // solhint-disable-previous-line no-empty-blocks
   }
 
-  // VIEW METHODS
+  // GETTERS
 
   function getCurrentPeriodId() public view returns (uint256) {
     uint256 blockTimestamp = block.timestamp;
