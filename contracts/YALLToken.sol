@@ -33,7 +33,6 @@ contract YALLToken is
 
   event SetTransferFee(address indexed feeManager, uint256 share);
   event SetGsnFee(address indexed feeManager, uint256 value);
-  event SetDistributor(uint256 newDistributor);
   event SetWhitelistAddress(address addr, bool isActive);
   event TransferWithMemo(address indexed from, address indexed to, uint256 value, string memo);
   event Mint(address indexed minter, address indexed to, uint256 value);
