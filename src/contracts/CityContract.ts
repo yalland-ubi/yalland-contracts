@@ -255,6 +255,10 @@ export default class CityContract extends EthContract {
         return this.massCallMethod("participants", [address]);
     }
 
+    async getMemberByAddress(address) {
+        return this.massCallMethod("getMemberByAddress", [address]);
+    }
+
     async isMemberHaveTariff(address, tariffId) {
         const memberTariff = await this.massCallMethod("getParticipantTariffInfo", [address, tariffId]);
         return memberTariff.active;

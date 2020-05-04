@@ -12,6 +12,7 @@
     "lint:js": "eslint .",
     "lint:sol": "solhint --max-warnings 0 \"contracts/**/*.sol\"",
     "local": "NODE_ENV=local ./node_modules/.bin/webpack-dev-server",
+    "local-prod": "NODE_ENV=production ./node_modules/.bin/webpack-dev-server",
     "deploy-test": "yarn && NODE_ENV=test node ./node_modules/.bin/webpack && surge ./dist dcity-test.surge.sh",
     "deploy-prod": "yarn && NODE_ENV=production node ./node_modules/.bin/webpack && surge ./dist dcity.surge.sh",
     "build": "yarn && NODE_ENV=production node ./node_modules/.bin/webpack",
