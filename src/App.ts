@@ -145,6 +145,8 @@ export default {
         // TODO: move root variables to plugins
         this.$root.$cointTokenContract = this.$cointTokenContract;
         this.$root.$cityContract = this.$cityContract;
+
+        // this.$yalDistributorContract.getMemberByAddress('0x2fa24b212c50754185d806775a32a9d12254e7cd');
         
         await this.initServerWeb3();
         
@@ -419,6 +421,13 @@ export default {
                     return;
                 }
                 this.$store.commit('is_migrate_manager', has);
+            });
+            this.$galtUser.hasExchangeManagerRole().then((has) => {
+                console.log('hasExchangeManagerRole', has);
+                if(has == this.is_exchange_manager) {
+                    return;
+                }
+                this.$store.commit('is_exchange_manager', has);
             });
         },
 

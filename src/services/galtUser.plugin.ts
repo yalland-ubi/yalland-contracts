@@ -230,6 +230,10 @@ export default {
                 return $contracts.$yalReferralPayouts.addRoleTo(sendOptions(), address, role);
             },
 
+            async sendExchangeMethod(methodName, args) {
+                return $contracts.$yalExchange[methodName].apply($contracts.$yalExchange, [sendOptions()].concat(args));
+            },
+
             async sendCityContractMethod(methodName, args) {
                 return $contracts.$city.sendMethodWithArgs(sendOptions(), methodName, args);
             },
@@ -298,6 +302,11 @@ export default {
             async hasMigrateManagerRole() {
                 await onWalletReady();
                 return $contracts.$addressUpgrader.hasRole(walletAddress, "superuser");
+            },
+
+            async hasExchangeManagerRole() {
+                await onWalletReady();
+                return $contracts.$yalExchange.hasRole(walletAddress, "fund_manager");
             },
 
             async generateNewInternalWallet(){

@@ -9,8 +9,8 @@ compile: cleanup
 	-tput bel
 
 lint:
-	npm run ethlint
-	npm run eslint
+	npm run lint:sol
+	npm run lint:js
 
 test:
 	-npm test

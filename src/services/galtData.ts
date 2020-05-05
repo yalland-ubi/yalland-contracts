@@ -7,7 +7,6 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-import * as pIteration from "p-iteration";
 import * as _ from "lodash";
 const Web3 = require('web3');
 const BN = Web3.utils.BN;
@@ -24,6 +23,7 @@ const config = require("../../config");
 const galtUtils = require('@galtproject/utils');
 import * as moment from 'moment';
 const sigUtil = require('eth-sig-util');
+const isUndefined = require('lodash/isUndefined');
 
 export default class GaltData {
     static contractsConfig: any;
@@ -552,10 +552,10 @@ export default class GaltData {
                 component: SpecifyAmountModal,
                 props: props,
                 onClose(amount) {
-                    if(amount) {
-                        resolve(amount);
-                    } else {
+                    if(isUndefined(amount)) {
                         reject();
+                    } else {
+                        resolve(amount);
                     }
                 }
             });

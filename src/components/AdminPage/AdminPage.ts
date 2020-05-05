@@ -7,14 +7,13 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-import AdminMembers from "./AdminMembers/AdminMembers";
-import AdminTariffs from "./AdminTariffs/AdminTariffs";
 import AdminCoin from "./AdminCoin/AdminCoin";
+import AdminExchange from "./AdminExchange/AdminExchange";
 
 export default {
     name: 'admin-page',
     template: require('./AdminPage.html'),
-    components: {AdminMembers, AdminTariffs, AdminCoin},
+    components: {AdminCoin, AdminExchange},
     created() {
 
     },

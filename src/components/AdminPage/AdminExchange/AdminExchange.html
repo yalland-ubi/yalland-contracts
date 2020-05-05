@@ -1,0 +1,41 @@
+<!--
+  ~ Copyright ©️ 2018 Galt•Project Society Construction and Terraforming Company
+  ~ (Founded by [Nikolai Popeka](https://github.com/npopeka)
+  ~
+  ~ Copyright ©️ 2018 Galt•Core Blockchain Company
+  ~ (Founded by [Nikolai Popeka](https://github.com/npopeka) by
+  ~ [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
+  -->
+
+<md-card>
+    <md-card-header>
+        <div class="md-title" v-locale="localeKey + '.title'"></div>
+    </md-card-header>
+
+    <md-card-content>
+        <md-list v-if="data">
+            <md-subheader v-locale="localeKey + '.general_data'"></md-subheader>
+
+            <md-list-item>
+                <span class="md-list-item-text row-direction">
+                    <span v-locale="localeKey + '.address'"></span> <hex-cut :hex="exchangeAddress"></hex-cut>
+                </span>
+            </md-list-item>
+            
+            <md-list-item v-for="item in dataItems" :class="{'right-button-container': !!item.setting && is_exchange_manager}">
+                <span class="md-list-item-text row-direction">
+                    <span v-locale="localeKey + '.data.' + item.name"></span> <span>{{data[item.name] | beautyNumber}} {{item.unit}}</span>
+                </span>
+                <md-button class="md-icon-button md-list-action md-raised" @click="editSetting(item.setting, data[item.name])" v-if="is_exchange_manager && item.setting">
+                    <md-icon class="md-accent">edit</md-icon>
+                </md-button>
+            </md-list-item>
+
+<!--            <md-list-item v-if="is_city_manager">-->
+<!--                <md-button class="md-accent md-raised" @click="migrateBalances()">-->
+<!--                    Миграция балансов-->
+<!--                </md-button>-->
+<!--            </md-list-item>-->
+        </md-list>
+    </md-card-content>
+</md-card>

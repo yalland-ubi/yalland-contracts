@@ -168,6 +168,44 @@
   },
   "admin": {
     "title": "Административная панель",
+    "exchange": {
+      "title": "Контракт обмена YAL на рубли",
+      "general_data": "Общие данные",
+      "address": "Адрес контракта",
+      "data": {
+        "total_exchanged": "Всего обменяно",
+        "exchange_balance": "Баланс YAL на обменнике",
+        "default_exchange_rate": "Курс обмена",
+        "default_member_period_limit": "Лимит пользователя за период",
+        "total_period_limit": "Общий лимит за период"
+      },
+      "edit_setting": {
+        "set_default_exchange_rate": {
+          "title": "Редактировать общий курс обмена",
+          "placeholder": "Сколько рублей будет получено за 1 YAL"
+        },
+        "set_default_member_period_limit": {
+          "title": "Редактировать лимит пользователя YAL за период",
+          "placeholder": "Сколько YAL можно обменять пользователю за период"
+        },
+        "set_total_period_limit": {
+          "title": "Редактировать общий лимит YAL за период",
+          "placeholder": "Сколько YAL можно обменять за период"
+        }
+      },
+      "success": {
+        "edit_setting": {
+          "title": "Успешно изменено",
+          "description": " "
+        }
+      },
+      "error": {
+        "edit_setting": {
+          "title": "Ошибка при изменении",
+          "description": "<%= message %>"
+        }
+      }
+    },
     "coin": {
       "title": "YAL",
       "general_data": "Общие данные",

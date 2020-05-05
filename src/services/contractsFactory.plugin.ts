@@ -10,6 +10,7 @@
 import CoinTokenContract from "../contracts/CoinTokenContract";
 import CityContract from "../contracts/CityContract";
 import GaltData from "./galtData";
+import ExchangeContract from "../contracts/ExchangeContract";
 
 const _ = require('lodash');
 
@@ -21,7 +22,7 @@ export default {
             'addressUpgrader': CityContract,
             'yalDistributor': CityContract,
             'tariffAdder': CityContract,
-            'yalExchange': CityContract,
+            'yalExchange': ExchangeContract,
             'yalReferralPayouts': CityContract
         };
 

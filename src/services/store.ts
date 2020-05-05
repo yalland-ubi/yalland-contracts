@@ -23,6 +23,7 @@ export default new Vuex.Store({
         is_fee_manager: false,
         is_role_manager: false,
         is_migrate_manager: false,
+        is_exchange_manager: false,
         user_eth_balance: null,
         user_space_balance: null,
         user_coin_balance: null,
@@ -66,6 +67,9 @@ export default new Vuex.Store({
         },
         is_fee_manager(state, is_fee_manager) {
             state.is_fee_manager = is_fee_manager;
+        },
+        is_exchange_manager(state, is_exchange_manager) {
+            state.is_exchange_manager = is_exchange_manager;
         },
 
         internal_wallet(state, internal_wallet) {
