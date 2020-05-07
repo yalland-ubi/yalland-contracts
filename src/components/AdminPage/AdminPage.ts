@@ -39,7 +39,10 @@ export default {
             return this.$store.state.user_wallet;
         },
         is_city_manager() {
-            return this.is_fee_manager || this.is_rate_manager || this.is_member_join_manager || this.is_member_leave_manager;
+            return this.is_fee_manager || this.is_rate_manager || this.is_member_join_manager || this.is_member_leave_manager || this.is_exchange_manager;
+        },
+        is_exchange_manager() {
+            return this.$store.state.is_exchange_manager;
         },
         is_fee_manager() {
             return this.$store.state.is_fee_manager;
