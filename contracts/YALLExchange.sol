@@ -64,7 +64,7 @@ contract YALLExchange is
     uint256 totalExchanged;
     uint256 totalVoided;
 
-    // periodId => yall exchanged
+    // periodId => yallToken exchanged
     mapping(uint256 => uint256) yallExchangedByPeriod;
   }
 

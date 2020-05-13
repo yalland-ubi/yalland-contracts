@@ -45,14 +45,14 @@ describe('YALLToken', () => {
     let genesisTimestamp;
 
     beforeEach(async function () {
-        [ registry, yallToken, dist ] = await buildCoinDistAndExchange(web3, defaultSender, {
+        ({ registry, yallToken, dist } = await buildCoinDistAndExchange(web3, defaultSender, {
             distributorVerifier,
             yallMinter,
             feeManager,
             feeClaimer,
             pauser,
             yallWLManager
-        });
+        }));
 
         await yallToken.mint(alice, ether(baseAliceBalance), {from: yallMinter});
         await yallToken.setTransferFee(ether(feePercent), {from: feeManager});

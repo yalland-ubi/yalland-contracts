@@ -51,7 +51,7 @@ describe('YALLExchange Unit tests', () => {
     let dist;
 
     beforeEach(async function () {
-        [ ,yallToken, dist, exchange, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, {
+        ({ yallToken, dist, exchange, genesisTimestamp } = await buildCoinDistAndExchange(web3, defaultSender, {
             periodVolume,
             feeManager,
             feeClaimer,
@@ -63,7 +63,7 @@ describe('YALLExchange Unit tests', () => {
             exchangeManager,
             exchangeOperator,
             exchangeSuperOperator,
-        });
+        }));
 
         await yallToken.mint(alice, ether(baseAliceBalance), { from: yallMinter });
         await yallToken.setTransferFee(ether('0.02'), { from: feeManager });

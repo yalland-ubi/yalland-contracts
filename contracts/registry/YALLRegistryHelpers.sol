@@ -10,9 +10,11 @@
 pragma solidity ^0.5.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "erc20-staking-contracts/contracts/interfaces/IStakingHomeMediator.sol";
 import "./YALLRegistry.sol";
 import "../interfaces/IYALLDistributor.sol";
 import "../interfaces/IYALLToken.sol";
+import "../interfaces/IYALLVerification.sol";
 
 /**
  * @title YALLRegistry contract
@@ -38,6 +40,10 @@ contract YALLRegistryHelpers {
   bytes32 public constant EXCHANGE_MANAGER_ROLE = bytes32("EXCHANGE_MANAGER");
   bytes32 public constant EXCHANGE_OPERATOR_ROLE = bytes32("EXCHANGE_OPERATOR");
   bytes32 public constant EXCHANGE_SUPER_OPERATOR_ROLE = bytes32("EXCHANGE_SUPER_OPERATOR");
+  // YALLEmissionRewardPool Role Constants
+  bytes32 public constant EMISSION_POOL_MANAGER_ROLE = bytes32("EMISSION_POOL_MANAGER");
+  // YALLCommissionRewardPool Role Constants
+  bytes32 public constant COMMISSION_POOL_MANAGER_ROLE = bytes32("COMMISSION_POOL_MANAGER");
 
   // Common Role Checkers
 
@@ -127,6 +133,26 @@ contract YALLRegistryHelpers {
     _;
   }
 
+  // YALLEmissionRewardPool Role Checkers
+
+  modifier onlyEmissionRewardPoolManager() {
+    require(
+      yallRegistry.hasRole(msg.sender, EMISSION_POOL_MANAGER_ROLE),
+      "YALLHelpers: Only EMISSION_POOL_MANAGER allowed"
+    );
+    _;
+  }
+
+  // YALLCommissionRewardPool Role Checkers
+
+  modifier onlyCommissionRewardPoolManager() {
+    require(
+      yallRegistry.hasRole(msg.sender, COMMISSION_POOL_MANAGER_ROLE),
+      "YALLHelpers: Only COMMISSION_POOL_MANAGER allowed"
+    );
+    _;
+  }
+
   // CONTRACT GETTERS
 
   function _yallTokenAddress() internal view returns (address) {
@@ -143,5 +169,13 @@ contract YALLRegistryHelpers {
 
   function _yallDistributor() internal view returns (IYALLDistributor) {
     return IYALLDistributor(yallRegistry.getYallDistributorAddress());
+  }
+
+  function _yallVerification() internal view returns (IYALLVerification) {
+    return IYALLVerification(yallRegistry.getYallVerificationAddress());
+  }
+
+  function _homeMediator() internal view returns (IStakingHomeMediator) {
+    return IStakingHomeMediator(yallRegistry.getYallHomeMediatorAddress());
   }
 }

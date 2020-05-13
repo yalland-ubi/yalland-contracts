@@ -45,7 +45,7 @@ describe('YALLDistributor Unit tests', () => {
     let dist;
 
     beforeEach(async function () {
-        [ registry, yallToken, dist,, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, {
+        ({ registry, yallToken, dist, genesisTimestamp } = await buildCoinDistAndExchange(web3, defaultSender, {
             periodVolume,
             pauser,
             feeManager,
@@ -56,7 +56,7 @@ describe('YALLDistributor Unit tests', () => {
             yallMinter,
             yallBurner,
             yallWLManager
-        });
+        }));
 
         await yallToken.mint(alice, ether(baseAliceBalance), { from: yallMinter });
         await yallToken.setTransferFee(ether('0.02'), { from: feeManager });
@@ -514,26 +514,28 @@ describe('YALLDistributor Unit tests', () => {
                 assert.equal(await dist.getCurrentPeriodId(), 0);
 
                 const charlieBalanceBefore = await yallToken.balanceOf(charlie);
-                await dist.claimEmissionPoolReward(0, charlie, { from: distributorEmissionClaimer });
+                await dist.distributeEmissionPoolReward(0, charlie, ether(25 * 1000), { from: distributorEmissionClaimer });
                 const charlieBalanceAfter = await yallToken.balanceOf(charlie);
 
                 let res = await dist.period(0);
-                assert.equal(res.emissionPoolReward, ether(25 * 1000));
+                assert.equal(res.emissionPoolRewardTotal, ether(25 * 1000));
 
                 assertErc20BalanceChanged(charlieBalanceBefore, charlieBalanceAfter, ether(25 * 1000))
             });
 
-            it('should deny distributorEmissionClaimer claiming reward twice', async function() {
+            it('should deny distributorEmissionClaimer claiming more reward than distributed', async function() {
                 await dist.addMembersBeforeGenesis([memberId1], [bob], { from: distributorVerifier });
                 await increaseTime(11);
 
                 // P0
                 assert.equal(await dist.getCurrentPeriodId(), 0);
-                await dist.claimEmissionPoolReward(0, charlie, { from: distributorEmissionClaimer });
+                await dist.distributeEmissionPoolReward(0, charlie, ether(15 * 1000), { from: distributorEmissionClaimer });
+                await dist.distributeEmissionPoolReward(0, bob, ether(5 * 1000), { from: distributorEmissionClaimer });
                 await assertRevert(
-                    dist.claimEmissionPoolReward(0, charlie, { from: distributorEmissionClaimer }),
-                    'YALLDistributor: Already claimed for given period'
+                    dist.distributeEmissionPoolReward(0, charlie, ether(6 * 1000), { from: distributorEmissionClaimer }),
+                    'YALLDistributor: Exceeds the period emission reward'
                 );
+                await dist.distributeEmissionPoolReward(0, bob, ether(5 * 1000), { from: distributorEmissionClaimer });
             });
 
             it('should not assign P0 distributorEmissionClaimer reward if there were no users at genesisTimestamp', async function() {
@@ -545,9 +547,9 @@ describe('YALLDistributor Unit tests', () => {
                 await dist.addMember(memberId1, bob, { from: distributorVerifier });
 
                 let res = await dist.period(0);
-                assert.equal(res.emissionPoolReward, 0);
+                assert.equal(res.emissionPoolRewardTotal, 0);
 
-                await dist.claimEmissionPoolReward(0, charlie, { from: distributorEmissionClaimer });
+                await dist.distributeEmissionPoolReward(0, charlie, ether(25 * 1000), { from: distributorEmissionClaimer });
             });
 
             it('should deny non-distributorEmissionClaimer claiming reward', async function() {
@@ -558,7 +560,7 @@ describe('YALLDistributor Unit tests', () => {
                 // P0
                 assert.equal(await dist.getCurrentPeriodId(), 0);
                 await assertRevert(
-                    dist.claimEmissionPoolReward(0, charlie, { from: distributorVerifier }),
+                    dist.distributeEmissionPoolReward(0, charlie, ether(25 * 1000), { from: distributorVerifier }),
                     'YALLDistributor: Only DISTRIBUTOR_EMISSION_CLAIMER allowed'
                 );
             });
