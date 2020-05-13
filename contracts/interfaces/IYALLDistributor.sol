@@ -40,9 +40,9 @@ interface IYALLDistributor {
     view
     returns (
       uint256 rewardPerMember,
-      uint256 verifierReward,
-      bool verifierClaimedReward
-    );
+      uint256 emissionPoolRewardTotal,
+      uint256 emissionPoolRewardClaimed
+  );
   function memberAddress2Id(address _memberAddress) external view returns(bytes32);
 
   // DISTRIBUTOR MANAGER INTERFACE

@@ -60,7 +60,6 @@ contract YALLDistributor is
     uint256 rewardPerMember;
     uint256 emissionPoolRewardTotal;
     uint256 emissionPoolRewardClaimed;
-    bool emissionRewardClaimed;
   }
 
   struct Member {
