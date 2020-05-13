@@ -12,6 +12,12 @@ module.exports = {
         defaultGasPrice: 20e9, // Gas price for contract calls (when unspecified)
         artifactsDir: 'build/contracts' // Directory where contract artifacts are stored
     },
+
+    node: {
+        // Options passed directly to Ganache client
+        gasLimit: 96000000, // Maximum gas per block
+        gasPrice: 1e9, // Sets the default gas price for transactions if not otherwise specified.
+    },
     setupProvider: (baseProvider) => {
         const { GSNDevProvider } = require('@openzeppelin/gsn-provider');
         const { accounts } = require('@openzeppelin/test-environment');
@@ -24,6 +30,4 @@ module.exports = {
             relayerAddress: accounts[9],
         });
     },
-
-    blockGasLimit: 9900000 // Maximum gas per block
 };
