@@ -9,12 +9,8 @@
 
 pragma solidity ^0.5.13;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/EnumerableSet.sol";
-import "@openzeppelin/upgrades/contracts/Initializable.sol";
 import "./registry/YALLRegistryHelpers.sol";
-import "./traits/ACLPausable.sol";
+import "./YALLVerificationCore.sol";
 
 
 /**
@@ -22,27 +18,7 @@ import "./traits/ACLPausable.sol";
  * @author Galt Project
  * @notice Verification interface for verifiers
  **/
-contract YALLVerification is
-  IYALLVerification,
-  Initializable,
-  YALLRegistryHelpers,
-  ACLPausable
-{
-  using SafeMath for uint256;
-  using EnumerableSet for EnumerableSet.AddressSet;
-
-  struct Verifier {
-    bool active;
-    address addr;
-    uint256 createdAt;
-    uint256 lastEnabledAt;
-    uint256 lastDisabledAt;
-  }
-
-  uint256 public activeVerifierCount;
-  mapping(address => Verifier) public verifiers;
-  EnumerableSet.AddressSet internal activeAddressesCache;
-
+contract YALLVerification is YALLVerificationCore {
   function initialize(
     address _yallRegistry
   )

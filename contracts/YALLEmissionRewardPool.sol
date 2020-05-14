@@ -9,12 +9,8 @@
 
 pragma solidity ^0.5.13;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/upgrades/contracts/Initializable.sol";
 import "./interfaces/IYALLDistributor.sol";
-import "./registry/YALLRegistryHelpers.sol";
-import "./traits/ACLPausable.sol";
-import "./traits/YALLRewardClaimer.sol";
+import "./YALLEmissionRewardPoolCore.sol";
 
 
 /**
@@ -22,47 +18,7 @@ import "./traits/YALLRewardClaimer.sol";
  * @author Galt Project
  * @notice Accounts emission distribution among the project delegators and verifiers
  **/
-contract YALLEmissionRewardPool is
-  Initializable,
-  YALLRegistryHelpers,
-  ACLPausable,
-  YALLRewardClaimer
-{
-  using SafeMath for uint256;
-
-  uint256 public constant RATE_DIVIDER = 100 ether;
-
-  event SetShares(uint256 delegatorsShare, uint256 verifiersShare);
-  event ClaimDelegatorReward(
-    address indexed delegator,
-    uint256 indexed periodId,
-    uint256 amount,
-    uint256 stakeBalance,
-    uint256 stakeTotalSupply
-  );
-  event ClaimVerifierReward(address indexed verifier, uint256 indexed periodId, uint256 amount);
-
-  struct Period {
-    bool transitionHandled;
-    uint256 totalReward;
-    uint256 totalVerifiersReward;
-    uint256 totalDelegatorsReward;
-    uint256 verifierReward;
-  }
-
-  // (periodId => (delegatorAddress => claimed ))
-  mapping(uint256 => mapping(address => bool)) public delegatorClaimedPeriods;
-  // (periodId => (verifierAddress => claimed ))
-  mapping(uint256 => mapping(address => bool)) public verifierClaimedPeriods;
-
-  // 100% == 100 eth
-  uint256 public delegatorsShare;
-  // 100% == 100 eth
-  uint256 public verifiersShare;
-
-  // period => totalReward
-  mapping(uint256 => Period) public periods;
-
+contract YALLEmissionRewardPool is YALLEmissionRewardPoolCore {
   modifier triggerTransition() {
     handlePeriodTransitionIfRequired();
     _;
