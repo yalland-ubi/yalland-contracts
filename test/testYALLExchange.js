@@ -44,7 +44,7 @@ describe('YALLExchange Integration tests', () => {
     const memberId4 = keccak256('eve');
 
     beforeEach(async function () {
-        [ registry, yallToken, dist, exchange ] = await buildCoinDistAndExchange(web3, defaultSender, {
+        ({ registry, yallToken, dist, exchange } = await buildCoinDistAndExchange(web3, defaultSender, {
             distributorVerifier,
             yallMinter,
             feeManager,
@@ -52,7 +52,7 @@ describe('YALLExchange Integration tests', () => {
             exchangeOperator,
             exchangeSuperOperator,
             yallWLManager
-        });
+        }));
 
         await yallToken.setTransferFee(ether('0.02'), { from: feeManager });
         await yallToken.setGsnFee(ether('1.7'), { from: feeManager });
@@ -94,7 +94,7 @@ describe('YALLExchange Integration tests', () => {
         await yallToken.approve(exchange.address, ether(12), { from: alice });
         let res = await exchange.createOrder(ether(12), { from: alice });
         const orderId = getEventArg(res, 'CreateOrder', 'orderId');
-        
+
         assert.equal(orderId, 1);
 
         res = await exchange.orders(orderId);

@@ -38,14 +38,14 @@ describe('YALLDistribution Integration Tests', () => {
     const emissionPoolRewardShare = ether(10);
 
     beforeEach(async function () {
-        [ registry, yallToken, dist,, genesisTimestamp ] = await buildCoinDistAndExchange(web3, defaultSender, {
+        ({ registry, yallToken, dist, genesisTimestamp } = await buildCoinDistAndExchange(web3, defaultSender, {
             yallMinter,
             feeManager,
             distributorVerifier,
             distributorManager,
             pauser,
             periodVolume
-        });
+        }));
 
         await yallToken.setTransferFee(ether(10), { from: feeManager });
         await yallToken.mint(alice, ether(baseAliceBalance), { from: yallMinter });
@@ -98,7 +98,7 @@ describe('YALLDistribution Integration Tests', () => {
         await assertRevert(dist.claimFunds({ from: bob }), 'Already claimed for the current period');
 
         let res = await dist.period(0);
-        assert.equal(res.emissionPoolReward, ether(25 * 1000));
+        assert.equal(res.emissionPoolRewardTotal, ether(25 * 1000));
         assert.equal(res.rewardPerMember, ether(225 * 1000));
 
         // period #1
@@ -112,7 +112,7 @@ describe('YALLDistribution Integration Tests', () => {
         );
 
         res = await dist.period(1);
-        assert.equal(res.emissionPoolReward, ether(25 * 1000));
+        assert.equal(res.emissionPoolRewardTotal, ether(25 * 1000));
         assert.equal(res.rewardPerMember, ether(225 * 1000));
     });
 
@@ -130,7 +130,7 @@ describe('YALLDistribution Integration Tests', () => {
         await assertRevert(dist.claimFunds({ from: bob }), 'Already claimed for the current period');
 
         let res = await dist.period(0);
-        assert.equal(res.emissionPoolReward, ether(25 * 1000));
+        assert.equal(res.emissionPoolRewardTotal, ether(25 * 1000));
         assert.equal(res.rewardPerMember, ether(225 * 1000));
 
         // add 2 more
@@ -140,7 +140,7 @@ describe('YALLDistribution Integration Tests', () => {
 
         // check this doesn't affect the already calculated rewards
         res = await dist.period(0);
-        assert.equal(res.emissionPoolReward, ether(25 * 1000));
+        assert.equal(res.emissionPoolRewardTotal, ether(25 * 1000));
         assert.equal(res.rewardPerMember, ether(225 * 1000));
 
         // period #1
@@ -150,7 +150,7 @@ describe('YALLDistribution Integration Tests', () => {
         await assertRevert(dist.claimFunds({ from: bob }), 'Already claimed for the current period');
 
         res = await dist.period(1);
-        assert.equal(res.emissionPoolReward, ether(62.5 * 1000));
+        assert.equal(res.emissionPoolRewardTotal, ether(62.5 * 1000));
         assert.equal(res.rewardPerMember, ether(62.5 * 1000));
     });
 
@@ -388,7 +388,7 @@ describe('YALLDistribution Integration Tests', () => {
                 'ACLPausable: paused'
             );
             await assertRevert(
-                dist.claimEmissionPoolReward(0, bob, { from: distributorVerifier }),
+                dist.distributeEmissionPoolReward(0, bob, ether(1), { from: distributorVerifier }),
                 'ACLPausable: paused'
             );
             await assertRevert(

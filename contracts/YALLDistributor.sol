@@ -42,7 +42,7 @@ contract YALLDistributor is
   event ChangeMemberAddress(bytes32 indexed memberId, address from, address to);
   event ChangeMyAddress(bytes32 indexed memberId, address from, address to);
   event ClaimFunds(bytes32 indexed memberId, address indexed addr, uint256 indexed periodId, uint256 amount);
-  event ClaimEmissionPoolReward(uint256 indexed periodId, address to);
+  event DistributeEmissionPoolReward(uint256 indexed periodId, address indexed to, uint256 amount);
   event EnableMember(bytes32 indexed memberId, address indexed memberAddress);
   event DisableMember(bytes32 indexed memberId, address indexed memberAddress);
   event PeriodChange(
@@ -58,8 +58,8 @@ contract YALLDistributor is
 
   struct Period {
     uint256 rewardPerMember;
-    uint256 emissionPoolReward;
-    bool verifierClaimedReward;
+    uint256 emissionPoolRewardTotal;
+    uint256 emissionPoolRewardClaimed;
   }
 
   struct Member {
@@ -95,30 +95,7 @@ contract YALLDistributor is
 
   // Mints tokens, assigns the verifier reward and caches reward per member
   modifier triggerTransition() {
-    uint256 currentPeriodId = getCurrentPeriodId();
-
-    Period storage currentPeriod = period[currentPeriodId];
-
-    if (currentPeriod.rewardPerMember == 0 && activeMemberCount > 0) {
-      currentPeriod.emissionPoolReward = periodVolume.mul(emissionPoolRewardShare) / HUNDRED_PCT;
-
-      // imbalance will be left at the contract
-      // uint256 currentPeriodRewardPerMember = (periodVolume * (100 ether - emissionPoolRewardShare)) / (activeMemberCount * 100 ether);
-      uint256 currentPeriodRewardPerMember = (periodVolume.mul(HUNDRED_PCT.sub(emissionPoolRewardShare)))
-        .div(activeMemberCount.mul(HUNDRED_PCT));
-
-      assert(currentPeriodRewardPerMember > 0);
-      currentPeriod.rewardPerMember = currentPeriodRewardPerMember;
-
-      emit PeriodChange(
-        currentPeriodId,
-        periodVolume,
-        currentPeriodRewardPerMember,
-        currentPeriod.emissionPoolReward,
-        activeMemberCount
-      );
-    }
-
+    handlePeriodTransitionIfRequired();
     _;
   }
 
@@ -182,6 +159,37 @@ contract YALLDistributor is
 
     if (signature == YALLDistributor(0).changeMyAddress.selector) {
       _yallTokenIERC20().transferFrom(from, address(this), gsnFee);
+    }
+  }
+
+  // PERMISSIONLESS INTERFACE
+
+  /*
+   * @dev Anyone can trigger period transition
+   */
+  function handlePeriodTransitionIfRequired() public {
+    uint256 currentPeriodId = getCurrentPeriodId();
+
+    Period storage currentPeriod = period[currentPeriodId];
+
+    if (currentPeriod.rewardPerMember == 0 && activeMemberCount > 0) {
+      currentPeriod.emissionPoolRewardTotal = periodVolume.mul(emissionPoolRewardShare) / HUNDRED_PCT;
+
+      // imbalance will be left at the contract
+      // uint256 currentPeriodRewardPerMember = (periodVolume * (100 ether - emissionPoolRewardShare)) / (activeMemberCount * 100 ether);
+      uint256 currentPeriodRewardPerMember = (periodVolume.mul(HUNDRED_PCT.sub(emissionPoolRewardShare)))
+      .div(activeMemberCount.mul(HUNDRED_PCT));
+
+      assert(currentPeriodRewardPerMember > 0);
+      currentPeriod.rewardPerMember = currentPeriodRewardPerMember;
+
+      emit PeriodChange(
+        currentPeriodId,
+        periodVolume,
+        currentPeriodRewardPerMember,
+        currentPeriod.emissionPoolRewardTotal,
+        activeMemberCount
+      );
     }
   }
 
@@ -485,10 +493,12 @@ contract YALLDistributor is
    * @dev Emission claimer claims their reward for the given period.
    * @param _periodId to claim reward for
    * @param _to address to send reward to
+   * @param _amount tokens to mint
    */
-  function claimEmissionPoolReward(
+  function distributeEmissionPoolReward(
     uint256 _periodId,
-    address _to
+    address _to,
+    uint256 _amount
   )
     external
     triggerTransition
@@ -497,13 +507,14 @@ contract YALLDistributor is
   {
     Period storage givenPeriod = period[_periodId];
 
-    require(givenPeriod.verifierClaimedReward == false, "YALLDistributor: Already claimed for given period");
+    uint256 newClaimedAmount = givenPeriod.emissionPoolRewardClaimed.add(_amount);
+    require(newClaimedAmount <= givenPeriod.emissionPoolRewardTotal, "YALLDistributor: Exceeds the period emission reward");
 
-    givenPeriod.verifierClaimedReward = true;
+    givenPeriod.emissionPoolRewardClaimed = newClaimedAmount;
 
-    emit ClaimEmissionPoolReward(_periodId, _to);
+    emit DistributeEmissionPoolReward(_periodId, _to, _amount);
 
-    _yallToken().mint(_to, givenPeriod.emissionPoolReward);
+    _yallToken().mint(_to, _amount);
   }
 
   // MEMBER INTERFACE
@@ -600,15 +611,6 @@ contract YALLDistributor is
     _changeMemberAddress(_msgSender(), _to);
   }
 
-  // PERMISSIONLESS INTERFACE
-
-  /*
-   * @dev Anyone can trigger period transition
-   */
-  function handlePeriodTransitionIfRequired() external triggerTransition {
-    // solhint-disable-previous-line no-empty-blocks
-  }
-
   // GETTERS
 
   function getCurrentPeriodId() public view returns (uint256) {
@@ -637,6 +639,11 @@ contract YALLDistributor is
   function getCurrentPeriodBeginsAt() public view returns (uint256) {
     // return (getCurrentPeriod() * periodLength) + genesisTimestamp;
     return (getCurrentPeriodId().mul(periodLength)).add(genesisTimestamp);
+  }
+
+  function getPeriodBeginsAt(uint256 _periodId) external view returns (uint256) {
+    // return (_periodId * periodLength) + genesisTimestamp
+    return (_periodId.mul(periodLength)).add(genesisTimestamp);
   }
 
   function requireCanClaimFundsByAddress(address _memberAddress) external view whenNotPaused {
@@ -673,6 +680,10 @@ contract YALLDistributor is
 
   function isActive(address _addr) external view returns (bool) {
     return member[memberAddress2Id[_addr]].active;
+  }
+
+  function getPeriodEmissionReward(uint256 _periodId) external view returns (uint256) {
+    return period[_periodId].emissionPoolRewardTotal;
   }
 
   function getTotalClaimed(bytes32 _memberId) external view returns (uint256) {
