@@ -9,6 +9,7 @@
 
 const { accounts, contract, web3, defaultSender } = require('@openzeppelin/test-environment');
 const { assert } = require('chai');
+const { BigNumber } = require('bignumber.js');
 const {
     deployRelayHub,
     fundRecipient,
@@ -17,7 +18,7 @@ const { buildCoinDistAndExchange } = require('../builders');
 
 const YALLToken = contract.fromArtifact('YALLToken');
 const YALLDistributor = contract.fromArtifact('YALLDistributor');
-const { approveFunction, assertRelayedCall, GSNRecipientSignatureErrorCodes } = require('../helpers')(web3);
+const { approveFunction, assertRelayedCall, GSNRecipientSignatureErrorCodes, assertYallWithdrawalChanged } = require('../helpers')(web3);
 
 YALLToken.numberFormat = 'String';
 YALLDistributor.numberFormat = 'String';
@@ -622,8 +623,14 @@ describe('YALLDistributor Unit tests', () => {
 
             it('should allow feeClaimer withdrawing fee', async function() {
                 assert.equal(await yallToken.balanceOf(feeClaimer), 0);
+                const claimerBalanceBefore = await yallToken.balanceOf(feeClaimer);
                 await dist.withdrawFee({ from: feeClaimer });
-                assert.equal(await yallToken.balanceOf(feeClaimer), ether('41.98'));
+                const claimerBalanceAfter = await yallToken.balanceOf(feeClaimer);
+                assertYallWithdrawalChanged(
+                  claimerBalanceBefore,
+                  claimerBalanceAfter,
+                  (new BigNumber(ether(42))).minus(ether(1))
+                )
             });
 
             it('should deny non-feeClaimer withdrawing fee', async function() {

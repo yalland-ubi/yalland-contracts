@@ -44,7 +44,10 @@ describe('YALLDistribution Integration Tests', () => {
             distributorVerifier,
             distributorManager,
             pauser,
-            periodVolume
+            periodVolume,
+            disableExchange: true,
+            disableEmission: true,
+            disableCommission: true
         }));
 
         await yallToken.setTransferFee(ether(10), { from: feeManager });

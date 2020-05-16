@@ -12,9 +12,10 @@ pragma solidity ^0.5.13;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IYALLDistributor.sol";
 import "./interfaces/IYALLToken.sol";
-import "./GSNRecipientSigned.sol";
 import "./interfaces/IYALLExchange.sol";
+import "./GSNRecipientSigned.sol";
 import "./YALLExchangeCore.sol";
+import "./traits/YALLFeeWithdrawable.sol";
 
 
 /**
@@ -26,7 +27,8 @@ contract YALLExchange is
   IYALLExchange,
   YALLExchangeCore,
   // GSNRecipientSigned occupies 1 storage slot
-  GSNRecipientSigned
+  GSNRecipientSigned,
+  YALLFeeWithdrawable
 {
   constructor() public {
   }
@@ -146,22 +148,6 @@ contract YALLExchange is
     gsnFee = _gsnFee;
 
     emit SetGsnFee(msg.sender, _gsnFee);
-  }
-
-  // FEE CLAIMER INTERFACE
-
-  /**
-   * @dev Withdraws almost all YALL tokens
-   * It keeps a small percent of tokens to reduce gas cost for further transfer operations with this address using GSN.
-   */
-  function withdrawYALLs() external onlyFeeClaimer {
-    address tokenAddress = _yallTokenAddress();
-    uint256 payout = IERC20(tokenAddress).balanceOf(address(this));
-
-    require(payout > 0, "YALLExchange: Nothing to withdraw");
-
-    // NOTICE: will keep a small amount of YALL tokens
-    IERC20(tokenAddress).transfer(msg.sender, payout.sub(IYALLToken(tokenAddress).transferFee()));
   }
 
   // OPERATOR INTERFACE

@@ -17,6 +17,7 @@ import "./interfaces/IYALLToken.sol";
 import "./registry/YALLRegistryHelpers.sol";
 import "./traits/ACLPausable.sol";
 import "./interfaces/IYALLExchange.sol";
+import "./traits/YALLFeeWithdrawable.sol";
 import "./traits/NumericIdCounter.sol";
 
 

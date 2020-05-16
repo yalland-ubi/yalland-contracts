@@ -15,7 +15,7 @@ const {
     fundRecipient,
 } = require('@openzeppelin/gsn-helpers');
 
-const { approveFunction, assertRelayedCall, GSNRecipientSignatureErrorCodes } = require('../helpers')(web3);
+const { approveFunction, assertRelayedCall, GSNRecipientSignatureErrorCodes, assertYallWithdrawalChanged } = require('../helpers')(web3);
 const { buildCoinDistAndExchange } = require('../builders');
 
 const { ether, now, increaseTime, assertRevert, assertGsnReject, getEventArg, getResTimestamp, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
@@ -179,22 +179,19 @@ describe('YALLExchange Unit tests', () => {
             })
 
             it('should allow feeClaimer withdrawing fee', async function() {
-                const feeClaimerBalanceBefore = await yallToken.balanceOf(feeClaimer);
-                await exchange.withdrawYALLs({ from: feeClaimer });
-                const feeClaimerBalanceAfter = await yallToken.balanceOf(feeClaimer);
+                const claimerBalanceBefore = await yallToken.balanceOf(feeClaimer);
+                await exchange.withdrawFee({ from: feeClaimer });
+                const claimerBalanceAfter = await yallToken.balanceOf(feeClaimer);
 
-                assertErc20BalanceChanged(feeClaimerBalanceBefore, feeClaimerBalanceAfter, ether('41.98'))
-
-                const fortyTwo = new BigNumber(42);
-                const withdrawn = new BigNumber('41.98');
-                assert.equal(
-                    await yallToken.balanceOf(exchange.address),
-                    ether(fortyTwo.minus(withdrawn).minus(withdrawn.multipliedBy('0.0002')).toString())
-                );
+                assertYallWithdrawalChanged(
+                  claimerBalanceBefore,
+                  claimerBalanceAfter,
+                  (new BigNumber(ether(42))).minus(ether(1))
+                )
             });
 
             it('should deny non-feeClaimer withdrawing fee', async function() {
-                await assertRevert(exchange.withdrawYALLs({ from: feeManager }), 'YALLHelpers: Only FEE_CLAIMER allowed');
+                await assertRevert(exchange.withdrawFee({ from: feeManager }), 'YALLHelpers: Only FEE_CLAIMER allowed');
             });
         });
     });

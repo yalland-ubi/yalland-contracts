@@ -40,6 +40,7 @@ interface IYALLToken {
 
   // GETTERS
   function getTransferFee(uint256 amount) external view returns(uint256);
+  function deductTransferFee(uint256 amount) external view returns(uint256);
   function isMemberValid(address _member) external view returns(bool);
   function canPayForGsnCall(address _addr) external view returns (bool);
 }
