@@ -40,6 +40,24 @@ contract YALLVerification is YALLVerificationCore {
     _incrementActiveVerifierCount(len);
   }
 
+  function disableVerifiers(address[] calldata _verifierAddresses) external {
+    uint256 len = _verifierAddresses.length;
+
+    require(len > 0, "YALLDistributor: Missing input verifiers");
+
+    for (uint256 i = 0; i < len; i++) {
+      Verifier storage v = verifiers[_verifierAddresses[i]];
+      require(v.active == true, "YALLDistributor: One of the verifiers is inactive");
+
+      v.active = false;
+      v.lastDisabledAt = now;
+
+//      emit DisableMember(memberId, addr);
+    }
+
+    _decrementActiveVerifierCount(len);
+  }
+
   function _addVerifier(address _verifierAddress) internal {
     Verifier storage v = verifiers[_verifierAddress];
 
@@ -57,5 +75,12 @@ contract YALLVerification is YALLVerificationCore {
     activeVerifierCount = newActiveVerifierCount;
 
 //    emit ActiveMemberCountChanged(newActiveVerifierCount);
+  }
+
+  function _decrementActiveVerifierCount(uint256 _n) internal {
+    uint256 newActiveVerifierCount = activeVerifierCount.sub(_n);
+    activeVerifierCount = newActiveVerifierCount;
+
+    //    emit ActiveMemberCountChanged(newActiveVerifierCount);
   }
 }

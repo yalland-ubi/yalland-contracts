@@ -14,6 +14,7 @@ import "./interfaces/IYALLToken.sol";
 import "./interfaces/IYALLDistributor.sol";
 import "./GSNRecipientSigned.sol";
 import "./YALLDistributorCore.sol";
+import "./traits/YALLFeeWithdrawable.sol";
 
 
 /**
@@ -25,7 +26,8 @@ contract YALLDistributor is
   IYALLDistributor,
   YALLDistributorCore,
   // GSNRecipientSigned occupies 1 storage slot
-  GSNRecipientSigned
+  GSNRecipientSigned,
+  YALLFeeWithdrawable
 {
   // Mints tokens, assigns the verifier reward and caches reward per member
   modifier triggerTransition() {
@@ -160,17 +162,6 @@ contract YALLDistributor is
     gsnFee = _gsnFee;
 
     emit SetGsnFee(_gsnFee);
-  }
-
-  // FEE CLAIMER INTERFACE
-
-  function withdrawFee() external onlyFeeClaimer {
-    address tokenAddress = _yallTokenAddress();
-    uint256 payout = IERC20(tokenAddress).balanceOf(address(this));
-
-    require(payout > 0, "YALLDistributor: Nothing to withdraw");
-
-    IERC20(tokenAddress).transfer(msg.sender, payout.sub(IYALLToken(tokenAddress).transferFee()));
   }
 
   // VERIFIER INTERFACE

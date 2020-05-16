@@ -22,10 +22,9 @@ const zero = new BigNumber(0);
 YALLToken.numberFormat = 'String';
 
 const { ether, increaseTime, evmMineBlock, assertRevert, now, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
-const { approveFunction, assertRelayedCall } = require('./helpers')(web3);
+const { approveFunction, assertRelayedCall, assertYallWithdrawalChanged } = require('./helpers')(web3);
 
 const keccak256 = web3.utils.soliditySha3;
-
 
 describe('YALLToken', () => {
     const [pauser, alice, bob, charlie, dan, yallMinter, distributorVerifier, feeManager, feeClaimer, yallWLManager] = accounts;
@@ -37,9 +36,9 @@ describe('YALLToken', () => {
     const periodLength = 7 * 24 * 60 * 60;
     const periodVolume = ether(250 * 1000);
     const distributorVerifierRewardShare = ether(10);
-    const baseAliceBalance = new BigNumber(100000000);
+    const baseAliceBalance = new BigNumber(ether(100000000));
     const feePercent = 0.02;
-    const gsnFee = new BigNumber(0.7);
+    const gsnFee = new BigNumber(ether(0.7));
     const startAfter = 10;
     const memberId1 = keccak256('bob');
     let genesisTimestamp;
@@ -51,12 +50,15 @@ describe('YALLToken', () => {
             feeManager,
             feeClaimer,
             pauser,
-            yallWLManager
+            yallWLManager,
+            disableExchange: true,
+            disableEmission: true,
+            disableCommission: true
         }));
 
-        await yallToken.mint(alice, ether(baseAliceBalance), {from: yallMinter});
+        await yallToken.mint(alice, baseAliceBalance.toString(), {from: yallMinter});
         await yallToken.setTransferFee(ether(feePercent), {from: feeManager});
-        await yallToken.setGsnFee(ether(gsnFee), {from: feeManager});
+        await yallToken.setGsnFee(gsnFee, {from: feeManager});
 
         await dist.addMembersBeforeGenesis(
             [keccak256('foo'), keccak256('bar'), keccak256('bazz')],
@@ -170,12 +172,18 @@ describe('YALLToken', () => {
         describe('approve restrictions', () => {
             it('should deny approving if the approver is inactive', async function() {
                 await dist.disableMembers([alice], { from: distributorVerifier });
-                await assertRevert(yallToken.approve(bob, ether(1), { from: alice }), 'Member is invalid');
+                await assertRevert(
+                  yallToken.approve(bob, ether(1), { from: alice }),
+                  'YALLToken: The address has no YALL token ops permission'
+                );
             });
 
             it('should deny approving if the receiver is inactive', async function() {
                 await dist.disableMembers([bob], { from: distributorVerifier });
-                await assertRevert(yallToken.approve(bob, ether(1), { from: alice }), 'Member is invalid');
+                await assertRevert(
+                  yallToken.approve(bob, ether(1), { from: alice }),
+                  'YALLToken: The address has no YALL token ops permission'
+                );
             });
 
             it('should allow approving when both approver and receiver are active', async function() {
@@ -184,33 +192,32 @@ describe('YALLToken', () => {
         });
 
         it('should correctly approve with fee using GSN', async function () {
-            const transferCoinAmount = 1000;
+            const transferCoinAmount = new BigNumber(ether(1000));
 
             const aliceBalanceBefore = await yallToken.balanceOf(alice);
             const bobBalanceBefore = await yallToken.balanceOf(bob);
             const contractBalanceBefore = await yallToken.balanceOf(yallToken.address);
 
-            let res = await yallToken.approve(charlie, ether(transferCoinAmount), { from: alice, useGSN: true });
+            let res = await yallToken.approve(charlie, transferCoinAmount, { from: alice, useGSN: true });
             assertRelayedCall(res);
 
             const aliceBalanaceAfter = await yallToken.balanceOf(alice);
             const bobBalanceAfter = await yallToken.balanceOf(bob);
             const contractBalanceAfter = await yallToken.balanceOf(yallToken.address);
 
-            assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanaceAfter, ether(-gsnFee));
+            assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanaceAfter, gsnFee.multipliedBy(-1).toString());
             assertErc20BalanceChanged(bobBalanceBefore, bobBalanceAfter, '0');
-            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(gsnFee));
+            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, gsnFee.toString());
         });
 
         it('should charge on each approval which uses GSN', async function () {
-            const transferCoinAmount = 1000;
-            const totalSupply = await yallToken.totalSupply();
+            const transferCoinAmount = new BigNumber(ether(1000));
 
             const aliceBalanceBefore = await yallToken.balanceOf(alice);
             const bobBalanceBefore = await yallToken.balanceOf(bob);
             const contractBalanceBefore = await yallToken.balanceOf(yallToken.address);
 
-            assert.equal(aliceBalanceBefore, ether(baseAliceBalance));
+            assert.equal(aliceBalanceBefore, baseAliceBalance.toString());
             assert.equal(bobBalanceBefore, ether(0));
             assert.equal(contractBalanceBefore, ether(0));
 
@@ -219,19 +226,19 @@ describe('YALLToken', () => {
             let res = await yallToken.approve(charlie, ether(transferCoinAmount), { from: alice, useGSN: true });
             await evmMineBlock();
 
-            res = await yallToken.approve(charlie, ether(2 * transferCoinAmount), { from: alice, useGSN: true });
+            await yallToken.approve(charlie, transferCoinAmount.multipliedBy(2), { from: alice, useGSN: true });
             await evmMineBlock();
 
-            res = await yallToken.approve(charlie, ether(0), { from: alice, useGSN: true });
+            await yallToken.approve(charlie, 0, { from: alice, useGSN: true });
             await evmMineBlock();
 
             const aliceBalanceAfter = await yallToken.balanceOf(alice);
             const bobBalanceAfter = await yallToken.balanceOf(bob);
             const contractBalanceAfter = await yallToken.balanceOf(yallToken.address);
 
-            assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanceAfter, ether(- (gsnFee.multipliedBy(3))));
+            assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanceAfter, (gsnFee.multipliedBy(3).multipliedBy(-1)).toString());
             assertErc20BalanceChanged(bobBalanceBefore, bobBalanceAfter, '0');
-            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(gsnFee.multipliedBy(3)));
+            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, gsnFee.multipliedBy(3).toString());
         });
     });
 
@@ -240,32 +247,32 @@ describe('YALLToken', () => {
             it('should deny transferring if a from address is not active', async function() {
                 await yallToken.approve(charlie, ether(1), { from: alice });
                 await dist.disableMembers([alice], { from: distributorVerifier });
-                await assertRevert(yallToken.transferFrom(alice, bob, ether(1), { from: charlie }), 'Member is invalid');
+                await assertRevert(yallToken.transferFrom(alice, bob, ether(1), { from: charlie }), 'YALLToken: The address has no YALL token ops permission');
             });
 
             it('should deny transferring if a to address is not active', async function() {
                 await yallToken.approve(charlie, ether(1), { from: alice });
                 await dist.disableMembers([bob], { from: distributorVerifier });
-                await assertRevert(yallToken.transferFrom(alice, bob, ether(1), { from: charlie }), 'Member is invalid');
+                await assertRevert(yallToken.transferFrom(alice, bob, ether(1), { from: charlie }), 'YALLToken: The address has no YALL token ops permission');
             });
 
             it('should deny transferring if a tx sender is not active', async function() {
                 await yallToken.approve(charlie, ether(1), { from: alice });
                 await dist.disableMembers([charlie], { from: distributorVerifier });
-                await assertRevert(yallToken.transferFrom(alice, bob, ether(1), { from: charlie }), 'Member is invalid');
+                await assertRevert(yallToken.transferFrom(alice, bob, ether(1), { from: charlie }), 'YALLToken: The address has no YALL token ops permission');
             });
 
             it('should allow transferring all from, to and tx sender are active', async function() {
-                await yallToken.mint(charlie, ether(baseAliceBalance), {from: yallMinter});
+                await yallToken.mint(charlie, baseAliceBalance, {from: yallMinter});
                 await yallToken.approve(charlie, ether(1), { from: alice });
                 await yallToken.transferFrom(alice, bob, ether(1), { from: charlie });
             });
         });
 
         it('should correct transfer with fee using GSN', async function () {
-            const ten = new BigNumber(10);
-            await yallToken.mint(charlie, ether(ten), {from: yallMinter});
-            const transferCoinAmount = new BigNumber('2.7');
+            const ten = new BigNumber(ether(10));
+            await yallToken.mint(charlie, ten, {from: yallMinter});
+            const transferCoinAmount = new BigNumber(ether('2.7'));
             const totalSupply = await yallToken.totalSupply();
 
             const aliceBalanceBefore = await yallToken.balanceOf(alice);
@@ -273,16 +280,16 @@ describe('YALLToken', () => {
             const charlieBalanceBefore = await yallToken.balanceOf(charlie);
             const contractBalanceBefore = await yallToken.balanceOf(yallToken.address);
 
-            assert.equal(await yallToken.balanceOf(charlie), ether(ten));
+            assert.equal(await yallToken.balanceOf(charlie), ten);
 
             await evmMineBlock();
 
             // 1st transfer
-            await yallToken.approve(charlie, ether(transferCoinAmount), { from: alice });
+            await yallToken.approve(charlie, transferCoinAmount.toString(), { from: alice });
             let res = await yallToken.transferFrom(
                 alice,
                 bob,
-                ether(transferCoinAmount.dividedBy(2)),
+                transferCoinAmount.dividedBy(2).toString(),
                 {from: charlie, useGSN: true}
                 );
             assertRelayedCall(res);
@@ -290,14 +297,14 @@ describe('YALLToken', () => {
 
             assert.equal(
                 await yallToken.allowance(alice, charlie),
-                ether(transferCoinAmount.dividedBy(2))
+                transferCoinAmount.dividedBy(2).toString()
             );
 
             // 2nd transfer
             res = await yallToken.transferFrom(
                 alice,
                 bob,
-                ether(transferCoinAmount.dividedBy(4)),
+                transferCoinAmount.dividedBy(4).toString(),
                 {from: charlie, useGSN: true}
             );
             assertRelayedCall(res);
@@ -308,11 +315,10 @@ describe('YALLToken', () => {
             res = await yallToken.transferFrom(
                 alice,
                 bob,
-                ether(transferCoinAmount.dividedBy(4)),
+                transferCoinAmount.dividedBy(4).toString(),
                 {from: charlie, useGSN: true}
             );
             assertRelayedCall(res);
-            const thirdBlock = res.receipt.blockNumber;
             await evmMineBlock();
 
             assert.equal(await yallToken.allowance(alice, charlie), 0);
@@ -328,55 +334,50 @@ describe('YALLToken', () => {
             assertErc20BalanceChanged(
                 aliceBalanceBefore,
                 aliceBalanaceAfter,
-                ether(zero.minus(transferCoinAmount))
+                zero.minus(transferCoinAmount).toString()
             );
-            assertErc20BalanceChanged(bobBalanceBefore, bobBalanceAfter, ether(transferCoinAmount));
+            assertErc20BalanceChanged(bobBalanceBefore, bobBalanceAfter, transferCoinAmount.toString());
             assertErc20BalanceChanged(
                 charlieBalanceBefore,
                 charlieBalanceAfter,
-                ether(zero.minus(totalFees))
+                zero.minus(totalFees).toString()
             );
-            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(totalFees));
+            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, totalFees.toString());
 
             const feeClaimerBalanceBefore = await yallToken.balanceOf(feeClaimer);
             await yallToken.withdrawFee({ from: feeClaimer });
             const feeClaimerBalanceAfter = await yallToken.balanceOf(feeClaimer);
 
-            assertErc20BalanceChanged(feeClaimerBalanceBefore, feeClaimerBalanceAfter, ether(totalFees));
+            assertYallWithdrawalChanged(feeClaimerBalanceBefore, feeClaimerBalanceAfter, totalFees.minus(ether(1)).toString());
 
             // final values
             assert.equal(
                 await yallToken.balanceOf(alice),
-                ether(baseAliceBalance.minus(transferCoinAmount))
+                baseAliceBalance.minus(transferCoinAmount).toString()
             );
-            assert.equal(await yallToken.balanceOf(bob), ether(transferCoinAmount));
+            assert.equal(await yallToken.balanceOf(bob), transferCoinAmount.toString());
             assert.equal(
                 await yallToken.balanceOf(charlie),
-                ether(ten
-                    .minus(gsnFee.multipliedBy(3))
-                    .minus(transferFee)
-                )
+                ten.minus(gsnFee.multipliedBy(3)).minus(transferFee).toString()
             );
-            assert.equal(await yallToken.balanceOf(yallToken.address), ether(0));
-            assert.equal(await yallToken.balanceOf(feeClaimer), ether(totalFees));
             assert.equal(await yallToken.totalSupply(), totalSupply);
 
         });
 
         it('should correct transfer with fee', async function () {
             await yallToken.mint(bob, ether(baseAliceBalance), {from: yallMinter});
-            const transferCoinAmount = new BigNumber(1000);
+            const transferCoinAmount = new BigNumber(ether(1000 * 1000));
 
             const aliceBalanceBefore = await yallToken.balanceOf(alice);
             const bobBalanceBefore = await yallToken.balanceOf(bob);
             const contractBalanceBefore = await yallToken.balanceOf(yallToken.address);
 
-            await yallToken.approve(bob, ether(transferCoinAmount), { from: alice });
-            await yallToken.transferFrom(alice, bob, ether(transferCoinAmount / 2), {from: bob});
+            await yallToken.approve(bob, transferCoinAmount.toString(), { from: alice });
+            await yallToken.transferFrom(alice, bob, transferCoinAmount.dividedBy(2), {from: bob});
 
-            assert.equal(await yallToken.allowance(alice, bob), ether(transferCoinAmount / 2));
+            assert.equal(await yallToken.allowance(alice, bob), transferCoinAmount.dividedBy(2));
 
-            await yallToken.transferFrom(alice, bob, ether(transferCoinAmount / 2), {from: bob});
+            await yallToken.transferFrom(alice, bob, transferCoinAmount.dividedBy(2), {from: bob});
 
             assert.equal(await yallToken.allowance(alice, bob), 0);
 
@@ -389,24 +390,30 @@ describe('YALLToken', () => {
             assertErc20BalanceChanged(
                 aliceBalanceBefore,
                 aliceBalanaceAfter,
-                ether(-transferCoinAmount)
+                transferCoinAmount.multipliedBy(-1).toString()
             );
+            // bob has paid transferFee
             assertErc20BalanceChanged(
                 bobBalanceBefore,
                 bobBalanceAfter,
-                ether(transferCoinAmount.minus(transferFee))
+                transferCoinAmount.minus(transferFee).toString()
             );
+            // yall token contract has received transferFee
             assertErc20BalanceChanged(
                 contractBalanceBefore,
                 contractBalanceAfter,
-                ether(transferFee )
+                transferFee.toString()
             );
 
             const feeClaimerBalanceBefore = await yallToken.balanceOf(feeClaimer);
             await yallToken.withdrawFee({from: feeClaimer});
             const feeClaimerBalanceAfter = await yallToken.balanceOf(feeClaimer);
 
-            assertErc20BalanceChanged(feeClaimerBalanceBefore, feeClaimerBalanceAfter, ether(transferCoinAmount / 100 * feePercent));
+            assertYallWithdrawalChanged(
+              feeClaimerBalanceBefore,
+              feeClaimerBalanceAfter,
+              transferFee.minus(ether(1)).toString()
+            );
         });
 
         it('should revert if there is no fee to cover transfer fee expenses', async function () {
@@ -436,11 +443,17 @@ describe('YALLToken', () => {
         describe('transfer restrictions', () => {
             it('should deny transfer if the sender is inactive', async function() {
                 await dist.disableMembers([alice], { from: distributorVerifier });
-                await assertRevert(yallToken.transfer(bob, ether(1), { from: alice }), 'Member is invalid');
+                await assertRevert(
+                  yallToken.transfer(bob, ether(1), { from: alice }),
+                  'YALLToken: The address has no YALL token ops permission'
+                );
             });
             it('should deny transfer if the receiver is inactive', async function() {
                 await dist.disableMembers([bob], { from: distributorVerifier });
-                await assertRevert(yallToken.transfer(bob, ether(1), { from: alice }), 'Member is invalid');
+                await assertRevert(
+                  yallToken.transfer(bob, ether(1), { from: alice }),
+                  'YALLToken: The address has no YALL token ops permission'
+                );
             });
 
             it('should allow transfer when both sender and receiver are active', async function() {
@@ -449,7 +462,7 @@ describe('YALLToken', () => {
         });
 
         it('should correct transfer with fee using GSN', async function () {
-            const transferCoinAmount = new BigNumber('2.7');
+            const transferCoinAmount = new BigNumber(ether('2.7'));
             const totalSupply = await yallToken.totalSupply();
 
             const aliceBalanaceBefore = await yallToken.balanceOf(alice);
@@ -459,17 +472,17 @@ describe('YALLToken', () => {
             await evmMineBlock();
 
             // 1st transfer
-            let res = await yallToken.transfer(bob, ether(transferCoinAmount.dividedBy(2)), {from: alice, useGSN: true});
+            let res = await yallToken.transfer(bob, transferCoinAmount.dividedBy(2), {from: alice, useGSN: true});
             assertRelayedCall(res);
             await evmMineBlock();
 
             // 2nd transfer
-            res = await yallToken.transfer(bob, ether(transferCoinAmount.dividedBy(4)), {from: alice, useGSN: true});
+            res = await yallToken.transfer(bob, transferCoinAmount.dividedBy(4), {from: alice, useGSN: true});
             assertRelayedCall(res);
             await evmMineBlock();
 
             // 3rd transfer
-            res = await yallToken.transfer(bob, ether(transferCoinAmount.dividedBy(4)), {from: alice, useGSN: true});
+            res = await yallToken.transfer(bob, transferCoinAmount.dividedBy(4), {from: alice, useGSN: true});
             assertRelayedCall(res);
             await evmMineBlock();
 
@@ -480,51 +493,53 @@ describe('YALLToken', () => {
             const transferFee = transferCoinAmount.multipliedBy(feePercent).dividedBy(100);
             const totalFees = gsnFee.multipliedBy(3).plus(transferFee);
 
-            assertErc20BalanceChanged(aliceBalanaceBefore, aliceBalanaceAfter, ether(zero.minus(transferCoinAmount).minus(totalFees)));
-            assertErc20BalanceChanged(bobBalanaceBefore, bobBalanaceAfter, ether(transferCoinAmount));
-            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(totalFees));
+            assertErc20BalanceChanged(aliceBalanaceBefore, aliceBalanaceAfter, zero.minus(transferCoinAmount).minus(totalFees).toString());
+            assertErc20BalanceChanged(bobBalanaceBefore, bobBalanaceAfter, transferCoinAmount.toString());
+            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, totalFees.toString());
 
             const feeClaimerBalanceBefore = await yallToken.balanceOf(feeClaimer);
-            res = await yallToken.withdrawFee({from: feeClaimer});
-            const fourthBlock = res.receipt.blockNumber;
+            await yallToken.withdrawFee({from: feeClaimer});
             await evmMineBlock();
             const feeClaimerBalanceAfter = await yallToken.balanceOf(feeClaimer);
 
-            assertErc20BalanceChanged(feeClaimerBalanceBefore, feeClaimerBalanceAfter, ether(totalFees));
+            assertYallWithdrawalChanged(feeClaimerBalanceBefore, feeClaimerBalanceAfter, totalFees.minus(ether(1)).toString());
 
             // final values
             assert.equal(
                 await yallToken.balanceOf(alice),
-                ether(baseAliceBalance.minus(transferCoinAmount).minus(totalFees))
+                baseAliceBalance.minus(transferCoinAmount).minus(totalFees)
             );
-            assert.equal(await yallToken.balanceOf(bob), ether(transferCoinAmount));
-            assert.equal(await yallToken.balanceOf(yallToken.address), ether(0));
-            assert.equal(await yallToken.balanceOf(feeClaimer), ether(totalFees));
+            assert.equal(await yallToken.balanceOf(bob), transferCoinAmount);
             assert.equal(await yallToken.totalSupply(), totalSupply);
         });
 
         it('should correct transfer with transfer fee only', async function () {
-            const transferCoinAmount = 1000;
+            const transferCoinAmount = new BigNumber(ether(1000 * 1000));
+            const totalFees = transferCoinAmount.multipliedBy(feePercent).dividedBy(100);
 
             const aliceBalanaceBefore = await yallToken.balanceOf(alice);
             const bobBalanaceBefore = await yallToken.balanceOf(bob);
             const contractBalanceBefore = await yallToken.balanceOf(yallToken.address);
 
-            await yallToken.transfer(bob, ether(transferCoinAmount), {from: alice});
+            await yallToken.transfer(bob, transferCoinAmount, {from: alice});
 
             const aliceBalanaceAfter = await yallToken.balanceOf(alice);
             const bobBalanaceAfter = await yallToken.balanceOf(bob);
             const contractBalanceAfter = await yallToken.balanceOf(yallToken.address);
 
-            assertErc20BalanceChanged(aliceBalanaceBefore, aliceBalanaceAfter, ether(zero.minus(transferCoinAmount).minus(transferCoinAmount * feePercent / 100)));
-            assertErc20BalanceChanged(bobBalanaceBefore, bobBalanaceAfter, ether(transferCoinAmount));
-            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, ether(transferCoinAmount * feePercent / 100));
+            assertErc20BalanceChanged(aliceBalanaceBefore, aliceBalanaceAfter, zero.minus(transferCoinAmount).minus(transferCoinAmount * feePercent / 100).toString());
+            assertErc20BalanceChanged(bobBalanaceBefore, bobBalanaceAfter, transferCoinAmount.toString());
+            assertErc20BalanceChanged(contractBalanceBefore, contractBalanceAfter, totalFees.toString());
 
             const feeClaimerBalanceBefore = await yallToken.balanceOf(feeClaimer);
             await yallToken.withdrawFee({from: feeClaimer});
             const feeClaimerBalanceAfter = await yallToken.balanceOf(feeClaimer);
 
-            assertErc20BalanceChanged(feeClaimerBalanceBefore, feeClaimerBalanceAfter, ether(transferCoinAmount / 100 * feePercent));
+            assertYallWithdrawalChanged(
+              feeClaimerBalanceBefore,
+              feeClaimerBalanceAfter,
+              totalFees.minus(ether(1)).toString()
+            );
         });
 
         it('should revert if there is no fee to cover transfer fee expenses', async function () {

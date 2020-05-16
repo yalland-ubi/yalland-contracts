@@ -1,6 +1,8 @@
 const { assert } = require('chai');
+const { BigNumber } = require('bignumber.js');
 
 function helpers(web3) {
+    const { assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
     const keccak256 = web3.utils.soliditySha3;
     const { toBN } = web3.utils;
 
@@ -41,6 +43,14 @@ function helpers(web3) {
         )
     }
 
+    function assertYallWithdrawalChanged(before, after, expected) {
+        const hundredPct = new BigNumber(100);
+        // the fee is constant across all the tests
+        const feePct = new BigNumber('0.02');
+        const newExpected = (new BigNumber(expected)).multipliedBy(hundredPct).dividedBy(hundredPct.plus(feePct));
+        return assertErc20BalanceChanged(before, after, newExpected.toString());
+    }
+
     const GSNRecipientSignatureErrorCodes = {
         METHOD_NOT_SUPPORTED: 11,
         OK: 12,
@@ -52,6 +62,7 @@ function helpers(web3) {
     return {
         approveFunction,
         assertRelayedCall,
+        assertYallWithdrawalChanged,
         fixSignature,
         GSNRecipientSignatureErrorCodes
     }

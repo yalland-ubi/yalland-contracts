@@ -1,7 +1,7 @@
 /*
  * Copyright ©️ 2018 Galt•Project Society Construction and Terraforming Company
  * (Founded by [Nikolai Popeka](https://github.com/npopeka)
- * 
+ *
  * Copyright ©️ 2018 Galt•Core Blockchain Company
  * (Founded by [Nikolai Popeka](https://github.com/npopeka) by
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
@@ -12,11 +12,12 @@ pragma solidity ^0.5.13;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "./interfaces/IYALLDistributor.sol";
+import "./interfaces/IYALLToken.sol";
 import "./GSNRecipientSigned.sol";
 import "./registry/YALLRegistry.sol";
-import "./interfaces/IYALLToken.sol";
 import "./registry/YALLRegistryHelpers.sol";
 import "./traits/ACLPausable.sol";
+import "./traits/YALLFeeWithdrawable.sol";
 
 
 contract YALLToken is
@@ -25,7 +26,8 @@ contract YALLToken is
   ERC20Detailed,
   YALLRegistryHelpers,
   ACLPausable,
-  GSNRecipientSigned
+  GSNRecipientSigned,
+  YALLFeeWithdrawable
 {
   uint256 public constant INITIAL_SUPPLY = 0;
 
@@ -136,17 +138,6 @@ contract YALLToken is
     emit SetGsnFee(msg.sender, _gsnFee);
   }
 
-  // FEE CLAIMER INTERFACE
-
-  function withdrawFee() external onlyFeeClaimer {
-    address _this = address(this);
-    uint256 _payout = balanceOf(_this);
-
-    require(_payout > 0, "Nothing to withdraw");
-
-    _transfer(_this, _msgSender(), _payout);
-  }
-
   // USER INTERFACE
 
   function approve(address _spender, uint256 _amount) public whenNotPaused returns (bool) {
@@ -195,7 +186,7 @@ contract YALLToken is
   // INTERNAL
 
   function _requireMemberIsValid(address _member) internal view {
-    require(isMemberValid(_member), "YALLToken: Member is invalid");
+    require(isMemberValid(_member), "YALLToken: The address has no YALL token ops permission");
   }
 
   function _chargeTransferFee(address from, uint256 _value) private {
@@ -208,12 +199,22 @@ contract YALLToken is
   }
 
   // GETTERS
-  
   function getTransferFee(uint256 amount) public view returns(uint256) {
     if (transferFee > 0) {
       return amount.mul(transferFee) / HUNDRED_PCT;
     } else {
       return 0;
+    }
+  }
+
+  function deductTransferFee(uint256 _amount) public view returns(uint256) {
+    if (transferFee > 0) {
+      uint256 net = (_amount.mul(HUNDRED_PCT)) / (transferFee + HUNDRED_PCT);
+      // NOTICE: this check could be redundant, not sure
+      require(net + getTransferFee(net) <= _amount, "YALLToken: net with fee is greater than the amount");
+      return net;
+    } else {
+      return _amount;
     }
   }
 

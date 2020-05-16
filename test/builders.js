@@ -5,6 +5,7 @@ const YALLRegistry = contract.fromArtifact('YALLRegistry');
 const YALLDistributor = contract.fromArtifact('YALLDistributor');
 const YALLExchange = contract.fromArtifact('YALLExchange');
 const YALLEmissionRewardPool = contract.fromArtifact('YALLEmissionRewardPool');
+const YALLCommissionRewardPool = contract.fromArtifact('YALLCommissionRewardPool');
 const YALLVerification = contract.fromArtifact('YALLVerification');
 const StakingHomeMediator = contract.fromArtifact('StakingHomeMediator');
 const Proxy = contract.fromArtifact('AdminUpgradeabilityProxy');
@@ -14,6 +15,7 @@ YALLToken.numberFormat = 'String';
 YALLExchange.numberFormat = 'String';
 YALLDistributor.numberFormat = 'String';
 YALLEmissionRewardPool.numberFormat = 'String';
+YALLCommissionRewardPool.numberFormat = 'String';
 StakingHomeMediator.numberFormat = 'String';
 
 const { ether, now, zeroAddress } = require('@galtproject/solidity-test-chest')(web3);
@@ -47,6 +49,9 @@ async function buildCoinDistAndExchange(web3, governance, config) {
     const emissionPoolRewardShare = ether(10);
     const emissionDelegatorShare = ether(40);
     const emissionVerifierShare = ether(60);
+    const commissionDelegatorShare = ether(40);
+    const commissionVerifierShare = ether(10);
+    const commissionMemberShare = ether(50);
     const baseAliceBalance = 10000000;
     const feePercent = 0.02;
     const startAfter = 10;
@@ -76,30 +81,52 @@ async function buildCoinDistAndExchange(web3, governance, config) {
     );
     const dist = distDeployment.contract;
 
-    const exchangeDeployment = await deployWithProxy(
-        YALLExchange,
-        proxyAdmin.address,
-        registry.address,
-        // defaultExchangeRate numerator
-        ether(42)
-    );
-    const exchange = exchangeDeployment.contract;
+    let exchange;
+    if (!config.disableExchange) {
+        const exchangeDeployment = await deployWithProxy(
+          YALLExchange,
+          proxyAdmin.address,
+          registry.address,
+          // defaultExchangeRate numerator
+          ether(42)
+        );
+        exchange = exchangeDeployment.contract;
+    }
 
-    const emissionDeployment = await deployWithProxy(
-      YALLEmissionRewardPool,
-      proxyAdmin.address,
-      registry.address,
-      emissionDelegatorShare,
-      emissionVerifierShare
-    );
-    const emission = emissionDeployment.contract;
+    let emission;
+    if (!config.disableEmission) {
+        const emissionDeployment = await deployWithProxy(
+          YALLEmissionRewardPool,
+          proxyAdmin.address,
+          registry.address,
+          emissionDelegatorShare,
+          emissionVerifierShare
+        );
+        emission = emissionDeployment.contract;
+    }
 
-    const verificationDeployment = await deployWithProxy(
-      YALLVerification,
-      proxyAdmin.address,
-      registry.address,
-    );
-    const verification = verificationDeployment.contract;
+    let commission;
+    if (!config.disableCommission) {
+        const commissionDeployment = await deployWithProxy(
+          YALLCommissionRewardPool,
+          proxyAdmin.address,
+          registry.address,
+          commissionDelegatorShare,
+          commissionVerifierShare,
+          commissionMemberShare
+        );
+        commission = commissionDeployment.contract;
+    }
+
+    let verification;
+    if (!config.disableVerification) {
+        const verificationDeployment = await deployWithProxy(
+          YALLVerification,
+          proxyAdmin.address,
+          registry.address,
+        );
+        verification = verificationDeployment.contract;
+    }
 
     let homeMediator;
     if (config.bridge && config.mediatorOnTheOtherSide) {
@@ -124,14 +151,16 @@ async function buildCoinDistAndExchange(web3, governance, config) {
     // Setting up contract addresses
     await registry.setContract(await registry.YALL_TOKEN_KEY(), yallToken.address);
     await registry.setContract(await registry.YALL_DISTRIBUTOR_KEY(), dist.address);
-    await registry.setContract(await registry.YALL_EXCHANGE_KEY(), exchange.address);
-    await registry.setContract(await registry.YALL_VERIFICATION_KEY(), verification.address);
-    await registry.setContract(await registry.YALL_EMISSION_REWARD_POOL_KEY(), emission.address);
+    exchange && await registry.setContract(await registry.YALL_EXCHANGE_KEY(), exchange.address);
+    verification && await registry.setContract(await registry.YALL_VERIFICATION_KEY(), verification.address);
+    commission && await registry.setContract(await registry.YALL_COMMISSION_REWARD_POOL_KEY(), commission.address);
+    emission && await registry.setContract(await registry.YALL_EMISSION_REWARD_POOL_KEY(), emission.address);
 
     if (!config.onlyCustomACL) {
         await registry.setRole(dist.address, await yallToken.YALL_TOKEN_MINTER_ROLE(), true);
         await registry.setRole(dist.address, await yallToken.YALL_TOKEN_BURNER_ROLE(), true);
-        await registry.setRole(emission.address, await yallToken.DISTRIBUTOR_EMISSION_CLAIMER_ROLE(), true);
+        emission && await registry.setRole(emission.address, await yallToken.DISTRIBUTOR_EMISSION_CLAIMER_ROLE(), true);
+        commission && await registry.setRole(commission.address, await yallToken.FEE_CLAIMER_ROLE(), true);
     }
     // Setting up ACL roles
     // common
@@ -178,6 +207,26 @@ async function buildCoinDistAndExchange(web3, governance, config) {
         await exchange.EXCHANGE_SUPER_OPERATOR_ROLE(),
         true
     );
+    config.commissionRewardPoolManager && await registry.setRole(
+      config.commissionRewardPoolManager,
+      await exchange.COMMISSION_POOL_MANAGER_ROLE(),
+      true
+    );
+    config.emissionRewardPoolManager && await registry.setRole(
+        config.emissionRewardPoolManager,
+        await exchange.EMMISSION_POOL_MANAGER_ROLE(),
+        true
+    );
+
+    // setup whitelisted contracts
+    await registry.setRole(defaultSender, await yallToken.YALL_TOKEN_WHITELIST_MANAGER_ROLE(), true);
+    await yallToken.setWhitelistAddress(yallToken.address, true);
+    await yallToken.setWhitelistAddress(dist.address, true);
+    exchange && await yallToken.setWhitelistAddress(exchange.address, true);
+    commission && await yallToken.setWhitelistAddress(commission.address, true);
+    emission && await yallToken.setWhitelistAddress(emission.address, true);
+    config.feeClaimer && await yallToken.setWhitelistAddress(config.feeClaimer, true);
+    await registry.setRole(defaultSender, await yallToken.YALL_TOKEN_WHITELIST_MANAGER_ROLE(), false);
 
     await registry.transferOwnership(governance);
     await proxyAdmin.transferOwnership(governance);
@@ -190,6 +239,7 @@ async function buildCoinDistAndExchange(web3, governance, config) {
         genesisTimestamp,
         proxyAdmin,
         emission,
+        commission,
         homeMediator,
         verification
     }
