@@ -813,7 +813,7 @@ describe('YALLDistributor Unit tests', () => {
 
             it('should deny claiming a reward for a non-active member', async function() {
                 await dist.disableMembers([charlie], { from: distributorVerifier });
-                await assertRevert(dist.claimFundsMultiple([charlie, dan], { from: distributorVerifier }), 'YALLDistributor: Not active member');
+                await assertRevert(dist.claimFundsMultiple([charlie, dan], { from: distributorVerifier }), 'YALLRewardClaimer: Not active participant.');
             });
 
             it('should deny non-distributorVerifier claiming a reward', async function() {
@@ -893,7 +893,7 @@ describe('YALLDistributor Unit tests', () => {
 
             it('should deny claiming a reward for a non-active member', async function() {
                 await dist.disableMembers([charlie], { from: distributorVerifier });
-                await assertRevert(dist.claimFunds({ from: charlie }), ' YALLDistributor: Not active member');
+                await assertRevert(dist.claimFunds({ from: charlie }), ' YALLRewardClaimer: Not active participant');
             });
 
             it('should increase totalClaimed value on each successful claim', async function() {
@@ -945,7 +945,7 @@ describe('YALLDistributor Unit tests', () => {
 
         describe('#currentPeriodBeginsAt()/#getNextPeriodBeginsAt()/#getPreviousPeriodBeginsAt()', async function() {
             it('should return correct time genesisTimestamp', async function() {
-                await increaseTime(8);
+                await increaseTime(5);
                 await assertRevert(dist.getPreviousPeriodBeginsAt(), 'Contract not initiated yet');
                 await assertRevert(dist.getCurrentPeriodBeginsAt(), 'Contract not initiated yet');
                 await assertRevert(dist.getNextPeriodBeginsAt(), 'Contract not initiated yet');
@@ -965,7 +965,7 @@ describe('YALLDistributor Unit tests', () => {
             });
 
             it('should return correct time before 0->1 transition', async function() {
-                await increaseTime(10 + periodLength - 4);
+                await increaseTime(10 + periodLength - 15);
                 await assertRevert(dist.getPreviousPeriodBeginsAt(), 'No previous period');
                 assert.equal(
                     await dist.getCurrentPeriodBeginsAt(),
@@ -994,7 +994,7 @@ describe('YALLDistributor Unit tests', () => {
             });
 
             it('should return correct time before 1->2 transition', async function() {
-                await increaseTime(10 + periodLength * 2 - 4);
+                await increaseTime(10 + periodLength * 2 - 15);
                 assert.equal(
                     await dist.getPreviousPeriodBeginsAt(),
                     await dist.genesisTimestamp()

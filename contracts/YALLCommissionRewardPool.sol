@@ -148,18 +148,10 @@ contract YALLCommissionRewardPool is YALLCommissionRewardPoolCore {
   function claimVerifierReward() external triggerTransition {
     IYALLDistributor dist = _yallDistributor();
     uint256 currentPeriodId = dist.getCurrentPeriodId();
-    uint256 currentPeriodStart = dist.getCurrentPeriodBeginsAt();
 
     Period storage period = periods[currentPeriodId];
 
-    require(
-      verifierClaimedPeriods[currentPeriodId][msg.sender] == false,
-      "YALLCommissionRewardPool: Already claimed for the current period"
-    );
-
-    (bool active, , uint256 createdAt, uint256 lastEnabledAt, uint256 lastDisabledAt) = _yallVerification().verifiers(msg.sender);
-
-    requireCanClaimReward(active, currentPeriodId, currentPeriodStart, createdAt, lastEnabledAt, lastDisabledAt);
+    requireVerifierCanClaimReward(msg.sender);
 
     uint256 grossReward = period.verifierReward;
 
@@ -183,19 +175,10 @@ contract YALLCommissionRewardPool is YALLCommissionRewardPoolCore {
   function claimMemberReward() external triggerTransition {
     IYALLDistributor dist = _yallDistributor();
     uint256 currentPeriodId = dist.getCurrentPeriodId();
-    uint256 currentPeriodStart = dist.getCurrentPeriodBeginsAt();
 
     Period storage period = periods[currentPeriodId];
 
-    require(
-      memberClaimedPeriods[currentPeriodId][msg.sender] == false,
-      "YALLCommissionRewardPool: Already claimed for the current period"
-    );
-
-    (, bool active, , uint256 createdAt, uint256 lastEnabledAt, uint256 lastDisabledAt,) = _yallDistributor().
-      getMemberByAddress(msg.sender);
-
-    requireCanClaimReward(active, currentPeriodId, currentPeriodStart, createdAt, lastEnabledAt, lastDisabledAt);
+    requireMemberCanClaimReward(msg.sender);
 
     uint256 grossReward = period.memberReward;
 
@@ -244,6 +227,60 @@ contract YALLCommissionRewardPool is YALLCommissionRewardPoolCore {
     emit WithdrawFees(diff, now, sources);
 
     return diff;
+  }
+
+  // REQUIRES
+  function requireVerifierCanClaimReward(address _verifier) public view {
+    uint256 currentPeriodId = _yallDistributor().getCurrentPeriodId();
+
+    require(
+      verifierClaimedPeriods[currentPeriodId][_verifier] == false,
+      "YALLCommissionRewardPool: Already claimed for the current period"
+    );
+
+    (
+      bool active,
+      ,
+      uint256 createdAt,
+      uint256 lastEnabledAt,
+      uint256 lastDisabledAt
+    ) = _yallVerification().verifiers(_verifier);
+
+    _requireCanClaimReward(
+      active,
+      currentPeriodId,
+      _yallDistributor().getCurrentPeriodBeginsAt(),
+      createdAt,
+      lastEnabledAt,
+      lastDisabledAt
+    );
+  }
+
+  function requireMemberCanClaimReward(address _member) public view {
+    uint256 currentPeriodId = _yallDistributor().getCurrentPeriodId();
+
+    require(
+      memberClaimedPeriods[currentPeriodId][_member] == false,
+      "YALLCommissionRewardPool: Already claimed for the current period"
+    );
+
+    (
+      ,
+      bool active,
+      ,
+      uint256 createdAt,
+      uint256 lastEnabledAt,
+      uint256 lastDisabledAt,
+    ) = _yallDistributor().getMemberByAddress(_member);
+
+    _requireCanClaimReward(
+      active,
+      currentPeriodId,
+      _yallDistributor().getCurrentPeriodBeginsAt(),
+      createdAt,
+      lastEnabledAt,
+      lastDisabledAt
+    );
   }
 
   // GETTERS

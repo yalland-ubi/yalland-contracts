@@ -19,7 +19,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 contract YALLRewardClaimer {
   using SafeMath for uint256;
 
-  function requireCanClaimReward(
+  function _requireCanClaimReward(
     bool _active,
     uint256 _currentPeriodId,
     uint256 _currentPeriodStart,
@@ -27,10 +27,10 @@ contract YALLRewardClaimer {
     uint256 _le,
     uint256 _ld
   )
-    public
+    internal
     pure
   {
-    require(_active == true, "YALLRewardClaimer: Not active verifier");
+    require(_active == true, "YALLRewardClaimer: Not active participant");
     require(_createdAt < _currentPeriodStart, "YALLRewardClaimer: Can't assign rewards for the creation period");
 
     if (_ld != 0 && _currentPeriodId != 0) {
