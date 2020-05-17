@@ -72,7 +72,7 @@ describe('YALLEmissionReward Integration tests', () => {
     });
 
     // Test Cases:
-    it('should call', async function() {
+    it('should correctly handle emission distribution', async function() {
         const step1 = await now() - 100;
         const step2 = await now() - 50;
         const step3 = await now();

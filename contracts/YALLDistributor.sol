@@ -15,6 +15,7 @@ import "./interfaces/IYALLDistributor.sol";
 import "./GSNRecipientSigned.sol";
 import "./YALLDistributorCore.sol";
 import "./traits/YALLFeeWithdrawable.sol";
+import "./traits/YALLRewardClaimer.sol";
 
 
 /**
@@ -27,7 +28,8 @@ contract YALLDistributor is
   YALLDistributorCore,
   // GSNRecipientSigned occupies 1 storage slot
   GSNRecipientSigned,
-  YALLFeeWithdrawable
+  YALLFeeWithdrawable,
+  YALLRewardClaimer
 {
   // Mints tokens, assigns the verifier reward and caches reward per member
   modifier triggerTransition() {
@@ -496,30 +498,17 @@ contract YALLDistributor is
     bytes32 memberId = memberAddress2Id[_memberAddress];
     Member storage m = member[memberId];
 
-    require(m.active == true, "YALLDistributor: Not active member");
     require(m.addr == _memberAddress, "YALLDistributor: Address doesn't match");
-
-    require(m.createdAt < _currentPeriodStart, "YALLDistributor: Can't assign rewards for the creation period");
     require(m.claimedPeriods[_currentPeriodId] == false, "YALLDistributor: Already claimed for the current period");
 
-    if (m.lastDisabledAt != 0 && _currentPeriodId != 0) {
-      // last disabled at
-      uint256 ld = m.lastDisabledAt;
-      // last enabled at
-      uint256 le = m.lastEnabledAt;
-      uint256 previousPeriodStart = getPreviousPeriodBeginsAt();
-
-      require(
-        // both disabled and enabled in the current period
-        (ld >= _currentPeriodStart && le >= _currentPeriodStart)
-        // both disabled and enabled in the previous period
-        // TODO: check that this line is still required
-        || (ld >= previousPeriodStart && le >= previousPeriodStart && ld < _currentPeriodStart && le < _currentPeriodStart)
-        // both disabled and enabled before the current period started
-        || (ld < _currentPeriodStart && le < _currentPeriodStart),
-        "YALLDistributor: One period should be skipped after re-enabling"
-      );
-    }
+    _requireCanClaimReward(
+      m.active,
+      _currentPeriodId,
+      _currentPeriodStart,
+      m.createdAt,
+      m.lastEnabledAt,
+      m.lastDisabledAt
+    );
   }
 
   /*
@@ -619,15 +608,19 @@ contract YALLDistributor is
     return member[_memberId].addr;
   }
 
-  function getMemberByAddress(address _memberAddress) external view returns (
-    bytes32 id,
-    bool active,
-    address addr,
-    uint256 createdAt,
-    uint256 lastEnabledAt,
-    uint256 lastDisabledAt,
-    uint256 totalClaimed
-  ) {
+  function getMemberByAddress(address _memberAddress)
+    external
+    view
+    returns (
+      bytes32 id,
+      bool active,
+      address addr,
+      uint256 createdAt,
+      uint256 lastEnabledAt,
+      uint256 lastDisabledAt,
+      uint256 totalClaimed
+    )
+  {
     bytes32 memberId = memberAddress2Id[_memberAddress];
     Member storage m = member[memberId];
     return (

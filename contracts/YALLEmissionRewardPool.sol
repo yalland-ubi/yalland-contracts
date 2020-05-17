@@ -71,7 +71,7 @@ contract YALLEmissionRewardPool is YALLEmissionRewardPoolCore {
   }
 
   // DELEGATOR INTERFACE
-  function claimDelegatorReward(uint256 _periodId) external {
+  function claimDelegatorReward(uint256 _periodId) external triggerTransition {
     require(delegatorClaimedPeriods[_periodId][msg.sender] == false, "YALLEmissionRewardPool: Already claimed for the current period");
 
     uint256 periodBeginsAt = _yallDistributor().getPeriodBeginsAt(_periodId);
@@ -95,15 +95,10 @@ contract YALLEmissionRewardPool is YALLEmissionRewardPoolCore {
   function claimVerifierReward() external triggerTransition {
     IYALLDistributor dist = _yallDistributor();
     uint256 currentPeriodId = dist.getCurrentPeriodId();
-    uint256 currentPeriodStart = dist.getCurrentPeriodBeginsAt();
 
     Period storage period = periods[currentPeriodId];
 
-    require(verifierClaimedPeriods[currentPeriodId][msg.sender] == false, "YALLEmissionRewardPool: Already claimed for the current period");
-
-    (bool active, , uint256 createdAt, uint256 lastEnabledAt, uint256 lastDisabledAt) = _yallVerification().verifiers(msg.sender);
-
-    requireCanClaimReward(active, currentPeriodId, currentPeriodStart, createdAt, lastEnabledAt, lastDisabledAt);
+    requireVerifierCanClaimReward(msg.sender);
 
     verifierClaimedPeriods[currentPeriodId][msg.sender] = true;
 
@@ -120,6 +115,33 @@ contract YALLEmissionRewardPool is YALLEmissionRewardPoolCore {
     verifiersShare = _verifiersShare;
 
     emit SetShares(_delegatorsShare, _verifiersShare);
+  }
+
+  // REQUIRES
+  function requireVerifierCanClaimReward(address _verifier) public view {
+    uint256 currentPeriodId = _yallDistributor().getCurrentPeriodId();
+
+    require(
+      verifierClaimedPeriods[currentPeriodId][_verifier] == false,
+      "YALLEmissionRewardPool: Already claimed for the current period"
+    );
+
+    (
+      bool active,
+      ,
+      uint256 createdAt,
+      uint256 lastEnabledAt,
+      uint256 lastDisabledAt
+    ) = _yallVerification().verifiers(_verifier);
+
+    _requireCanClaimReward(
+      active,
+      currentPeriodId,
+      _yallDistributor().getCurrentPeriodBeginsAt(),
+      createdAt,
+      lastEnabledAt,
+      lastDisabledAt
+    );
   }
 
   // GETTERS
