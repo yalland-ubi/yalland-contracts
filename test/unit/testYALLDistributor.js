@@ -813,7 +813,7 @@ describe('YALLDistributor Unit tests', () => {
 
             it('should deny claiming a reward for a non-active member', async function() {
                 await dist.disableMembers([charlie], { from: distributorVerifier });
-                await assertRevert(dist.claimFundsMultiple([charlie, dan], { from: distributorVerifier }), 'YALLDistributor: Not active participant.');
+                await assertRevert(dist.claimFundsMultiple([charlie, dan], { from: distributorVerifier }), 'YALLRewardClaimer: Not active participant.');
             });
 
             it('should deny non-distributorVerifier claiming a reward', async function() {
@@ -893,7 +893,7 @@ describe('YALLDistributor Unit tests', () => {
 
             it('should deny claiming a reward for a non-active member', async function() {
                 await dist.disableMembers([charlie], { from: distributorVerifier });
-                await assertRevert(dist.claimFunds({ from: charlie }), ' YALLDistributor: Not active participant');
+                await assertRevert(dist.claimFunds({ from: charlie }), ' YALLRewardClaimer: Not active participant');
             });
 
             it('should increase totalClaimed value on each successful claim', async function() {
