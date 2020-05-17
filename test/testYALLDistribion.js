@@ -266,11 +266,11 @@ describe('YALLDistribution Integration Tests', () => {
 
             await assertRevert(
                 dist.requireCanClaimFundsByAddress(bob),
-                'Not active member'
+                'Not active participant'
             );
             await assertRevert(
                 dist.claimFunds({ from: bob }),
-                'Not active member'
+                'Not active participant'
             );
 
             // period 2 reward was not distributed since no one had claimed it
