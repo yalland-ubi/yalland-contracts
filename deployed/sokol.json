@@ -1,5 +1,5 @@
 {
-  "yallTokenAddress": "0xC0933D06F6d941CF9783864578651666E83340e3",
+  "yallTokenAddress": "0x83bacC01dD7B9B083160e12164c18bF0766b14A9",
   "yallTokenAbi": [
     {
       "inputs": [
@@ -145,20 +145,6 @@
       "anonymous": false,
       "inputs": [
         {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "newDistributor",
-          "type": "uint256"
-        }
-      ],
-      "name": "SetDistributor",
-      "type": "event",
-      "signature": "0xde68c1f8d452f0cc190b3594558733c1f54f0f0b8717e594386e8b0795d54c6b"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
           "indexed": true,
           "internalType": "address",
           "name": "feeManager",
@@ -288,6 +274,48 @@
       "signature": "0x5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa"
     },
     {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "feeClaimer",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bool",
+          "name": "success",
+          "type": "bool"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "WithdrawFee",
+      "type": "event",
+      "signature": "0x16056a46a1ff3d1178f52faef18c69fed5767a3b0193118908e52c414bfdb08c"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "COMMISSION_POOL_MANAGER_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xbf5426a4"
+    },
+    {
       "constant": true,
       "inputs": [],
       "name": "DISTRIBUTOR_EMISSION_CLAIMER_ROLE",
@@ -334,6 +362,22 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0xf375dafb"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "EMISSION_POOL_MANAGER_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xe04b4f96"
     },
     {
       "constant": true,
@@ -889,6 +933,16 @@
       "signature": "0x3f4ba83a"
     },
     {
+      "constant": false,
+      "inputs": [],
+      "name": "withdrawFee",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0xe941fa78"
+    },
+    {
       "constant": true,
       "inputs": [],
       "name": "yallRegistry",
@@ -1004,16 +1058,6 @@
       "stateMutability": "nonpayable",
       "type": "function",
       "signature": "0x5aa94794"
-    },
-    {
-      "constant": false,
-      "inputs": [],
-      "name": "withdrawFee",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0xe941fa78"
     },
     {
       "constant": false,
@@ -1213,6 +1257,28 @@
       "constant": true,
       "inputs": [
         {
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "deductTransferFee",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xfc4cda0a"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
           "internalType": "address",
           "name": "_member",
           "type": "address"
@@ -1254,7 +1320,7 @@
       "signature": "0x28912822"
     }
   ],
-  "yallDistributorAddress": "0x65E1Ec07a2207d91c7e45f0a8959754036e11Ba1",
+  "yallDistributorAddress": "0xDA3c144110fe925A065cc3D4C626a5396c4c4026",
   "yallDistributorAbi": [
     {
       "inputs": [],
@@ -1354,26 +1420,6 @@
       "inputs": [
         {
           "indexed": true,
-          "internalType": "uint256",
-          "name": "periodId",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "to",
-          "type": "address"
-        }
-      ],
-      "name": "ClaimEmissionPoolReward",
-      "type": "event",
-      "signature": "0xb2f158b8568cbfc3970cd01c65dee0869c514877b6c227c7786eb51300570cdf"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
           "internalType": "bytes32",
           "name": "memberId",
           "type": "bytes32"
@@ -1420,6 +1466,32 @@
       "name": "DisableMember",
       "type": "event",
       "signature": "0x514b5968a494791938552d5da5f24c9b17a87c9849c242c04067b337f6c4a765"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "periodId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "DistributeEmissionPoolReward",
+      "type": "event",
+      "signature": "0x7e94a69ac2d30369acbb4517e5664277b5de8935fcc7a5eac62c83ea66ba5455"
     },
     {
       "anonymous": false,
@@ -1576,6 +1648,48 @@
       "signature": "0x5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa"
     },
     {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "feeClaimer",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bool",
+          "name": "success",
+          "type": "bool"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "WithdrawFee",
+      "type": "event",
+      "signature": "0x16056a46a1ff3d1178f52faef18c69fed5767a3b0193118908e52c414bfdb08c"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "COMMISSION_POOL_MANAGER_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xbf5426a4"
+    },
+    {
       "constant": true,
       "inputs": [],
       "name": "DISTRIBUTOR_EMISSION_CLAIMER_ROLE",
@@ -1622,6 +1736,22 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0xf375dafb"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "EMISSION_POOL_MANAGER_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xe04b4f96"
     },
     {
       "constant": true,
@@ -2065,13 +2195,13 @@
         },
         {
           "internalType": "uint256",
-          "name": "emissionPoolReward",
+          "name": "emissionPoolRewardTotal",
           "type": "uint256"
         },
         {
-          "internalType": "bool",
-          "name": "verifierClaimedReward",
-          "type": "bool"
+          "internalType": "uint256",
+          "name": "emissionPoolRewardClaimed",
+          "type": "uint256"
         }
       ],
       "payable": false,
@@ -2191,6 +2321,16 @@
       "signature": "0x3f4ba83a"
     },
     {
+      "constant": false,
+      "inputs": [],
+      "name": "withdrawFee",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0xe941fa78"
+    },
+    {
       "constant": true,
       "inputs": [],
       "name": "yallRegistry",
@@ -2244,6 +2384,16 @@
     },
     {
       "constant": false,
+      "inputs": [],
+      "name": "handlePeriodTransitionIfRequired",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0x2d3ba9f6"
+    },
+    {
+      "constant": false,
       "inputs": [
         {
           "internalType": "uint256",
@@ -2289,16 +2439,6 @@
       "stateMutability": "nonpayable",
       "type": "function",
       "signature": "0x5aa94794"
-    },
-    {
-      "constant": false,
-      "inputs": [],
-      "name": "withdrawFee",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0xe941fa78"
     },
     {
       "constant": false,
@@ -2465,14 +2605,19 @@
           "internalType": "address",
           "name": "_to",
           "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
         }
       ],
-      "name": "claimEmissionPoolReward",
+      "name": "distributeEmissionPoolReward",
       "outputs": [],
       "payable": false,
       "stateMutability": "nonpayable",
       "type": "function",
-      "signature": "0xfa6e715f"
+      "signature": "0xb6681089"
     },
     {
       "constant": false,
@@ -2499,16 +2644,6 @@
       "stateMutability": "nonpayable",
       "type": "function",
       "signature": "0x1833b7c6"
-    },
-    {
-      "constant": false,
-      "inputs": [],
-      "name": "handlePeriodTransitionIfRequired",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0x2d3ba9f6"
     },
     {
       "constant": true,
@@ -2573,6 +2708,28 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0x7b5c83bd"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_periodId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getPeriodBeginsAt",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x49b0593e"
     },
     {
       "constant": true,
@@ -2746,6 +2903,28 @@
       "constant": true,
       "inputs": [
         {
+          "internalType": "uint256",
+          "name": "_periodId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getPeriodEmissionReward",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x201b7ec6"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
           "internalType": "bytes32",
           "name": "_memberId",
           "type": "bytes32"
@@ -2839,7 +3018,7 @@
       "signature": "0x3dd9899f"
     }
   ],
-  "yallExchangeAddress": "0x29f3F73CEd2f9e96EB0c35adCa32CAFDE3ad67D5",
+  "yallExchangeAddress": "0x5732fD5C1F1DAE98c3d1079b37Fc3BB1E3fB928d",
   "yallExchangeAbi": [
     {
       "inputs": [],
@@ -3127,6 +3306,48 @@
       "signature": "0x54687608b3309a2a7fa1f154dc55738a6192f2db18d5d7d50346794e44b3ef04"
     },
     {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "feeClaimer",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bool",
+          "name": "success",
+          "type": "bool"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "WithdrawFee",
+      "type": "event",
+      "signature": "0x16056a46a1ff3d1178f52faef18c69fed5767a3b0193118908e52c414bfdb08c"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "COMMISSION_POOL_MANAGER_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xbf5426a4"
+    },
+    {
       "constant": true,
       "inputs": [],
       "name": "DISTRIBUTOR_EMISSION_CLAIMER_ROLE",
@@ -3173,6 +3394,22 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0xf375dafb"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "EMISSION_POOL_MANAGER_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xe04b4f96"
     },
     {
       "constant": true,
@@ -3253,6 +3490,22 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0x05db2f41"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "HUNDRED_PCT",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xc1b5dcb6"
     },
     {
       "constant": true,
@@ -3714,6 +3967,16 @@
       "signature": "0x3f4ba83a"
     },
     {
+      "constant": false,
+      "inputs": [],
+      "name": "withdrawFee",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0xe941fa78"
+    },
+    {
       "constant": true,
       "inputs": [
         {
@@ -3877,16 +4140,6 @@
       "stateMutability": "nonpayable",
       "type": "function",
       "signature": "0x5aa94794"
-    },
-    {
-      "constant": false,
-      "inputs": [],
-      "name": "withdrawYALLs",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0x804f73b7"
     },
     {
       "constant": false,
@@ -4235,7 +4488,7 @@
       "signature": "0x1fafd366"
     }
   ],
-  "homeBridgeMediatorAddress": "0xBd97a1CFe3A427931b44d10248a00575489ebcd5",
+  "homeBridgeMediatorAddress": "0x3122C3B82fb06884fa1EB978029bdb30Fb0fC434",
   "homeBridgeMediatorAbi": [
     {
       "constant": false,
@@ -5082,8 +5335,8 @@
       "signature": "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0"
     }
   ],
-  "foreignBridgeMediatorAddress": "0x18FFc5aF2956df7694e901EbF51E2FE8068DFbae",
-  "yallProxyAdminAddress": "0xDbfe7D0E1914b311222751cCaf45E22264A29599",
+  "foreignBridgeMediatorAddress": "0x094b35A280437fE2641A25bdC2F8795103252d55",
+  "yallProxyAdminAddress": "0x2397171665862Ac2482191853B77caa18CB816bC",
   "yallProxyAdminAbi": [
     {
       "anonymous": false,
@@ -5276,7 +5529,7 @@
       "signature": "0x9623609d"
     }
   ],
-  "yallRegistryAddress": "0xeB9Cf254A3d6444Aa865613A5D9dC765830a2A35",
+  "yallRegistryAddress": "0x03D9DfAc580c2B8E19a460e9b420153B03A16f7A",
   "yallRegistryAbi": [
     {
       "anonymous": false,
@@ -5363,6 +5616,22 @@
     {
       "constant": true,
       "inputs": [],
+      "name": "YALL_COMMISSION_REWARD_POOL_KEY",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x8825f6b7"
+    },
+    {
+      "constant": true,
+      "inputs": [],
       "name": "YALL_DISTRIBUTOR_KEY",
       "outputs": [
         {
@@ -5375,6 +5644,22 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0xc5235aca"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "YALL_EMISSION_REWARD_POOL_KEY",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x1aab8fb4"
     },
     {
       "constant": true,
@@ -5395,6 +5680,22 @@
     {
       "constant": true,
       "inputs": [],
+      "name": "YALL_HOME_MEDIATOR_KEY",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xe631d448"
+    },
+    {
+      "constant": true,
+      "inputs": [],
       "name": "YALL_TOKEN_KEY",
       "outputs": [
         {
@@ -5407,6 +5708,22 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0xb7e22215"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "YALL_VERIFICATION_KEY",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xbb482bea"
     },
     {
       "constant": true,
@@ -5619,6 +5936,70 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0x703cd733"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getYallVerificationAddress",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x968264c7"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getYallCommissionRewardPoolAddress",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x255c75fe"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getYallEmissionRewardPoolAddress",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x1a8e6938"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getYallHomeMediatorAddress",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xd82b3fc2"
     }
   ]
 }
