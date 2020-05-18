@@ -1,0 +1,99 @@
+
+> deploy@1.0.0 deploy /Users/nikita/projects/tokenbridge-contracts/deploy
+> if test "$NOFLAT" != "true" ; then cd ..; npm run flatten; cd deploy; fi && node deploy.js
+
+
+> token-bridge-contracts@4.1.0 flatten /Users/nikita/projects/tokenbridge-contracts
+> bash flatten.sh
+
+Flattening common bridge contracts
+Flattening bridge validators contracts
+Flattening contracts related to native-to-erc bridge
+Flattening contracts related to erc-to-erc bridge
+Flattening contracts related to erc-to-native bridge
+Flattening contracts related to arbitrary-message bridge
+Flattening contracts related to erc677 to erc677 on top of AMB bridge
+Bridge mode: AMB_YALLAND
+
+[Home] Deploying Bridge Mediator storage
+
+pending txHash 0xa834227d5c8c28d5c9ac8353429d0721c37ebe65e4dec22a58b1cd866f8e3ae5
+0x3122c3b82fb06884fa1eb978029bdb30fb0fc434 verified in blockscout
+[Home] Bridge Mediator Storage:  0x3122C3B82fb06884fa1EB978029bdb30Fb0fC434
+
+[Home] Deploying Bridge Mediator implementation
+
+pending txHash 0xa18ddd13f3eb35569117baf7faae08539bd4a482c4e828fa46b2d6a86aa37a7e
+0x28aeafc764c2d55a75c14e0fea6aed5f85158bb4 verified in blockscout
+[Home] Bridge Mediator Implementation:  0x28AeAFc764C2d55A75C14e0fea6aeD5f85158bb4
+
+[Home] Hooking up Mediator storage to Mediator implementation
+pending txHash 0x3429f493208f17d7b170bba78285cea33bc73255d76a1e0285daaf5ab73e2ce3
+
+Home part of ERC677-to-ERC677 bridge deployed
+
+
+[Foreign] Deploying Bridge Mediator storage
+
+pending txHash 0x73f229fcd0823ecaed357e1816b8300e187a398ccb3ffb70366bc607dd468d57
+0x094b35a280437fe2641a25bdc2f8795103252d55 verified in etherscan
+[Foreign] Bridge Mediator Storage:  0x094b35A280437fE2641A25bdC2F8795103252d55
+
+[Foreign] Deploying Bridge Mediator implementation
+
+pending txHash 0x9d81050689946dbac6dcdfc5a2f1b74f3d092d95d6dc039abb9a8c478b416ca7
+0x1e277f652aae559ba14c59e3143cd114b363189b verified in etherscan
+[Foreign] Bridge Mediator Implementation:  0x1e277f652AAE559BA14C59E3143cd114b363189B
+
+[Foreign] Hooking up Mediator storage to Mediator implementation
+pending txHash 0x58ebcf0d1e5615cfb7a1b3b5c78b70ce5e67652bb84e17a72da69ccb5964b46f
+
+Foreign part of ERC677-to-ERC677 bridge deployed
+
+
+[Home] Initializing Bridge Mediator with following parameters:
+
+
+    AMB contract: 0xFe446bEF1DbF7AFE24E81e05BC8B271C1BA9a560,
+    Mediator contract: 0x094b35A280437fE2641A25bdC2F8795103252d55,
+    Token contract: 0x83bacC01dD7B9B083160e12164c18bF0766b14A9,
+    DAILY_LIMIT : 75000000000000000000000 which is 75000 in eth,
+    MAX_AMOUNT_PER_TX: 30000000000000000000 which is 30 in eth,
+    MIN_AMOUNT_PER_TX: 1000000000000000000 which is 1 in eth,
+    EXECUTION_DAILY_LIMIT : 75000000000000000000000 which is 75000 in eth,
+    EXECUTION_MAX_AMOUNT_PER_TX: 30000000000000000000 which is 30 in eth,
+    FOREIGN_TO_HOME_DECIMAL_SHIFT: 0,
+    MEDIATOR_REQUEST_GAS_LIMIT : 2000000,
+    OWNER: 0xfffff2b5e1b308331b8548960347f9d874824f40
+
+pending txHash 0x93594e93414213bc265f3c3a85b9d1867f225ebbe710e3d7ac6afcf24f115613
+Transferring bridge mediator proxy ownership to upgradeability admin
+pending txHash 0xceb0985e9c311202197ec73ec4f84783a22aaebabe02033892efbf2ecaca4b64
+
+[Foreign] Initializing Bridge Mediator with following parameters:
+
+
+    AMB contract: 0xFe446bEF1DbF7AFE24E81e05BC8B271C1BA9a560,
+    Mediator contract: 0x3122C3B82fb06884fa1EB978029bdb30Fb0fC434,
+    Token contract: 0xF82247e3eE03158d6F55CDDFEa1048Db1c9657CD,
+    DAILY_LIMIT : 75000000000000000000000 which is 75000 in eth,
+    MAX_AMOUNT_PER_TX: 30000000000000000000 which is 30 in eth,
+    MIN_AMOUNT_PER_TX: 1000000000000000000 which is 1 in eth,
+    EXECUTION_DAILY_LIMIT : 75000000000000000000000 which is 75000 in eth,
+    EXECUTION_MAX_AMOUNT_PER_TX: 30000000000000000000 which is 30 in eth,
+    FOREIGN_TO_HOME_DECIMAL_SHIFT: 0,
+    MEDIATOR_REQUEST_GAS_LIMIT : 2000000,
+    OWNER: 0xfffff2b5e1b308331b8548960347f9d874824f40
+
+pending txHash 0x284116c6365ba34033d9e8bfc3b395a539228ee599b6a5338f5491d72c736a33
+Transferring bridge mediator proxy ownership to upgradeability admin
+pending txHash 0xf4767c5902b03ab996118209db83fc615ee57ad6e7151bce897df1034d152dc5
+
+Deployment has been completed.
+
+
+[   Home  ] Bridge Mediator: 0x3122C3B82fb06884fa1EB978029bdb30Fb0fC434
+[   Home  ] ERC20 Token: 0x83bacC01dD7B9B083160e12164c18bF0766b14A9
+[ Foreign ] Bridge Mediator: 0x094b35A280437fE2641A25bdC2F8795103252d55
+[ Foreign ] ERC20 Token: 0xF82247e3eE03158d6F55CDDFEa1048Db1c9657CD
+Contracts Deployment have been saved to '/Users/nikita/projects/tokenbridge-contracts/deploy/bridgeDeploymentResults.json'
