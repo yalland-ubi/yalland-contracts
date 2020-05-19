@@ -27,13 +27,18 @@ const keccak256 = web3.utils.soliditySha3;
 
 YALLDistributor.numberFormat = 'String';
 
+
+
 module.exports = async function (truffle, network, accounts) {
     if (network === 'test' || network === 'local_test' || network === 'development') {
         console.log('Skipping deployment migration');
         return;
     }
-    const data = JSON.parse(fs.readFileSync(`${__dirname}/../deployed/${network}.json`).toString());
+    const { Deployment } = require('../scripts/deployment')(web3, Proxy);
+    const deployment = new Deployment(truffle, network, accounts[0]);
 
+
+    // const data = JSON.parse(fs.readFileSync(`${__dirname}/../deployed/${network}.json`).toString());
 
     // User1 private: 849381f70496d2d13ceb5ca5c07fb88445df8d5f78492ffa2d318b7d6118a933
     // User1 address: 111119454839c655ecbf662a292de4fc597a9f44
@@ -92,52 +97,50 @@ module.exports = async function (truffle, network, accounts) {
         // 0.0002%
         const erc20TransferFeeShare = ether('0.02');
 
-        console.log('Deploying the proxied contract implementations...');
-        const registryImplementation = await truffle.deploy(YALLRegistry);
-        const distImplementation = await truffle.deploy(YALLDistributor);
-        const exchangeImplementation = await truffle.deploy(YALLExchange);
-        const proxyAdmin = await truffle.deploy(ProxyAdmin);
+        console.log('Deploying the contracts...');
+        const proxyAdmin = await deployment
+          .factory(ProxyAdmin)
+          .name('yallProxyAdmin')
+          .arguments()
+          .deploy();
 
-        console.log('Deploying YALLDistributor/YALLExchange proxy instances...');
-        const registryProxy = await Proxy.new(
-            registryImplementation.address,
-            deployer,
-            registryImplementation.contract.methods.initialize().encodeABI()
-        );
-        const distProxy = await Proxy.new(
-            distImplementation.address,
-            deployer,
-            distImplementation.contract.methods.initialize(
-                periodVolume,
-                verifierRewardShare,
+        const registry = await deployment
+          .factory(YALLRegistry)
+          .name('yallRegistry')
+          .arguments()
+          .deployWithProxy(proxyAdmin.address);
 
-                registryProxy.address,
-                periodLength,
-                genesisTimestamp
-            ).encodeABI()
-        );
-        const exchangeProxy = await Proxy.new(
-            exchangeImplementation.address,
-            deployer,
-            exchangeImplementation.contract.methods.initialize(
-                registryProxy.address,
-                defaultExchangeRateNumerator
-            ).encodeABI()
-        );
+        const dist = await deployment
+          .factory(YALLDistributor)
+          .name('yallDistributor')
+          .arguments(
+            periodVolume,
+            verifierRewardShare,
 
-        console.log('Transferring proxy admin permissions to the ProxyAdmin contract');
-        await Promise.all([
-            registryProxy.changeAdmin(proxyAdmin.address),
-            distProxy.changeAdmin(proxyAdmin.address),
-            exchangeProxy.changeAdmin(proxyAdmin.address)
-        ]);
+            registry.address,
+            periodLength,
+            genesisTimestamp
+          )
+          .deployWithProxy(proxyAdmin.address);
+
+        const exchange = await deployment
+          .factory(YALLExchange)
+          .name('yallExchange')
+          .arguments(
+            registry.address,
+            defaultExchangeRateNumerator
+          )
+          .deployWithProxy(proxyAdmin.address);
 
         console.log('Deploying YALLToken contract...');
-        const yall = await truffle.deploy(YALLToken, registryProxy.address, "Yalland Test", "YALT", 18);
 
-        const registry = await YALLRegistry.at(registryProxy.address);
-        const dist = await YALLDistributor.at(distProxy.address);
-        const exchange = await YALLExchange.at(exchangeProxy.address);
+        const yall = await deployment
+          .factory(YALLToken)
+          .name('yallToken')
+          .arguments(registry.address, "Yalland Test", "YALT", 18)
+          .deploy();
+
+        deployment.save();
 
         console.log('GSN checks...');
         assert.equal(await dist.getHubAddr(), await yall.getHubAddr());
@@ -237,40 +240,11 @@ module.exports = async function (truffle, network, accounts) {
         console.log('Checking permissions');
         assert.equal(await registry.owner(), superuser);
         assert.equal(await proxyAdmin.owner(), superuser);
-        assert.equal(await proxyAdmin.getProxyAdmin(registryProxy.address), proxyAdmin.address);
-        assert.equal(await proxyAdmin.getProxyAdmin(distProxy.address), proxyAdmin.address);
-        assert.equal(await proxyAdmin.getProxyAdmin(exchangeProxy.address), proxyAdmin.address);
+        assert.equal(await proxyAdmin.getProxyAdmin(registry.address), proxyAdmin.address);
+        assert.equal(await proxyAdmin.getProxyAdmin(dist.address), proxyAdmin.address);
+        assert.equal(await proxyAdmin.getProxyAdmin(exchange.address), proxyAdmin.address);
 
         console.log('Saving addresses and abi to deployed folder...');
-        await new Promise(resolve => {
-            const deployDirectory = `${__dirname}/../deployed`;
-            if (!fs.existsSync(deployDirectory)) {
-                fs.mkdirSync(deployDirectory);
-            }
-
-            const deployFile = `${deployDirectory}/${network}.json`;
-            console.log(`saved to ${deployFile}`);
-
-            fs.writeFile(
-                deployFile,
-                JSON.stringify(
-                    _.extend(data, {
-                        yallProxyAdminAddress: proxyAdmin.address,
-                        yallProxyAdminAbi: proxyAdmin.abi,
-                        yallRegistryAddress: registry.address,
-                        yallRegistryAbi: registry.abi,
-                        yallTokenAddress: yall.address,
-                        yallTokenAbi: yall.abi,
-                        yallDistributorAddress: dist.address,
-                        yallDistributorAbi: dist.abi,
-                        yallExchangeAddress: exchange.address,
-                        yallExchangeAbi: exchange.abi
-                    }),
-                    null,
-                    2
-                ),
-                resolve
-            );
-        });
+        deployment.save();
     });
 };
