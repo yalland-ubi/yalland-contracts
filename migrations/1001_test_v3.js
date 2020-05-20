@@ -37,9 +37,6 @@ module.exports = async function (truffle, network, accounts) {
     const { Deployment } = require('../scripts/deployment')(web3, Proxy);
     const deployment = new Deployment(truffle, network, accounts[0]);
 
-
-    // const data = JSON.parse(fs.readFileSync(`${__dirname}/../deployed/${network}.json`).toString());
-
     // User1 private: 849381f70496d2d13ceb5ca5c07fb88445df8d5f78492ffa2d318b7d6118a933
     // User1 address: 111119454839c655ecbf662a292de4fc597a9f44
     // User2 private: 83e4b681814f3bbe09952d94999e194c25a52e5c3ebf36b09d77f16ff8a10da8
@@ -224,11 +221,11 @@ module.exports = async function (truffle, network, accounts) {
 
         console.log('Revoking temporary Registry and ACL records for deployer');
         await Promise.all([
-            registry.setRole(superuser, await yall.FEE_MANAGER_ROLE(), false),
-            registry.setRole(superuser, await yall.YALL_TOKEN_WHITELIST_MANAGER_ROLE(), false),
-            registry.setRole(superuser, await yall.DISTRIBUTOR_MANAGER_ROLE(), false),
-            registry.setRole(superuser, await yall.DISTRIBUTOR_VERIFIER_ROLE(), false),
-            registry.setRole(superuser, await yall.EXCHANGE_MANAGER_ROLE(), false)
+            registry.setRole(deployer, await yall.FEE_MANAGER_ROLE(), false),
+            registry.setRole(deployer, await yall.YALL_TOKEN_WHITELIST_MANAGER_ROLE(), false),
+            registry.setRole(deployer, await yall.DISTRIBUTOR_MANAGER_ROLE(), false),
+            registry.setRole(deployer, await yall.DISTRIBUTOR_VERIFIER_ROLE(), false),
+            registry.setRole(deployer, await yall.EXCHANGE_MANAGER_ROLE(), false)
         ]);
 
         console.log('Transferring ownerships');
