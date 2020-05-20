@@ -1,6 +1,6 @@
 const { getLoader } = require('../galtproject-gpc');
 const {
-    fundRecipient,
+    relayHub
 } = require('@openzeppelin/gsn-helpers');
 const assert = require('assert');
 
@@ -20,24 +20,27 @@ const { loader, provider, defaultSender } = getLoader({
 
 const config = require(`../deployed/${process.env.NETWORK}.json`)
 
-const YALDistributor = loader.truffle.fromArtifact('YALDistributor');
-const YALExchange = loader.truffle.fromArtifact('YALExchange');
-const CoinToken = loader.truffle.fromArtifact('CoinToken');
+const YALLRegistry = loader.truffle.fromArtifact('YALLRegistry');
+const YALLDistributor = loader.truffle.fromArtifact('YALLDistributor');
+const YALLExchange = loader.truffle.fromArtifact('YALLExchange');
+const YALLToken = loader.truffle.fromArtifact('YALLToken');
 const HomeMediator = loader.truffle.fromABI(config.homeBridgeMediatorAbi)
+const RelayHub = loader.truffle.fromABI(relayHub.abi);
 
 HomeMediator.numberFormat = 'String';
-YALDistributor.numberFormat = 'String';
-CoinToken.numberFormat = 'String';
-YALExchange.numberFormat = 'String';
+YALLDistributor.numberFormat = 'String';
+YALLToken.numberFormat = 'String';
+YALLExchange.numberFormat = 'String';
 
-const { web3 } = YALDistributor;
+const { web3 } = YALLDistributor;
 // eslint-disable-next-line import/order
 const { getEventArg, ether } = require('@galtproject/solidity-test-chest')(web3);
 const keccak256 = web3.utils.soliditySha3;
 const { approveFunction } = require('../test/helpers')(web3);
 
 // inputs >>>
-const superuser = 'fffff2b5e1b308331b8548960347f9d874824f40';
+const superuser = '0xfffff2b5e1b308331b8548960347f9d874824f40';
+const ops = 'aaaaa67b971f1181f5af957ea4a0fc53cc034f63';
 const me = '3333331e386a009d9538e759a92ddb37f8da4852';
 const myMemberId = keccak256('user3');
 const he = '0x2222ebc798ebe6517adf90483d1ca69b5276978b';
@@ -86,7 +89,6 @@ async function claimFunds(dist) {
 
 async function claimFundsGSN(dist) {
     console.log('>>> dist getHubAddr ', await dist.getHubAddr());
-    console.log('>>> token ', await dist.token());
     console.log('>>> currentPeriodId ', await dist.getCurrentPeriodId());
     console.log('>>> me active ', await dist.member(myMemberId));
 
@@ -95,9 +97,11 @@ async function claimFundsGSN(dist) {
 
 // WARNING: doesnt' work, will be fixed later
 async function fundGSNContracts(dist, token, exchange) {
-    await fundRecipient(web3, { recipient: dist.address, amount: ether(1), useGSN: false });
-    await fundRecipient(web3, { recipient: token.address, amount: ether(1) });
-    await fundRecipient(web3, { recipient: exchange.address, amount: ether(1) });
+    const relayHub = await RelayHub.at('0xd216153c06e857cd7f72665e0af1d7d82172f494');
+
+    await relayHub.depositFor(dist.address, { value: ether(1), from: defaultSender });
+    await relayHub.depositFor(token.address, { value: ether(1), from: defaultSender });
+    await relayHub.depositFor(exchange.address, { value: ether(1), from: defaultSender });
 }
 
 async function setMediatorOnOtherSide(mediator) {
@@ -106,23 +110,28 @@ async function setMediatorOnOtherSide(mediator) {
     console.log('>>> new mediator on other side ', await mediator.mediatorContractOnOtherSide());
 }
 
-async function addWhitelistedAddress(token) {
+async function addWhitelistedAddress(registry, token, dist) {
+    assert(
+      await registry.hasRole(superuser, await token.FEE_MANAGER_ROLE()),
+      "Sender has no WL manager role"
+    );
     const addressToAdd = config.homeBridgeMediatorAddress;
     await token.setWhitelistAddress(addressToAdd, true, { from: superuser });
 }
 
 async function totalSupply(token) {
-    console.log('>>> YALToken address ', await token.address);
-    console.log('>>> YALToken totalSupply ', await token.totalSupply());
+    console.log('>>> YALLToken address ', await token.address);
+    console.log('>>> YALLToken totalSupply ', await token.totalSupply());
 }
 
-async function balanceOf(token) {
-    console.log('>>> YALToken address ', await token.address);
-    console.log('>>> YALToken balanceOf ', await token.balanceOf(me));
+async function balanceOf(token, mediator) {
+    console.log('>>> YALLToken address ', await token.address);
+    console.log('>>> YALLToken balanceOf mediator', await token.balanceOf(mediator.address));
+    console.log('>>> YALLToken balanceOf me', await token.balanceOf(me));
 }
 
 async function estimateExchange(dist, token, exchange) {
-    console.log('>>> YALExchange address ', await exchange.address);
+    console.log('>>> YALLExchange address ', await exchange.address);
 
     const addr = '0x11965fa061d53b7b9d49e06155f35964682df52b';
     const amount = ether(0.9);
@@ -143,7 +152,7 @@ async function estimateExchange(dist, token, exchange) {
 
     console.log('>>> Estimating... ');
     console.log(
-        '>>> YALExchange estimation ',
+        '>>> YALLExchange estimation ',
         await exchange.contract.methods
             .createOrder(amount)
             .estimateGas({ from: addr })
@@ -153,10 +162,11 @@ async function estimateExchange(dist, token, exchange) {
 async function main() {
     console.log('web3::eth::id::', await web3.eth.net.getId());
 
-    const token = await CoinToken.at(config.yallTokenAddress);
-    const dist = await YALDistributor.at(config.yallDistributorAddress);
-    const exchange = await YALExchange.at(config.yallExchangeAddress);
+    const token = await YALLToken.at(config.yallTokenAddress);
+    const dist = await YALLDistributor.at(config.yallDistributorAddress);
+    const exchange = await YALLExchange.at(config.yallExchangeAddress);
     const mediator = await HomeMediator.at(config.homeBridgeMediatorAddress);
+    const registry = await YALLRegistry.at(config.yallRegistryAddress)
     console.log('>>> Starting...');
 
     // NOTICE: Please, keep all the following method call lines commented out before making a commit
@@ -165,11 +175,11 @@ async function main() {
     // await fundGSNContracts(dist, token, exchange);
     // await claimFunds(dist);
     // await claimFundsGSN(dist);
-    // await addWhitelistedAddress(token);
+    // await addWhitelistedAddress(registry, token, dist);
     // await checkWhitelistedAddresses(token);
     // await setMediatorOnOtherSide(mediator);
     // await totalSupply(token);
-    // await balanceOf(token);
+    // await balanceOf(token, mediator);
     // await estimateExchange(dist, token, exchange);
 }
 
