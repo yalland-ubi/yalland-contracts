@@ -25,11 +25,11 @@
 ## Yalland universal basic income
 **The program is a public blockchain smart contract system managed by a decentralized community. Everyone can participate in the program, verifying himself/herself as a unique person and receive points (tokens), which can be exchanged for products, services or fiat money on the open market. The program is not state-owned and is built on the principles of P2P - economics. The presented smart contract system is blockchain agnostic and can be executed in any Turing-complete virtual machine. It is assumed that it will work initially on Ethereum + xDai and then will be migrated to Ethereum 2.0.**
 
-[@yalland-contracts](https://github.com/yalland-ubi/yalland-contracts/) epo contains smart contracts that enable Yalland members to claim and exchange tokens of Yalland UBI program. Every Yalland member can take a part in current period tokens distribution, earn referral payouts and exchange tokens to any currency.
+[@yalland-contracts](https://github.com/yalland-ubi/yalland-contracts/) repo contains smart contracts that enable Yalland members to claim and exchange tokens of Yalland UBI program. Every Yalland member can take a part in current period tokens distribution, earn referral payouts and exchange tokens to any currency.
 
 :page_with_curl: **For more information read the [Whitepaper](https://github.com/yalland-ubi/yalland-docs/blob/master/Whitepaper.md)**
 
-:construction: **@yalland-contracts stage: Audit**
+:construction: **@yalland-contracts stage: Testnet**
 
 At the moment, [@yalland-contracts](https://github.com/yalland-ubi/yalland-contracts/) contracts are deployed in our private Yalland network(RPC: https://api.yalland.com:8645/, Explorer: https://explorer.yalland.com/).
 
@@ -39,12 +39,12 @@ At the moment, [@yalland-contracts](https://github.com/yalland-ubi/yalland-contr
 
 # Contracts overview
 This repository [@yalland-contracts](https://github.com/yalland-ubi/yalland-contracts/) contains main project contracts:
-- **YALLDistributor.sol** - Main contract for distribute Yall tokens to members of project
-- **YALLExchange.sol** - Contract for exchange YALL to any another currency
-- **YALLRegistry.sol** - Registry of all yalland contracts
-- **YALLVerification.sol** - Verificators addresses registry
-- **YALLEmissionRewardPool.sol** - Contract for distribute token emmission to delegators and verifiers
-- **YALLCommissionRewardPool.sol** - Contract for distribute contracts comissions to delegators and verifiers
+- **YALLDistributor.sol** - main distribution contract;
+- **YALLExchange.sol** - a contract that exchanges tokens for fiat currencies from non-profit organizations of the project;
+- **YALLRegistry.sol** - registry of roles and rights contract;
+- **YALLVerification.sol** - contract containing addresses of non-profit organizations that verify program members;
+- **YALLEmissionRewardPool.sol** - emission distribution contract;
+- **YALLCommissionRewardPool.sol** - commission distribution contract;
 
 ## For Developers
 
