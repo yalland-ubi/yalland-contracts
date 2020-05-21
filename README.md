@@ -6,6 +6,8 @@
 </div>
 
 <div align="center">
+
+![CI](https://github.com/yalland-ubi/yalland-contracts/workflows/CI/badge.svg)
 <img src="https://img.shields.io/github/issues-raw/yalland-ubi/yalland-contracts.svg?color=green&style=flat-square" alt="Opened issues"/>
 <img src="https://img.shields.io/github/issues-closed-raw/yalland-ubi/yalland-contracts.svg?color=blue&style=flat-square" alt="Closed issues" />
 <img src="https://img.shields.io/github/issues-pr-closed/yalland-ubi/yalland-contracts.svg?color=green&style=flat-square" alt="Closed PR"/>
@@ -21,9 +23,9 @@
 <br/>
 
 ## Yalland universal basic income
-The program is a public blockchain smart contract system managed by a decentralized community. Everyone can participate in the program, verifying himself/herself as a unique person and receive points (tokens), which can be exchanged for products, services or fiat money on the open market. The program is not state-owned and is built on the principles of P2P - economics. The presented smart contract system is blockchain agnistic and can be executed in any Turing-complete virtual machine. It is assumed that it will work initially on Ethereum + xDai and then will be migrated to Ethereum 2.0.
+**The program is a public blockchain smart contract system managed by a decentralized community. Everyone can participate in the program, verifying himself/herself as a unique person and receive points (tokens), which can be exchanged for products, services or fiat money on the open market. The program is not state-owned and is built on the principles of P2P - economics. The presented smart contract system is blockchain agnistic and can be executed in any Turing-complete virtual machine. It is assumed that it will work initially on Ethereum + xDai and then will be migrated to Ethereum 2.0.**
 
-[@yalland-contracts](https://github.com/yalland-ubi/yalland-contracts/) repo contains smart contracts for a Single consistent decentralized land and real estate registry. Any land and real-estate property owner can create his property tokens with the help of the decentralized community of cadastral engineers and notaries. Tokens can be created for commercial purposes or for the self-government of property owners.
+[@yalland-contracts](https://github.com/yalland-ubi/yalland-contracts/) repo contains smart contracts for a give Yalland members opportunity to claim and exchange tokens of Yalland program. using this contracts - every Yalland member can take a part of current period tokens distribution volume, earn referral payouts and exchange tokens to any currency.
 
 :page_with_curl: **For more information read the [Whitepaper](https://github.com/yalland-ubi/yalland-docs/blob/master/Whitepaper.md)**
 
@@ -37,7 +39,12 @@ At the moment, [@yalland-contracts](https://github.com/yalland-ubi/yalland-contr
 
 # Contracts overview
 This repository [@yalland-contracts](https://github.com/yalland-ubi/yalland-contracts/) contains main project contracts:
-- **YallDistributor.sol** - Main contract for distribute Yall tokens to members of project
+- **YALLDistributor.sol** - Main contract for distribute Yall tokens to members of project
+- **YALLExchange.sol** - Contract for exchange YALL to any another currency
+- **YALLRegistry.sol** - Registry of all yalland contracts
+- **YALLVerification.sol** - Verificators addresses registry
+- **YALLEmissionRewardPool.sol** - Contract for distribute token emmission to delegators and verifiers
+- **YALLCommissionRewardPool.sol** - Contract for distribute contracts comissions to delegators and verifiers
 
 ## For Developers
 
