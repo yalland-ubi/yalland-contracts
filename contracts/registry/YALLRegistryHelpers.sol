@@ -178,4 +178,18 @@ contract YALLRegistryHelpers {
   function _homeMediator() internal view returns (IStakingHomeMediator) {
     return IStakingHomeMediator(yallRegistry.getYallHomeMediatorAddress());
   }
+
+  function _feeCollector() internal view returns (address) {
+    return yallRegistry.getYallFeeCollectorAddress();
+  }
+
+  function _yallDistributorAndFeeCollector() internal view returns (IYALLDistributor, address) {
+    (address dist, address feeCollector) = yallRegistry.getYallDistributorAndFeeCollectorAddress();
+    return (IYALLDistributor(dist), feeCollector);
+  }
+
+  function _yallTokenIERC20AndFeeCollector() internal view returns (IERC20, address) {
+    (address token, address feeCollector) = yallRegistry.getYallTokenAndFeeCollectorAddress();
+    return (IERC20(token), feeCollector);
+  }
 }

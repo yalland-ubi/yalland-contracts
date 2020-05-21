@@ -18,17 +18,18 @@ const { buildCoinDistAndExchange } = require('../builders');
 
 const YALLToken = contract.fromArtifact('YALLToken');
 const YALLDistributor = contract.fromArtifact('YALLDistributor');
+const MockMeter = contract.fromArtifact('MockMeter');
 const { approveFunction, assertRelayedCall, GSNRecipientSignatureErrorCodes, assertYallWithdrawalChanged } = require('../helpers')(web3);
 
 YALLToken.numberFormat = 'String';
 YALLDistributor.numberFormat = 'String';
 
-const { ether, now, int, increaseTime, assertRevert, assertGsnReject, zeroAddress, getResTimestamp, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
+const { ether, getEventArg, int, increaseTime, assertRevert, assertGsnReject, zeroAddress, getResTimestamp, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
 
 const keccak256 = web3.utils.soliditySha3;
 
 describe('YALLDistributor Unit tests', () => {
-    const [distributorVerifier, distributorManager, alice, bob, charlie, dan, eve, yallMinter, yallBurner, feeManager, feeClaimer, yallWLManager, pauser, distributorEmissionClaimer] = accounts;
+    const [distributorVerifier, distributorManager, feeCollector, alice, bob, charlie, dan, eve, yallMinter, yallBurner, feeManager, feeClaimer, yallWLManager, pauser, distributorEmissionClaimer] = accounts;
 
     // 7 days
     const periodLength = 7 * 24 * 60 * 60;
@@ -44,6 +45,7 @@ describe('YALLDistributor Unit tests', () => {
     let genesisTimestamp;
     let yallToken;
     let dist;
+    let registry;
 
     beforeEach(async function () {
         ({ registry, yallToken, dist, genesisTimestamp } = await buildCoinDistAndExchange(web3, defaultSender, {
@@ -56,7 +58,8 @@ describe('YALLDistributor Unit tests', () => {
             distributorEmissionClaimer,
             yallMinter,
             yallBurner,
-            yallWLManager
+            yallWLManager,
+            feeCollector
         }));
 
         await yallToken.mint(alice, ether(baseAliceBalance), { from: yallMinter });
@@ -609,37 +612,6 @@ describe('YALLDistributor Unit tests', () => {
         });
     });
 
-    describe('FeeClaimer Interface', () => {
-        describe('#withdrawFee()', () => {
-            beforeEach(async function() {
-                await increaseTime(11);
-                await dist.addMembers([keccak256('bob')], [bob], { from: distributorVerifier })
-                await yallToken.setWhitelistAddress(dist.address, true, { from: yallWLManager });
-                await yallToken.setWhitelistAddress(feeClaimer, true, { from: yallWLManager });
-                await dist.changeMyAddress(alice, { from: bob });
-
-                await yallToken.transfer(dist.address, ether(42), { from: alice })
-            })
-
-            it('should allow feeClaimer withdrawing fee', async function() {
-                assert.equal(await yallToken.balanceOf(feeClaimer), 0);
-                const claimerBalanceBefore = await yallToken.balanceOf(feeClaimer);
-                await dist.withdrawFee({ from: feeClaimer });
-                const claimerBalanceAfter = await yallToken.balanceOf(feeClaimer);
-                assertYallWithdrawalChanged(
-                  claimerBalanceBefore,
-                  claimerBalanceAfter,
-                  (new BigNumber(ether(42))).minus(ether(1))
-                )
-            });
-
-            it('should deny non-feeClaimer withdrawing fee', async function() {
-                await assertRevert(dist.withdrawFee({ from: alice }), 'YALLHelpers: Only FEE_CLAIMER allowed');
-            });
-        });
-
-    });
-
     describe('Pauser Interface', () => {
         describe('#pause()/#unpause()', () => {
             it('should allow the pauser pausing/unpausing contract', async function() {
@@ -705,14 +677,23 @@ describe('YALLDistributor Unit tests', () => {
                 await yallToken.mint(dist.address, ether(12), { from: yallMinter });
                 await yallToken.mint(bob, ether(12), { from: yallMinter });
                 await yallToken.mint(charlie, ether(12), { from: yallMinter });
-                await yallToken.transfer(charlie, ether(1), { from: charlie });
+
+                const newFeeCollector = (await MockMeter.new()).address;
+                await yallToken.setWhitelistAddress(newFeeCollector, true, { from: yallWLManager });
+                await registry.setContract(
+                  await registry.YALL_FEE_COLLECTOR_KEY(),
+                  newFeeCollector
+                );
+                assert.equal(await yallToken.balanceOf(newFeeCollector), 0);
 
                 assert.equal(await yallToken.balanceOf(alice), ether(baseAliceBalance));
                 assert.equal(await yallToken.balanceOf(bob), ether(12));
+                assert.equal(await yallToken.balanceOf(feeCollector), 0);
 
-                await yallToken.approve(dist.address, await ether(4.2), { from: bob });
+                await yallToken.approve(dist.address, await ether(10), { from: bob });
                 const res = await dist.changeMyAddress(alice, { from: bob, gasLimit: 9000000, useGSN: true });
                 assertRelayedCall(res);
+                // console.log('>>>', getEventArg(res, 'DebugPreRelayedCall', 'gasUsed'));
 
                 assert.equal(await yallToken.balanceOf(alice), ether(baseAliceBalance + 12 - 4.2));
                 assert.equal(await yallToken.balanceOf(bob), ether(0));

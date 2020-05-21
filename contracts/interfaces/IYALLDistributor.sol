@@ -52,9 +52,6 @@ interface IYALLDistributor {
   // FEE MANAGER INTERFACE
   function setGsnFee(uint256 _gsnFee) external;
 
-  // FEE CLAIMER INTERFACE
-  function withdrawFee() external;
-
   // VERIFIER INTERFACE
   function claimFundsMultiple(address[] calldata _memberAddresses) external;
 
@@ -83,6 +80,8 @@ interface IYALLDistributor {
   function isPeriodClaimedByMember(bytes32 _memberId, uint256 _periodId) external view returns (bool);
   function isPeriodClaimedByAddress(address _memberAddress, uint256 _periodId) external view returns (bool);
   function isActive(address _addr) external view returns (bool);
+  function areActive2(address _addr1, address _addr2) external view returns (bool, bool);
+  function areActive3(address _addr1, address _addr2, address _addr3) external view returns (bool, bool, bool);
   function getPeriodEmissionReward(uint256 _periodId) external view returns (uint256);
   function getTotalClaimed(bytes32 _memberId) external view returns (uint256);
   function getMemberAddress(bytes32 _memberId) external view returns (address);

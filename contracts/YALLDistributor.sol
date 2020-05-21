@@ -14,7 +14,6 @@ import "./interfaces/IYALLToken.sol";
 import "./interfaces/IYALLDistributor.sol";
 import "./GSNRecipientSigned.sol";
 import "./YALLDistributorCore.sol";
-import "./traits/YALLFeeWithdrawable.sol";
 import "./traits/YALLRewardClaimer.sol";
 
 
@@ -28,7 +27,6 @@ contract YALLDistributor is
   YALLDistributorCore,
   // GSNRecipientSigned occupies 1 storage slot
   GSNRecipientSigned,
-  YALLFeeWithdrawable,
   YALLRewardClaimer
 {
   // Mints tokens, assigns the verifier reward and caches reward per member
@@ -96,7 +94,8 @@ contract YALLDistributor is
     (address from, bytes4 signature) = abi.decode(_context, (address, bytes4));
 
     if (signature == YALLDistributor(0).changeMyAddress.selector) {
-      _yallTokenIERC20().transferFrom(from, address(this), gsnFee);
+      (IERC20 token, address collector) = _yallTokenIERC20AndFeeCollector();
+      token.transferFrom(from, collector, gsnFee);
     }
   }
 
@@ -592,8 +591,16 @@ contract YALLDistributor is
     return member[memberAddress2Id[_memberAddress]].claimedPeriods[_periodId];
   }
 
-  function isActive(address _addr) external view returns (bool) {
+  function isActive(address _addr) public view returns (bool) {
     return member[memberAddress2Id[_addr]].active;
+  }
+
+  function areActive2(address _addr1, address _addr2) external view returns (bool, bool) {
+    return (isActive(_addr1), isActive(_addr2));
+  }
+
+  function areActive3(address _addr1, address _addr2, address _addr3) external view returns (bool, bool, bool) {
+    return (isActive(_addr1), isActive(_addr2), isActive(_addr3));
   }
 
   function getPeriodEmissionReward(uint256 _periodId) external view returns (uint256) {

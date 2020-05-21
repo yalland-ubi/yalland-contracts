@@ -65,9 +65,6 @@ interface IYALLExchange {
   // FEE MANAGER INTERFACE
   function setGsnFee(uint256 _gsnFee) external;
 
-  // FEE CLAIMER INTERFACE
-  function withdrawFee() external;
-
   // OPERATOR INTERFACE
   function closeOrder(uint256 _orderId, string calldata _paymentDetails) external;
   function cancelOrder(uint256 _orderId, string calldata _cancelReason) external;

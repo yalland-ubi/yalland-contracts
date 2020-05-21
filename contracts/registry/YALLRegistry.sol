@@ -26,7 +26,39 @@ contract YALLRegistry is YALLRegistryCore {
   bytes32 public constant YALL_COMMISSION_REWARD_POOL_KEY = bytes32("YALL_COMMISSION_REWARD_POOL");
   bytes32 public constant YALL_EMISSION_REWARD_POOL_KEY = bytes32("YALL_EMISSION_REWARD_POOL");
   bytes32 public constant YALL_HOME_MEDIATOR_KEY = bytes32("YALL_HOME_MEDIATOR");
+  bytes32 public constant YALL_FEE_COLLECTOR_KEY = bytes32("YALL_FEE_COLLECTOR");
 
+  // GET WRAPPERS
+  function getContracts2(bytes32 _key1, bytes32 _key2) external view returns (address, address) {
+    return (contracts[_key1], contracts[_key2]);
+  }
+
+  function getContracts3(bytes32 _key1, bytes32 _key2, bytes32 _key3) external view returns (address, address, address) {
+    return (contracts[_key1], contracts[_key2], contracts[_key3]);
+  }
+
+  function getContractSafu(bytes32 _key) external view returns (address) {
+    address addr = contracts[_key];
+    require(addr != ZERO_ADDRESS, "YALLRegistry: contract not set");
+    return (addr);
+  }
+
+  function getContractsSafu2(bytes32 _key1, bytes32 _key2) public view returns (address, address) {
+    address addr1 = contracts[_key1];
+    address addr2 = contracts[_key2];
+    require(addr1 != ZERO_ADDRESS && addr2 != ZERO_ADDRESS, "YALLRegistry: contract not set");
+    return (addr1, addr2);
+  }
+
+  function getContractsSafu3(bytes32 _key1, bytes32 _key2, bytes32 _key3) external view returns (address, address, address) {
+    address addr1 = contracts[_key1];
+    address addr2 = contracts[_key2];
+    address addr3 = contracts[_key3];
+    require(addr1 != ZERO_ADDRESS && addr2 != ZERO_ADDRESS && addr3 != ZERO_ADDRESS, "YALLRegistry: contract not set");
+    return (addr1, addr2, addr3);
+  }
+
+  // NAMED GETTERS
   function getYallTokenAddress() external view returns (address) {
     require(contracts[YALL_TOKEN_KEY] != ZERO_ADDRESS, "YALLRegistry: YALL_TOKEN not set");
     return contracts[YALL_TOKEN_KEY];
@@ -60,5 +92,19 @@ contract YALLRegistry is YALLRegistryCore {
   function getYallHomeMediatorAddress() external view returns (address) {
     require(contracts[YALL_HOME_MEDIATOR_KEY] != ZERO_ADDRESS, "YALLRegistry: YALL_HOME_MEDIATOR not set");
     return contracts[YALL_HOME_MEDIATOR_KEY];
+  }
+
+  function getYallFeeCollectorAddress() external view returns (address) {
+    require(contracts[YALL_FEE_COLLECTOR_KEY] != ZERO_ADDRESS, "YALLRegistry: YALL_FEE_COLLECTOR not set");
+    return contracts[YALL_FEE_COLLECTOR_KEY];
+  }
+
+  // NAMED COMBINED GETTERS
+  function getYallDistributorAndFeeCollectorAddress() external view returns (address, address) {
+    return getContractsSafu2(YALL_DISTRIBUTOR_KEY, YALL_FEE_COLLECTOR_KEY);
+  }
+
+  function getYallTokenAndFeeCollectorAddress() external view returns (address, address) {
+    return getContractsSafu2(YALL_TOKEN_KEY, YALL_FEE_COLLECTOR_KEY);
   }
 }
