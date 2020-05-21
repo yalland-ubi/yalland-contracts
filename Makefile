@@ -16,6 +16,10 @@ test:
 	-npm test
 	-tput bel
 
+flatten:
+	node scripts/extracter.js
+	node scripts/flattenDeployed.js
+
 ops-home:
 	NETWORK=sokol node ops/opsHome
 	-tput bel
@@ -24,8 +28,12 @@ ops-foreign:
 	NETWORK=kovan node ops/opsForeign
 	-tput bel
 
+migrate-yalland-test:
+	RESULT_FILE=yalland_netconfig_test ./node_modules/.bin/truffle migrate -f 14 --to 999 --network yalland
+	-tput bel
+
 migrate-yalland:
-	./node_modules/.bin/truffle migrate -f 12 --to 999 --network yalland --reset
+	RESULT_FILE=yalland_netconfig ./node_modules/.bin/truffle migrate -f 14 --to 999 --network yalland
 	-tput bel
 
 migrate-kovan:
@@ -37,7 +45,7 @@ migrate-sokol:
 	-tput bel
 
 migrate-ganache:
-	./node_modules/.bin/truffle migrate -f 1001 --network ganache --reset
+	./node_modules/.bin/truffle migrate -f 1001 --to 1999 --network ganache --reset
 	-tput bel
 
 migrate:

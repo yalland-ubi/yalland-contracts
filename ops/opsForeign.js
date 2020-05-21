@@ -1,7 +1,13 @@
 const { getLoader } = require('../galtproject-gpc');
 const assert = require('assert');
 
-const { loader } = getLoader();
+const { loader, provider, defaultSender } = getLoader({
+    gsnSupport: false,
+    loaderOptions: {
+        // 1 gwei
+        defaultGasPrice: 10 ** 9
+    }
+});
 
 const config = require(`../deployed/${process.env.NETWORK}.json`)
 
@@ -67,14 +73,15 @@ async function setErc677token(mediator) {
 
 async function setMinter(token) {
     console.log('>>> current minter ', await token.minter());
-    // await token.setMinter(config.foreignBridgeMediatorAddress, { from: superuser });
-    await token.setMinter(superuser, { from: superuser });
+    await token.setMinter(config.foreignBridgeMediatorAddress, { from: superuser });
+    // await token.setMinter(superuser, { from: superuser });
     console.log('>>> new minter ', await token.minter());
 }
 
 async function ambFixFailedTransfer(token, mediator) {
-    // txHash
-    await mediator.requestFailedMessageFix('0x5fe4cd4b3d149105ee147ef781de83641738e56e2570e577c9751fbb9aa4fc63', { from: me });
+    // home chain failed transfer txHash
+    // WARNING: ensure that the home mediator has enough YALLs to operate
+    await mediator.requestFailedMessageFix('0x3456fc8d4292f7cd388f11d9b14886528a2af74d152ea030d82b646802475d90', { from: me });
     // console.log('>>> YALTokenEthereum address ', await token.address);
     // console.log('>>> YALTokenEthereum totalSupply ', await token.totalSupply());
 }

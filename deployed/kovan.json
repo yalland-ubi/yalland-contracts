@@ -1,5 +1,5 @@
 {
-  "yallTokenEthereumAddress": "0xd19416362D53344EbD589cbC899969C13F9130db",
+  "yallTokenEthereumAddress": "0xC0933D06F6d941CF9783864578651666E83340e3",
   "yallTokenEthereumAbi": [
     {
       "inputs": [],
@@ -544,8 +544,8 @@
       "signature": "0x40c10f19"
     }
   ],
-  "homeBridgeMediatorAddress": "0xBd97a1CFe3A427931b44d10248a00575489ebcd5",
-  "foreignBridgeMediatorAddress": "0x18FFc5aF2956df7694e901EbF51E2FE8068DFbae",
+  "homeBridgeMediatorAddress": "0x5c841596d46bbd2a10b6896cB5660a4d8AD2082F",
+  "foreignBridgeMediatorAddress": "0xc22aEa155590D13060403eC30d4cBcC33a19f7ce",
   "foreignBridgeMediatorAbi": [
     {
       "constant": false,

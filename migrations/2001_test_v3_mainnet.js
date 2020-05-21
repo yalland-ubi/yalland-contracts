@@ -9,6 +9,7 @@
 
 const fs = require('fs');
 const _ = require('lodash');
+const assert = require('assert');
 
 const YALLTokenEthereum = artifacts.require('./YALLTokenEthereum');
 const { web3 } = YALLTokenEthereum;
@@ -18,49 +19,39 @@ module.exports = async function (truffle, network, accounts) {
     //     console.log('Skipping deployment migration');
     //     return;
     // }
-    const data = JSON.parse(fs.readFileSync(`${__dirname}/../deployed/${network}.json`).toString());
+    const { Deployment } = require('../scripts/deployment')(web3, Proxy);
+    const deployment = new Deployment(truffle, network, accounts[0]);
 
     // Superuser private: a46e68b3f1881ca65ddb387b9e9baf28c3da1f6848d3f93cd206e51549453669
     // Superuser address: fffff2b5e1b308331b8548960347f9d874824f40
+    // Deployer private: 8e1b9e2b156bc61d74482427f522842d8b1e6252b284da4d80fcbd95638d9ee9
+    // Deployer address: dddddf4630b0ca1d7f18b681e61f5f40c0a4a652
 
     const superuser = 'fffff2b5e1b308331b8548960347f9d874824f40';
+    const expectedDeployer = '0xDDddDf4630b0Ca1D7F18B681e61F5F40c0a4A652';
+
     truffle.then(async () => {
-        let deployer;
+        const networkName = network || 'ganache';
         if (network === 'ganache') {
             deployer = (await web3.eth.getAccounts())[0]
         } else {
-            deployer = truffle.networks[network].from;
+            deployer = truffle.networks[networkName].from;
+            assert.equal(accounts[0], expectedDeployer, 'Please, deploy using the above deployer address');
         }
         console.log('deployer address:', deployer);
 
         console.log('Deploying YALLTokenEthereum');
-        const yallTokenEthereum = await truffle.deploy(YALLTokenEthereum);
+        const yallTokenEthereum = await deployment
+          .factory(YALLTokenEthereum)
+          .name('yallTokenEthereum')
+          .arguments()
+          .deploy();
 
         await yallTokenEthereum.setMinter(superuser);
         await yallTokenEthereum.transferOwnership(superuser);
 
         console.log('Saving addresses and abi to deployed folder...');
-        await new Promise(resolve => {
-            const deployDirectory = `${__dirname}/../deployed`;
-            if (!fs.existsSync(deployDirectory)) {
-                fs.mkdirSync(deployDirectory);
-            }
 
-            const deployFile = `${deployDirectory}/${network}.json`;
-            console.log(`saved to ${deployFile}`);
-
-            fs.writeFile(
-                deployFile,
-                JSON.stringify(
-                    _.extend(data, {
-                        yallTokenEthereumAddress: yallTokenEthereum.address,
-                        yallTokenEthereumAbi: yallTokenEthereum.abi
-                    }),
-                    null,
-                    2
-                ),
-                resolve
-            );
-        });
+        deployment.save();
     });
 };
