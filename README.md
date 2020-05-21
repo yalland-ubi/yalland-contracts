@@ -23,7 +23,7 @@
 <br/>
 
 ## Yalland universal basic income
-**The program is a public blockchain smart contract system managed by a decentralized community. Everyone can participate in the program, verifying himself/herself as a unique person and receive points (tokens), which can be exchanged for products, services or fiat money on the open market. The program is not state-owned and is built on the principles of P2P - economics. The presented smart contract system is blockchain agnistic and can be executed in any Turing-complete virtual machine. It is assumed that it will work initially on Ethereum + xDai and then will be migrated to Ethereum 2.0.**
+**The program is a public blockchain smart contract system managed by a decentralized community. Everyone can participate in the program, verifying himself/herself as a unique person and receive points (tokens), which can be exchanged for products, services or fiat money on the open market. The program is not state-owned and is built on the principles of P2P - economics. The presented smart contract system is blockchain agnostic and can be executed in any Turing-complete virtual machine. It is assumed that it will work initially on Ethereum + xDai and then will be migrated to Ethereum 2.0.**
 
 [@yalland-contracts](https://github.com/yalland-ubi/yalland-contracts/) epo contains smart contracts that enable Yalland members to claim and exchange tokens of Yalland UBI program. Every Yalland member can take a part in current period tokens distribution, earn referral payouts and exchange tokens to any currency.
 
