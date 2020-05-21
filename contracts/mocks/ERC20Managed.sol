@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 contract ERC20Managed {
-  IERC20 erc20;
+  IERC20 public erc20;
 
   event GasUsedEvent(uint256 gasUsed);
   constructor(address _erc20) public {
