@@ -43,7 +43,8 @@
     "ganache-core": "^2.10.2",
     "solhint": "^2.3.1",
     "truffle": "5.1.20",
-    "web3": "1.2.4"
+    "web3": "1.2.4",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "@openzeppelin/test-environment": "^0.1.3",
