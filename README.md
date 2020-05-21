@@ -10,7 +10,7 @@
 <img src="https://img.shields.io/github/issues-closed-raw/yalland-ubi/yalland-contracts.svg?color=blue&style=flat-square" alt="Closed issues" />
 <img src="https://img.shields.io/github/issues-pr-closed/yalland-ubi/yalland-contracts.svg?color=green&style=flat-square" alt="Closed PR"/>
 <img src="https://img.shields.io/github/issues-pr-raw/yalland-ubi/yalland-contracts.svg?color=green&style=flat-square" alt="Opened PR"/>
-<img src="https://img.shields.io/badge/version-0.12.0-yellow.svg" alt="Contracts Version"/>
+<img src="https://img.shields.io/badge/version-1.0.0-yellow.svg" alt="Contracts Version"/>
 </div>
 <br/>
 <br/>
