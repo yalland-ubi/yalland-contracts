@@ -20,6 +20,8 @@ const { buildCoinDistAndExchange } = require('../builders');
 
 const { ether, now, increaseTime, assertRevert, assertGsnReject, getEventArg, getResTimestamp, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
 
+const MockMeter = contract.fromArtifact('MockMeter');
+
 const keccak256 = web3.utils.soliditySha3;
 
 const OrderStatus = {
@@ -31,7 +33,7 @@ const OrderStatus = {
 };
 
 describe('YALLExchange Unit tests', () => {
-    const [distributorVerifier, alice, bob, charlie, dan, exchangeSuperOperator, pauser, yallMinter, yallBurner, exchangeOperator, exchangeManager, feeManager, feeClaimer, yallWLManager] = accounts;
+    const [distributorVerifier, alice, bob, charlie, dan, feeCollector, exchangeSuperOperator, pauser, yallMinter, yallBurner, exchangeOperator, exchangeManager, feeManager, feeClaimer, yallWLManager] = accounts;
     const owner = defaultSender;
 
     // 7 days
@@ -49,12 +51,14 @@ describe('YALLExchange Unit tests', () => {
     let yallToken;
     let exchange;
     let dist;
+    let registry;
 
     beforeEach(async function () {
-        ({ yallToken, dist, exchange, genesisTimestamp } = await buildCoinDistAndExchange(web3, defaultSender, {
+        ({ registry, yallToken, dist, exchange, genesisTimestamp } = await buildCoinDistAndExchange(web3, defaultSender, {
             periodVolume,
             feeManager,
             feeClaimer,
+            feeCollector,
             pauser,
             yallMinter,
             yallBurner,
@@ -166,36 +170,6 @@ describe('YALLExchange Unit tests', () => {
         });
     });
 
-    describe('FeeClaimer Interface', () => {
-        describe('#withdrawYALLs()', () => {
-            beforeEach(async function() {
-                await increaseTime(11);
-                await dist.addMembers([keccak256('bob')], [bob], { from: distributorVerifier })
-                await dist.addMembers([keccak256('alice')], [alice], { from: distributorVerifier })
-                await yallToken.setWhitelistAddress(exchange.address, true, { from: yallWLManager });
-                await yallToken.setWhitelistAddress(feeClaimer, true, { from: yallWLManager });
-
-                await yallToken.transfer(exchange.address, ether(42), { from: alice })
-            })
-
-            it('should allow feeClaimer withdrawing fee', async function() {
-                const claimerBalanceBefore = await yallToken.balanceOf(feeClaimer);
-                await exchange.withdrawFee({ from: feeClaimer });
-                const claimerBalanceAfter = await yallToken.balanceOf(feeClaimer);
-
-                assertYallWithdrawalChanged(
-                  claimerBalanceBefore,
-                  claimerBalanceAfter,
-                  (new BigNumber(ether(42))).minus(ether(1))
-                )
-            });
-
-            it('should deny non-feeClaimer withdrawing fee', async function() {
-                await assertRevert(exchange.withdrawFee({ from: feeManager }), 'YALLHelpers: Only FEE_CLAIMER allowed');
-            });
-        });
-    });
-
     describe('Pauser Interface', () => {
         describe('#pause()/#unpause()', () => {
             it('should allow a pauser pausing/unpausing contract', async function() {
@@ -269,21 +243,43 @@ describe('YALLExchange Unit tests', () => {
                 });
 
                 it('should allow creating an order using GSN', async function() {
+                    // 3 - is a GSN fee
                     await yallToken.approve(exchange.address, ether(13 + 3), { from: bob });
 
+                    const newFeeCollector = (await MockMeter.new()).address;
+                    await yallToken.setWhitelistAddress(newFeeCollector, true, { from: yallWLManager });
+                    await registry.setContract(
+                      await registry.YALL_FEE_COLLECTOR_KEY(),
+                      newFeeCollector
+                    );
+                    assert.equal(await yallToken.balanceOf(newFeeCollector), 0);
+
+                    const feeCollectorBalanceBefore = await yallToken.balanceOf(newFeeCollector);
                     const exchangeBalanceBefore = await yallToken.balanceOf(exchange.address);
                     const bobsBalanceBefore = await yallToken.balanceOf(bob);
+
                     let res = await exchange.createOrder(ether(13), { from: bob, useGSN: true });
                     assertRelayedCall(res);
+                    // console.log('>>>', getEventArg(res, 'DebugPreRelayedCall', 'gasUsed'));
+
+                    const feeCollectorBalanceAfter = await yallToken.balanceOf(newFeeCollector);
                     const exchangeBalanceAfter = await yallToken.balanceOf(exchange.address);
                     const bobsBalanceAfter = await yallToken.balanceOf(bob);
 
                     const total = (new BigNumber(ether(13 + 3)));
                     const feeRate = new BigNumber('0.02');
+                    const thirteen = new BigNumber(ether(13));
+                    const three = new BigNumber(ether(3));
+
+                    assertErc20BalanceChanged(
+                      feeCollectorBalanceBefore,
+                      feeCollectorBalanceAfter,
+                      total.multipliedBy(feeRate).dividedBy(100).plus(three).toString()
+                    );
                     assertErc20BalanceChanged(
                         exchangeBalanceBefore,
                         exchangeBalanceAfter,
-                        total
+                        thirteen
                             .minus(total.multipliedBy(feeRate).dividedBy(100))
                             .toString()
                     );

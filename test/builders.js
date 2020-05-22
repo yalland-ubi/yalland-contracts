@@ -155,6 +155,10 @@ async function buildCoinDistAndExchange(web3, governance, config) {
     verification && await registry.setContract(await registry.YALL_VERIFICATION_KEY(), verification.address);
     commission && await registry.setContract(await registry.YALL_COMMISSION_REWARD_POOL_KEY(), commission.address);
     emission && await registry.setContract(await registry.YALL_EMISSION_REWARD_POOL_KEY(), emission.address);
+    await registry.setContract(
+      await registry.YALL_FEE_COLLECTOR_KEY(),
+      config.feeCollector || commission.address
+    )
 
     if (!config.onlyCustomACL) {
         await registry.setRole(dist.address, await yallToken.YALL_TOKEN_MINTER_ROLE(), true);
@@ -226,6 +230,7 @@ async function buildCoinDistAndExchange(web3, governance, config) {
     commission && await yallToken.setWhitelistAddress(commission.address, true);
     emission && await yallToken.setWhitelistAddress(emission.address, true);
     config.feeClaimer && await yallToken.setWhitelistAddress(config.feeClaimer, true);
+    config.feeCollector && await yallToken.setWhitelistAddress(config.feeCollector, true);
     await registry.setRole(defaultSender, await yallToken.YALL_TOKEN_WHITELIST_MANAGER_ROLE(), false);
 
     await registry.transferOwnership(governance);

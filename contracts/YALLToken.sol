@@ -17,7 +17,6 @@ import "./GSNRecipientSigned.sol";
 import "./registry/YALLRegistry.sol";
 import "./registry/YALLRegistryHelpers.sol";
 import "./traits/ACLPausable.sol";
-import "./traits/YALLFeeWithdrawable.sol";
 
 
 contract YALLToken is
@@ -26,8 +25,7 @@ contract YALLToken is
   ERC20Detailed,
   YALLRegistryHelpers,
   ACLPausable,
-  GSNRecipientSigned,
-  YALLFeeWithdrawable
+  GSNRecipientSigned
 {
   uint256 public constant INITIAL_SUPPLY = 0;
 
@@ -93,7 +91,7 @@ contract YALLToken is
   function _preRelayedCall(bytes memory _context) internal returns (bytes32) {
     address from = abi.decode(_context, (address));
 
-    _transfer(from, address(this), gsnFee);
+    _transfer(from, _feeCollector(), gsnFee);
   }
 
   // MINTER INTERFACE
@@ -141,19 +139,18 @@ contract YALLToken is
   // USER INTERFACE
 
   function approve(address _spender, uint256 _amount) public whenNotPaused returns (bool) {
-    _requireMemberIsValid(_msgSender());
-    _requireMemberIsValid(_spender);
+    _requireMembersAreValid2(_yallDistributor(), _spender, _msgSender());
 
     return super.approve(_spender, _amount);
   }
 
   function transfer(address _to, uint256 _value) public whenNotPaused returns (bool) {
-    _requireMemberIsValid(_to);
-    _requireMemberIsValid(_msgSender());
+    (IYALLDistributor dist, address feeCollector) = _yallDistributorAndFeeCollector();
+    _requireMembersAreValid2(dist, _to, _msgSender());
 
     bool result = ERC20.transfer(_to, _value);
 
-    _chargeTransferFee(_msgSender(), _value);
+    _chargeTransferFee(_msgSender(), feeCollector, _value);
 
     return result;
   }
@@ -164,13 +161,12 @@ contract YALLToken is
   }
 
   function transferFrom(address _from, address _to, uint256 _value) public whenNotPaused returns (bool) {
-    _requireMemberIsValid(_from);
-    _requireMemberIsValid(_to);
-    _requireMemberIsValid(_msgSender());
+    (IYALLDistributor dist, address feeCollector) = _yallDistributorAndFeeCollector();
+    _requireMembersAreValid3(dist, _from, _to, _msgSender());
 
     bool result = ERC20.transferFrom(_from, _to, _value);
 
-    _chargeTransferFee(_msgSender(), _value);
+    _chargeTransferFee(_msgSender(), feeCollector, _value);
 
     return result;
   }
@@ -184,18 +180,60 @@ contract YALLToken is
   }
 
   // INTERNAL
+  function _chargeTransferFee(address _from, address _feeCollector, uint256 _value) private {
+    uint256 fee = getTransferFee(_value);
 
-  function _requireMemberIsValid(address _member) internal view {
-    require(isMemberValid(_member), "YALLToken: The address has no YALL token ops permission");
+    if (fee > 0) {
+      require(balanceOf(_from) >= fee, "YALLToken: insufficient balance for paying a fee");
+      _transfer(_from, _feeCollector, fee);
+    }
   }
 
-  function _chargeTransferFee(address from, uint256 _value) private {
-    uint256 _fee = getTransferFee(_value);
+  function _isMemberValid(IYALLDistributor _dist, address _member) internal view returns(bool) {
+    return _dist.isActive(_member) || opsWhitelist[_member] == true;
+  }
 
-    if (_fee > 0) {
-      require(balanceOf(from) >= _fee, "YALLToken: insufficient balance for paying a fee");
-      _transfer(from, address(this), _fee);
-    }
+  function _areMembersValid2(IYALLDistributor _dist, address _member1, address _member2) internal view returns(bool) {
+    (bool active1, bool active2) = _dist.areActive2(_member1, _member2);
+
+    return (active1 || opsWhitelist[_member1] == true) && (active2 || opsWhitelist[_member2] == true);
+  }
+
+  function _areMembersValid3(
+    IYALLDistributor _dist,
+    address _member1,
+    address _member2,
+    address _member3
+  )
+    internal
+    view
+    returns(bool)
+  {
+    (bool active1, bool active2, bool active3) = _dist.areActive3(_member1, _member2, _member3);
+
+    return (active1 || opsWhitelist[_member1] == true)
+        && (active2 || opsWhitelist[_member2] == true)
+        && (active3 || opsWhitelist[_member3] == true);
+  }
+
+  // REQUIRES
+  function _requireMembersAreValid2(IYALLDistributor _dist, address _member1, address _member2) internal view {
+    require(_areMembersValid2(_dist, _member1, _member2), "YALLToken: The address has no YALL token ops permission");
+  }
+
+  function _requireMembersAreValid3(
+    IYALLDistributor _dist,
+    address _member1,
+    address _member2,
+    address _member3
+  )
+    internal
+    view
+  {
+    require(
+      _areMembersValid3(_dist, _member1, _member2, _member3),
+      "YALLToken: The address has no YALL token ops permission"
+    );
   }
 
   // GETTERS
@@ -210,6 +248,15 @@ contract YALLToken is
   function deductTransferFee(uint256 _amount) public view returns(uint256) {
     if (transferFee > 0) {
       uint256 net = (_amount.mul(HUNDRED_PCT)) / (transferFee + HUNDRED_PCT);
+      return net;
+    } else {
+      return _amount;
+    }
+  }
+
+  function deductTransferSafu(uint256 _amount) public view returns(uint256) {
+    if (transferFee > 0) {
+      uint256 net = (_amount.mul(HUNDRED_PCT)) / (transferFee + HUNDRED_PCT);
       // NOTICE: this check could be redundant, not sure
       require(net + getTransferFee(net) <= _amount, "YALLToken: net with fee is greater than the amount");
       return net;
@@ -219,7 +266,15 @@ contract YALLToken is
   }
 
   function isMemberValid(address _member) public view returns(bool) {
-    return IYALLDistributor(yallRegistry.getYallDistributorAddress()).isActive(_member) || opsWhitelist[_member] == true;
+    return _isMemberValid(IYALLDistributor(yallRegistry.getYallDistributorAddress()), _member);
+  }
+
+  function areMembersValid2(address _member1, address _member2) public view returns(bool) {
+    return _areMembersValid2(IYALLDistributor(yallRegistry.getYallDistributorAddress()), _member1, _member2);
+  }
+
+  function areMembersValid3(address _member1, address _member2, address _member3) public view returns(bool) {
+    return _areMembersValid3(IYALLDistributor(yallRegistry.getYallDistributorAddress()), _member1, _member2, _member3);
   }
 
   function canPayForGsnCall(address _addr) public view returns (bool) {

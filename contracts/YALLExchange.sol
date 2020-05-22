@@ -15,7 +15,6 @@ import "./interfaces/IYALLToken.sol";
 import "./interfaces/IYALLExchange.sol";
 import "./GSNRecipientSigned.sol";
 import "./YALLExchangeCore.sol";
-import "./traits/YALLFeeWithdrawable.sol";
 
 
 /**
@@ -27,8 +26,7 @@ contract YALLExchange is
   IYALLExchange,
   YALLExchangeCore,
   // GSNRecipientSigned occupies 1 storage slot
-  GSNRecipientSigned,
-  YALLFeeWithdrawable
+  GSNRecipientSigned
 {
   constructor() public {
   }
@@ -79,7 +77,8 @@ contract YALLExchange is
     (address from, bytes4 signature) = abi.decode(_context, (address, bytes4));
 
     if (signature == YALLExchange(0).createOrder.selector) {
-      _yallTokenIERC20().transferFrom(from, address(this), gsnFee);
+      (IERC20 token, address collector) = _yallTokenIERC20AndFeeCollector();
+      token.transferFrom(from, collector, gsnFee);
     }
   }
 

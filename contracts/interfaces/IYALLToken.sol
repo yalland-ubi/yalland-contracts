@@ -35,9 +35,6 @@ interface IYALLToken {
   function setTransferFee(uint256 _transferFee) external;
   function setGsnFee(uint256 _gsnFee) external;
 
-  // FEE CLAIMER INTERFACE
-  function withdrawFee() external;
-
   // GETTERS
   function getTransferFee(uint256 amount) external view returns(uint256);
   function deductTransferFee(uint256 amount) external view returns(uint256);

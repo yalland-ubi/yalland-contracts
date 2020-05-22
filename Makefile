@@ -20,6 +20,10 @@ flatten:
 	node scripts/extracter.js
 	node scripts/flattenDeployed.js
 
+benchmark:
+	node benchmarks/main.js
+	-tput bel
+
 ops-home:
 	NETWORK=sokol node ops/opsHome
 	-tput bel

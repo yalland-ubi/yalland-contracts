@@ -21,7 +21,7 @@ const { approveFunction, GSNRecipientSignatureErrorCodes } = require('./helpers'
 const keccak256 = web3.utils.soliditySha3;
 
 describe('YALLDistribution Integration Tests', () => {
-    const [distributorVerifier, distributorManager, alice, bob, charlie, dan, eve, yallMinter, feeManager, pauser] = accounts;
+    const [distributorVerifier, distributorManager, alice, bob, charlie, dan, eve, yallMinter, feeCollector, feeManager, pauser] = accounts;
 
     let registry;
     let yallToken;
@@ -45,6 +45,7 @@ describe('YALLDistribution Integration Tests', () => {
             distributorManager,
             pauser,
             periodVolume,
+            feeCollector,
             disableExchange: true,
             disableEmission: true,
             disableCommission: true
