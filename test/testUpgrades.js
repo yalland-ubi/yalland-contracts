@@ -25,14 +25,17 @@ async function getProxyAdmin(address) {
 }
 
 describe('Upgrades', () => {
-    const [alice] = accounts;
+    const [alice, feeCollector, gsnFeeCollector] = accounts;
 
     let registryV1;
     let yallToken;
     let dist;
 
     beforeEach(async function () {
-        ({ registry: registryV1, yallToken, dist } = await buildCoinDistAndExchange(web3, alice, {}));
+        ({ registry: registryV1, yallToken, dist } = await buildCoinDistAndExchange(web3, alice, {
+            feeCollector,
+            gsnFeeCollector,
+        }));
     });
 
     it('#should allow a proxy admin owner performing upgrades()', async function() {
