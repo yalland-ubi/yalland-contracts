@@ -31,7 +31,7 @@ const OrderStatus = {
 const keccak256 = web3.utils.soliditySha3;
 
 describe('YALLExchange Integration tests', () => {
-    const [distributorVerifier, alice, bob, charlie, dan, yallMinter, exchangeOperator, exchangeSuperOperator, exchangeManager, feeManager, yallWLManager] = accounts;
+    const [distributorVerifier, alice, bob, charlie, dan, yallMinter, exchangeOperator, exchangeSuperOperator, exchangeManager, feeManager, yallTokenManager] = accounts;
 
     let registry;
     let yallToken;
@@ -51,17 +51,17 @@ describe('YALLExchange Integration tests', () => {
             exchangeManager,
             exchangeOperator,
             exchangeSuperOperator,
-            yallWLManager
+            yallTokenManager
         }));
 
         await yallToken.setTransferFee(ether('0.02'), { from: feeManager });
         await yallToken.setGsnFee(ether('1.7'), { from: feeManager });
 
-        await yallToken.setWhitelistAddress(dist.address, true, { from: yallWLManager });
-        await yallToken.setWhitelistAddress(exchange.address, true, { from: yallWLManager });
-        await yallToken.setWhitelistAddress(exchangeOperator, true, { from: yallWLManager });
-        await yallToken.setWhitelistAddress(exchangeSuperOperator, true, { from: yallWLManager });
-        await yallToken.setWhitelistAddress(dan, true, { from: yallWLManager });
+        await yallToken.setCanTransferWhitelistAddress(dist.address, true, { from: yallTokenManager });
+        await yallToken.setCanTransferWhitelistAddress(exchange.address, true, { from: yallTokenManager });
+        await yallToken.setCanTransferWhitelistAddress(exchangeOperator, true, { from: yallTokenManager });
+        await yallToken.setCanTransferWhitelistAddress(exchangeSuperOperator, true, { from: yallTokenManager });
+        await yallToken.setCanTransferWhitelistAddress(dan, true, { from: yallTokenManager });
 
         await dist.addMembersBeforeGenesis([memberId1], [alice], { from: distributorVerifier })
         await dist.addMembersBeforeGenesis([memberId2], [bob], { from: distributorVerifier })

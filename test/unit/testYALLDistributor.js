@@ -29,7 +29,7 @@ const { ether, getEventArg, int, increaseTime, assertRevert, assertGsnReject, ze
 const keccak256 = web3.utils.soliditySha3;
 
 describe('YALLDistributor Unit tests', () => {
-    const [distributorVerifier, distributorManager, feeCollector, alice, bob, charlie, dan, eve, yallMinter, yallBurner, feeManager, feeClaimer, yallWLManager, pauser, distributorEmissionClaimer] = accounts;
+    const [distributorVerifier, distributorManager, feeCollector, alice, bob, charlie, dan, eve, yallMinter, yallBurner, feeManager, feeClaimer, yallTokenManager, pauser, distributorEmissionClaimer] = accounts;
 
     // 7 days
     const periodLength = 7 * 24 * 60 * 60;
@@ -58,7 +58,7 @@ describe('YALLDistributor Unit tests', () => {
             distributorEmissionClaimer,
             yallMinter,
             yallBurner,
-            yallWLManager,
+            yallTokenManager,
             feeCollector
         }));
 
@@ -672,14 +672,14 @@ describe('YALLDistributor Unit tests', () => {
                     '0x0000000000000000000000000000000000000000000000000000000000000000'
                 );
 
-                await yallToken.setWhitelistAddress(dist.address, true, { from: yallWLManager });
+                await yallToken.setCanTransferWhitelistAddress(dist.address, true, { from: yallTokenManager });
 
                 await yallToken.mint(dist.address, ether(12), { from: yallMinter });
                 await yallToken.mint(bob, ether(12), { from: yallMinter });
                 await yallToken.mint(charlie, ether(12), { from: yallMinter });
 
                 const newFeeCollector = (await MockMeter.new()).address;
-                await yallToken.setWhitelistAddress(newFeeCollector, true, { from: yallWLManager });
+                await yallToken.setCanTransferWhitelistAddress(newFeeCollector, true, { from: yallTokenManager });
                 await registry.setContract(
                   await registry.YALL_FEE_COLLECTOR_KEY(),
                   newFeeCollector
@@ -715,7 +715,7 @@ describe('YALLDistributor Unit tests', () => {
                     assert.equal(await yallToken.balanceOf(alice), ether(baseAliceBalance));
                     assert.equal(await yallToken.balanceOf(bob), ether(12));
                     assert.equal(await dist.gsnFee(), ether('4.2'));
-                    await yallToken.setWhitelistAddress(dist.address, true, { from: yallWLManager });
+                    await yallToken.setCanTransferWhitelistAddress(dist.address, true, { from: yallTokenManager });
                 })
 
                 it('should deny changing address without sufficient pre-approved funds using GSN', async function() {

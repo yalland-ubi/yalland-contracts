@@ -21,7 +21,7 @@ const ERC20Managed = contract.fromArtifact('ERC20Managed');
 YALLToken.numberFormat = 'String';
 ERC20Managed.numberFormat = 'String';
 
-const [alice, bob, charlie, distributorVerifier, feeManager, yallMinter, yallWLManager] = accounts;
+const [alice, bob, charlie, distributorVerifier, feeManager, yallMinter, yallTokenManager] = accounts;
 
 const memberId1 = keccak256('alice');
 const memberId2 = keccak256('bob');
@@ -41,7 +41,7 @@ benchmark(() => {
             distributorVerifier,
             feeManager,
             yallMinter,
-            yallWLManager,
+            yallTokenManager,
             feeCollector
         }));
         await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [alice, bob, charlie], { from: distributorVerifier });
@@ -51,7 +51,7 @@ benchmark(() => {
         yallToken = await YALLToken.new(registry.address, "Coin token", "COIN", 18);
         await registry.setContract(await registry.YALL_TOKEN_KEY(), yallToken.address);
         await yallToken.mint(alice, ether(100), { from: yallMinter });
-        await yallToken.setWhitelistAddress(feeCollector, true, { from: yallWLManager});
+        await yallToken.setCanTransferWhitelistAddress(feeCollector, true, { from: yallTokenManager});
         await yallToken.setTransferFee(ether('0.02'), { from: feeManager });
         await registry.setContract(
           await registry.YALL_FEE_COLLECTOR_KEY(),
@@ -98,7 +98,7 @@ benchmark(() => {
     describe('#transferFrom() for WL contracts (net)', function() {
         run('for beneficiary with 0 balance / beneficiary is msg.sender / collector balance is 0', async function() {
             const c1 = await ERC20Managed.new(yallToken.address);
-            await yallToken.setWhitelistAddress(c1.address, true, { from: yallWLManager});
+            await yallToken.setCanTransferWhitelistAddress(c1.address, true, { from: yallTokenManager});
             await yallToken.approve(c1.address, ether(20), { from: alice });
             const res = await c1.transferFrom(alice, c1.address, ether(10));
             const gasUsed = getEventArg(res, 'GasUsedEvent', 'gasUsed');
@@ -108,7 +108,7 @@ benchmark(() => {
         run('for beneficiary with 0 balance / beneficiary is msg.sender / collector balance non-0', async function() {
             const c1 = await ERC20Managed.new(yallToken.address);
             await yallToken.mint(feeCollector, ether(10), { from: yallMinter });
-            await yallToken.setWhitelistAddress(c1.address, true, { from: yallWLManager});
+            await yallToken.setCanTransferWhitelistAddress(c1.address, true, { from: yallTokenManager});
             await yallToken.approve(c1.address, ether(20), { from: alice });
             assert.equal(await yallToken.balanceOf(feeCollector), ether(10));
             const res = await c1.transferFrom(alice, c1.address, ether(10));
@@ -122,9 +122,9 @@ benchmark(() => {
             const c2 = await ERC20Managed.new(yallToken.address);
             await yallToken.mint(c0.address, ether(20), { from: yallMinter });
             await yallToken.mint(c1.address, ether(20), { from: yallMinter });
-            await yallToken.setWhitelistAddress(c0.address, true, { from: yallWLManager});
-            await yallToken.setWhitelistAddress(c1.address, true, { from: yallWLManager});
-            await yallToken.setWhitelistAddress(c2.address, true, { from: yallWLManager});
+            await yallToken.setCanTransferWhitelistAddress(c0.address, true, { from: yallTokenManager});
+            await yallToken.setCanTransferWhitelistAddress(c1.address, true, { from: yallTokenManager});
+            await yallToken.setCanTransferWhitelistAddress(c2.address, true, { from: yallTokenManager});
             await c0.approve(c1.address, ether(20 ));
             assert.equal(await yallToken.balanceOf(c2.address), 0);
             assert.equal(await yallToken.balanceOf(feeCollector), 0);

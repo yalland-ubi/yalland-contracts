@@ -20,6 +20,13 @@ StakingHomeMediator.numberFormat = 'String';
 
 const { ether, now, zeroAddress } = require('@galtproject/solidity-test-chest')(web3);
 
+const TransferRestrictionsMode = {
+    OFF: 0,
+    ONLY_MEMBERS: 1,
+    ONLY_WHITELIST: 2,
+    ONLY_MEMBERS_OR_WHITELIST: 3
+}
+
 
 async function deployWithProxy(implContract, proxyAdminAddress, ...args) {
     const implementation = await implContract.new();
@@ -174,9 +181,9 @@ async function buildCoinDistAndExchange(web3, governance, config) {
     // yallToken
     config.yallMinter && await registry.setRole(config.yallMinter, await yallToken.YALL_TOKEN_MINTER_ROLE(), true);
     config.yallBurner && await registry.setRole(config.yallBurner, await yallToken.YALL_TOKEN_BURNER_ROLE(), true);
-    config.yallWLManager && await registry.setRole(
-        config.yallWLManager,
-        await yallToken.YALL_TOKEN_WHITELIST_MANAGER_ROLE(),
+    config.yallTokenManager && await registry.setRole(
+        config.yallTokenManager,
+        await yallToken.YALL_TOKEN_MANAGER_ROLE(),
         true
     );
     // yallDistributor
@@ -223,15 +230,27 @@ async function buildCoinDistAndExchange(web3, governance, config) {
     );
 
     // setup whitelisted contracts
-    await registry.setRole(defaultSender, await yallToken.YALL_TOKEN_WHITELIST_MANAGER_ROLE(), true);
-    await yallToken.setWhitelistAddress(yallToken.address, true);
-    await yallToken.setWhitelistAddress(dist.address, true);
-    exchange && await yallToken.setWhitelistAddress(exchange.address, true);
-    commission && await yallToken.setWhitelistAddress(commission.address, true);
-    emission && await yallToken.setWhitelistAddress(emission.address, true);
-    config.feeClaimer && await yallToken.setWhitelistAddress(config.feeClaimer, true);
-    config.feeCollector && await yallToken.setWhitelistAddress(config.feeCollector, true);
-    await registry.setRole(defaultSender, await yallToken.YALL_TOKEN_WHITELIST_MANAGER_ROLE(), false);
+    await registry.setRole(defaultSender, await yallToken.YALL_TOKEN_MANAGER_ROLE(), true);
+
+    // can transfer whitelist
+    await yallToken.setCanTransferWhitelistAddress(yallToken.address, true);
+    await yallToken.setCanTransferWhitelistAddress(dist.address, true);
+    exchange && await yallToken.setCanTransferWhitelistAddress(exchange.address, true);
+    commission && await yallToken.setCanTransferWhitelistAddress(commission.address, true);
+    emission && await yallToken.setCanTransferWhitelistAddress(emission.address, true);
+    // config.feeClaimer && await yallToken.setCanTransferWhitelistAddress(config.feeClaimer, true);
+    config.feeCollector && await yallToken.setCanTransferWhitelistAddress(config.feeCollector, true);
+
+    // no fee whitelist
+    await yallToken.setNoTransferFeeWhitelistAddress(yallToken.address, true);
+    await yallToken.setNoTransferFeeWhitelistAddress(dist.address, true);
+    exchange && await yallToken.setNoTransferFeeWhitelistAddress(exchange.address, true);
+    commission && await yallToken.setNoTransferFeeWhitelistAddress(commission.address, true);
+    emission && await yallToken.setNoTransferFeeWhitelistAddress(emission.address, true);
+
+    await yallToken.setTransferRestrictionMode(TransferRestrictionsMode.ONLY_MEMBERS_OR_WHITELIST);
+
+    await registry.setRole(defaultSender, await yallToken.YALL_TOKEN_MANAGER_ROLE(), false);
 
     await registry.transferOwnership(governance);
     await proxyAdmin.transferOwnership(governance);
@@ -253,5 +272,6 @@ async function buildCoinDistAndExchange(web3, governance, config) {
 
 module.exports = {
     buildCoinDistAndExchange,
-    deployWithProxy
+    deployWithProxy,
+    TransferRestrictionsMode
 };
