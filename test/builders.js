@@ -24,7 +24,7 @@ const TransferRestrictionsMode = {
     OFF: 0,
     ONLY_MEMBERS: 1,
     ONLY_WHITELIST: 2,
-    ONLY_MEMBERS_AND_WHITELIST: 3
+    ONLY_MEMBERS_OR_WHITELIST: 3
 }
 
 
@@ -248,7 +248,7 @@ async function buildCoinDistAndExchange(web3, governance, config) {
     commission && await yallToken.setNoTransferFeeWhitelistAddress(commission.address, true);
     emission && await yallToken.setNoTransferFeeWhitelistAddress(emission.address, true);
 
-    await yallToken.setTransferRestrictionMode(TransferRestrictionsMode.ONLY_MEMBERS_AND_WHITELIST);
+    await yallToken.setTransferRestrictionMode(TransferRestrictionsMode.ONLY_MEMBERS_OR_WHITELIST);
 
     await registry.setRole(defaultSender, await yallToken.YALL_TOKEN_MANAGER_ROLE(), false);
 

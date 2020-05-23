@@ -217,7 +217,7 @@ contract YALLToken is
   function _isMemberValid(IYALLDistributor _dist, address _member) internal view returns(bool) {
     TransferRestrictionsMode mode = transferRestrictions;
 
-    if (mode == TransferRestrictionsMode.ONLY_MEMBERS_AND_WHITELIST) {
+    if (mode == TransferRestrictionsMode.ONLY_MEMBERS_OR_WHITELIST) {
       return _dist.isActive(_member) || canTransferWhitelist[_member] == true;
     } else if (mode == TransferRestrictionsMode.OFF) {
       return true;
@@ -232,7 +232,7 @@ contract YALLToken is
   function _areMembersValid2(IYALLDistributor _dist, address _member1, address _member2) internal view returns(bool) {
     TransferRestrictionsMode mode = transferRestrictions;
 
-    if (mode == TransferRestrictionsMode.ONLY_MEMBERS_AND_WHITELIST) {
+    if (mode == TransferRestrictionsMode.ONLY_MEMBERS_OR_WHITELIST) {
       (bool active1, bool active2) = _dist.areActive2(_member1, _member2);
       return (active1 || canTransferWhitelist[_member1] == true) && (active2 || canTransferWhitelist[_member2] == true);
     } else if (mode == TransferRestrictionsMode.OFF) {
@@ -258,7 +258,7 @@ contract YALLToken is
   {
     TransferRestrictionsMode mode = transferRestrictions;
 
-    if (mode == TransferRestrictionsMode.ONLY_MEMBERS_AND_WHITELIST) {
+    if (mode == TransferRestrictionsMode.ONLY_MEMBERS_OR_WHITELIST) {
       (bool active1, bool active2, bool active3) = _dist.areActive3(_member1, _member2, _member3);
 
       return (active1 || canTransferWhitelist[_member1] == true)

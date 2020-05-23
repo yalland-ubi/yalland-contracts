@@ -612,8 +612,8 @@ describe('YALLToken', () => {
             });
 
             it('should change mode value', async function() {
-                await yallToken.setTransferRestrictionMode(TransferRestrictionsMode.ONLY_MEMBERS_AND_WHITELIST, { from: yallTokenManager });
-                assert.equal(await yallToken.transferRestrictions(), TransferRestrictionsMode.ONLY_MEMBERS_AND_WHITELIST);
+                await yallToken.setTransferRestrictionMode(TransferRestrictionsMode.ONLY_MEMBERS_OR_WHITELIST, { from: yallTokenManager });
+                assert.equal(await yallToken.transferRestrictions(), TransferRestrictionsMode.ONLY_MEMBERS_OR_WHITELIST);
                 await yallToken.setTransferRestrictionMode(TransferRestrictionsMode.ONLY_MEMBERS, { from: yallTokenManager });
                 assert.equal(await yallToken.transferRestrictions(), TransferRestrictionsMode.ONLY_MEMBERS);
             });
@@ -771,12 +771,12 @@ describe('YALLToken', () => {
                     });
                 });
 
-                describe('ONLY_MEMBERS_AND_WHITELIST mode', () => {
+                describe('ONLY_MEMBERS_OR_WHITELIST mode', () => {
                     beforeEach(async function() {
                         await yallToken.mint(bob, ether(10), { from: yallMinter });
                         await yallToken.mint(dan, ether(10), { from: yallMinter });
                         await yallToken.mint(eve, ether(10), { from: yallMinter });
-                        await yallToken.setTransferRestrictionMode(TransferRestrictionsMode.ONLY_MEMBERS_AND_WHITELIST, { from: yallTokenManager });
+                        await yallToken.setTransferRestrictionMode(TransferRestrictionsMode.ONLY_MEMBERS_OR_WHITELIST, { from: yallTokenManager });
                     });
 
                     it('allow txs between members and whitelisted addresses', async function() {
