@@ -24,7 +24,7 @@ const { ether, now, assertRevert, assertErc20BalanceChanged } = require('@galtpr
 
 
 describe('YALLReferralPayouts Unit tests', () => {
-    const [alice, bob, charlie, superOperator, yallMinter, operator, feeManager, yallTokenManager] = accounts;
+    const [alice, bob, charlie, superOperator, yallMinter, feeCollector, gsnFeeCollector, operator, feeManager, yallTokenManager] = accounts;
 
     // 7 days
     const startAfter = 10;
@@ -38,7 +38,12 @@ describe('YALLReferralPayouts Unit tests', () => {
             governance: alice,
             yallMinter,
             feeManager,
-            yallTokenManager: yallTokenManager,
+            yallTokenManager,
+            feeCollector,
+            gsnFeeCollector,
+            disableExchange: true,
+            disableEmission: true,
+            disableCommission: true,
             periodVolume: ether(250)
         }));
 

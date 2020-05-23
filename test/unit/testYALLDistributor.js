@@ -29,7 +29,7 @@ const { ether, getEventArg, int, increaseTime, assertRevert, assertGsnReject, ze
 const keccak256 = web3.utils.soliditySha3;
 
 describe('YALLDistributor Unit tests', () => {
-    const [distributorVerifier, distributorManager, feeCollector, alice, bob, charlie, dan, eve, yallMinter, yallBurner, feeManager, feeClaimer, yallTokenManager, pauser, distributorEmissionClaimer] = accounts;
+    const [distributorVerifier, distributorManager, gsnFeeCollector, feeCollector, alice, bob, charlie, dan, eve, yallMinter, yallBurner, feeManager, feeClaimer, yallTokenManager, pauser, distributorEmissionClaimer] = accounts;
 
     // 7 days
     const periodLength = 7 * 24 * 60 * 60;
@@ -59,7 +59,11 @@ describe('YALLDistributor Unit tests', () => {
             yallMinter,
             yallBurner,
             yallTokenManager,
-            feeCollector
+            feeCollector,
+            gsnFeeCollector,
+            disableExchange: true,
+            disableEmission: true,
+            disableCommission: true
         }));
 
         await yallToken.mint(alice, ether(baseAliceBalance), { from: yallMinter });
@@ -678,16 +682,15 @@ describe('YALLDistributor Unit tests', () => {
                 await yallToken.mint(bob, ether(12), { from: yallMinter });
                 await yallToken.mint(charlie, ether(12), { from: yallMinter });
 
-                const newFeeCollector = (await MockMeter.new()).address;
-                await yallToken.setCanTransferWhitelistAddress(newFeeCollector, true, { from: yallTokenManager });
+                const newGsnFeeCollector = (await MockMeter.new()).address;
+                await yallToken.setCanTransferWhitelistAddress(newGsnFeeCollector, true, { from: yallTokenManager });
                 await registry.setContract(
-                  await registry.YALL_FEE_COLLECTOR_KEY(),
-                  newFeeCollector
+                  await registry.YALL_GSN_FEE_COLLECTOR_KEY(),
+                  newGsnFeeCollector
                 );
-                assert.equal(await yallToken.balanceOf(newFeeCollector), 0);
-
                 assert.equal(await yallToken.balanceOf(alice), ether(baseAliceBalance));
                 assert.equal(await yallToken.balanceOf(bob), ether(12));
+                assert.equal(await yallToken.balanceOf(newGsnFeeCollector), 0);
                 assert.equal(await yallToken.balanceOf(feeCollector), 0);
 
                 await yallToken.approve(dist.address, await ether(10), { from: bob });

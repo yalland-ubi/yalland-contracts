@@ -96,7 +96,7 @@ contract YALLToken is
   function _preRelayedCall(bytes memory _context) internal returns (bytes32) {
     address from = abi.decode(_context, (address));
 
-    _transfer(from, _feeCollector(), gsnFee);
+    _transfer(from, _gsnFeeCollector(), gsnFee);
   }
 
   // MINTER INTERFACE

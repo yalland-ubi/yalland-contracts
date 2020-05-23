@@ -33,7 +33,7 @@ const OrderStatus = {
 };
 
 describe('YALLExchange Unit tests', () => {
-    const [distributorVerifier, alice, bob, charlie, dan, feeCollector, exchangeSuperOperator, pauser, yallMinter, yallBurner, exchangeOperator, exchangeManager, feeManager, feeClaimer, yallTokenManager] = accounts;
+    const [distributorVerifier, alice, bob, charlie, dan, feeCollector, gsnFeeCollector, exchangeSuperOperator, pauser, yallMinter, yallBurner, exchangeOperator, exchangeManager, feeManager, feeClaimer, yallTokenManager] = accounts;
     const owner = defaultSender;
 
     // 7 days
@@ -57,8 +57,8 @@ describe('YALLExchange Unit tests', () => {
         ({ registry, yallToken, dist, exchange, genesisTimestamp } = await buildCoinDistAndExchange(web3, defaultSender, {
             periodVolume,
             feeManager,
-            feeClaimer,
             feeCollector,
+            gsnFeeCollector,
             pauser,
             yallMinter,
             yallBurner,
@@ -67,6 +67,8 @@ describe('YALLExchange Unit tests', () => {
             exchangeManager,
             exchangeOperator,
             exchangeSuperOperator,
+            disableEmission: true,
+            disableCommission: true
         }));
 
         await yallToken.mint(alice, ether(baseAliceBalance), { from: yallMinter });
@@ -246,15 +248,15 @@ describe('YALLExchange Unit tests', () => {
                     // 3 - is a GSN fee
                     await yallToken.approve(exchange.address, ether(13 + 3), { from: bob });
 
-                    const newFeeCollector = (await MockMeter.new()).address;
-                    await yallToken.setCanTransferWhitelistAddress(newFeeCollector, true, { from: yallTokenManager });
+                    const newGsnFeeCollector = (await MockMeter.new()).address;
+                    await yallToken.setCanTransferWhitelistAddress(newGsnFeeCollector, true, { from: yallTokenManager });
                     await registry.setContract(
-                      await registry.YALL_FEE_COLLECTOR_KEY(),
-                      newFeeCollector
+                      await registry.YALL_GSN_FEE_COLLECTOR_KEY(),
+                      newGsnFeeCollector
                     );
-                    assert.equal(await yallToken.balanceOf(newFeeCollector), 0);
+                    assert.equal(await yallToken.balanceOf(newGsnFeeCollector), 0);
 
-                    const feeCollectorBalanceBefore = await yallToken.balanceOf(newFeeCollector);
+                    const gsnFeeCollectorBalanceBefore = await yallToken.balanceOf(newGsnFeeCollector);
                     const exchangeBalanceBefore = await yallToken.balanceOf(exchange.address);
                     const bobsBalanceBefore = await yallToken.balanceOf(bob);
 
@@ -262,7 +264,7 @@ describe('YALLExchange Unit tests', () => {
                     assertRelayedCall(res);
                     // console.log('>>>', getEventArg(res, 'DebugPreRelayedCall', 'gasUsed'));
 
-                    const feeCollectorBalanceAfter = await yallToken.balanceOf(newFeeCollector);
+                    const gsnFeeCollectorBalanceAfter = await yallToken.balanceOf(newGsnFeeCollector);
                     const exchangeBalanceAfter = await yallToken.balanceOf(exchange.address);
                     const bobsBalanceAfter = await yallToken.balanceOf(bob);
 
@@ -270,8 +272,8 @@ describe('YALLExchange Unit tests', () => {
                     const three = new BigNumber(ether(3));
 
                     assertErc20BalanceChanged(
-                      feeCollectorBalanceBefore,
-                      feeCollectorBalanceAfter,
+                      gsnFeeCollectorBalanceBefore,
+                      gsnFeeCollectorBalanceAfter,
                       three.toString()
                     );
                     assertErc20BalanceChanged(
