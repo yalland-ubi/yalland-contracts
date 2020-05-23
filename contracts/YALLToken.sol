@@ -219,13 +219,15 @@ contract YALLToken is
 
     if (mode == TransferRestrictionsMode.ONLY_MEMBERS_OR_WHITELIST) {
       return _dist.isActive(_member) || canTransferWhitelist[_member] == true;
-    } else if (mode == TransferRestrictionsMode.OFF) {
+    }
+    if (mode == TransferRestrictionsMode.OFF) {
       return true;
-    } else if (mode == TransferRestrictionsMode.ONLY_WHITELIST) {
+    }
+    if (mode == TransferRestrictionsMode.ONLY_WHITELIST) {
       return canTransferWhitelist[_member] == true;
     }
 
-    // else if (mode == TransferRestrictionsMode.ONLY_MEMBERS)
+    // if (mode == TransferRestrictionsMode.ONLY_MEMBERS)
     return _dist.isActive(_member);
   }
 
@@ -235,13 +237,15 @@ contract YALLToken is
     if (mode == TransferRestrictionsMode.ONLY_MEMBERS_OR_WHITELIST) {
       (bool active1, bool active2) = _dist.areActive2(_member1, _member2);
       return (active1 || canTransferWhitelist[_member1] == true) && (active2 || canTransferWhitelist[_member2] == true);
-    } else if (mode == TransferRestrictionsMode.OFF) {
+    }
+    if (mode == TransferRestrictionsMode.OFF) {
       return true;
-    } else if (mode == TransferRestrictionsMode.ONLY_WHITELIST) {
+    }
+    if (mode == TransferRestrictionsMode.ONLY_WHITELIST) {
       return (canTransferWhitelist[_member1] == true && canTransferWhitelist[_member2] == true);
     }
 
-    // else if (mode == TransferRestrictionsMode.ONLY_MEMBERS)
+    // if (mode == TransferRestrictionsMode.ONLY_MEMBERS)
     (bool active1, bool active2) = _dist.areActive2(_member1, _member2);
     return (active1 && active2);
   }
@@ -264,13 +268,15 @@ contract YALLToken is
       return (active1 || canTransferWhitelist[_member1] == true)
           && (active2 || canTransferWhitelist[_member2] == true)
           && (active3 || canTransferWhitelist[_member3] == true);
-    } else if (mode == TransferRestrictionsMode.OFF) {
+    }
+    if (mode == TransferRestrictionsMode.OFF) {
       return true;
-    } else if (mode == TransferRestrictionsMode.ONLY_WHITELIST) {
+    }
+    if (mode == TransferRestrictionsMode.ONLY_WHITELIST) {
       return (canTransferWhitelist[_member1] == true && canTransferWhitelist[_member2] == true && canTransferWhitelist[_member3] == true);
     }
 
-    // else if (mode == TransferRestrictionsMode.ONLY_MEMBERS)
+    // if (mode == TransferRestrictionsMode.ONLY_MEMBERS)
     (bool active1, bool active2, bool active3) = _dist.areActive3(_member1, _member2, _member3);
     return (active1 && active2 && active3);
   }
