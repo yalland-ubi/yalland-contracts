@@ -266,22 +266,18 @@ describe('YALLExchange Unit tests', () => {
                     const exchangeBalanceAfter = await yallToken.balanceOf(exchange.address);
                     const bobsBalanceAfter = await yallToken.balanceOf(bob);
 
-                    const total = (new BigNumber(ether(13 + 3)));
-                    const feeRate = new BigNumber('0.02');
                     const thirteen = new BigNumber(ether(13));
                     const three = new BigNumber(ether(3));
 
                     assertErc20BalanceChanged(
                       feeCollectorBalanceBefore,
                       feeCollectorBalanceAfter,
-                      total.multipliedBy(feeRate).dividedBy(100).plus(three).toString()
+                      three.toString()
                     );
                     assertErc20BalanceChanged(
                         exchangeBalanceBefore,
                         exchangeBalanceAfter,
-                        thirteen
-                            .minus(total.multipliedBy(feeRate).dividedBy(100))
-                            .toString()
+                        thirteen.toString()
                     );
                     assertErc20BalanceChanged(bobsBalanceBefore, bobsBalanceAfter, ether(-16));
                 });
