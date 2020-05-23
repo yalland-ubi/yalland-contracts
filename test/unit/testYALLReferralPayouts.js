@@ -38,7 +38,10 @@ describe('YALLReferralPayouts Unit tests', () => {
             governance: alice,
             yallMinter,
             feeManager,
-            yallTokenManager: yallTokenManager,
+            yallTokenManager,
+            disableExchange: true,
+            disableEmission: true,
+            disableCommission: true,
             periodVolume: ether(250)
         }));
 

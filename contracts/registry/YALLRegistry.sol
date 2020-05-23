@@ -27,6 +27,7 @@ contract YALLRegistry is YALLRegistryCore {
   bytes32 public constant YALL_EMISSION_REWARD_POOL_KEY = bytes32("YALL_EMISSION_REWARD_POOL");
   bytes32 public constant YALL_HOME_MEDIATOR_KEY = bytes32("YALL_HOME_MEDIATOR");
   bytes32 public constant YALL_FEE_COLLECTOR_KEY = bytes32("YALL_FEE_COLLECTOR");
+  bytes32 public constant YALL_GSN_FEE_COLLECTOR_KEY = bytes32("YALL_GSN_FEE_COLLECTOR");
 
   // GET WRAPPERS
   function getContracts2(bytes32 _key1, bytes32 _key2) external view returns (address, address) {
@@ -99,12 +100,17 @@ contract YALLRegistry is YALLRegistryCore {
     return contracts[YALL_FEE_COLLECTOR_KEY];
   }
 
+  function getYallGsnFeeCollectorAddress() external view returns (address) {
+    require(contracts[YALL_GSN_FEE_COLLECTOR_KEY] != ZERO_ADDRESS, "YALLRegistry: YALL_GSN_FEE_COLLECTOR not set");
+    return contracts[YALL_GSN_FEE_COLLECTOR_KEY];
+  }
+
   // NAMED COMBINED GETTERS
   function getYallDistributorAndFeeCollectorAddress() external view returns (address, address) {
     return getContractsSafu2(YALL_DISTRIBUTOR_KEY, YALL_FEE_COLLECTOR_KEY);
   }
 
-  function getYallTokenAndFeeCollectorAddress() external view returns (address, address) {
-    return getContractsSafu2(YALL_TOKEN_KEY, YALL_FEE_COLLECTOR_KEY);
+  function getYallTokenAndGsnFeeCollectorAddress() external view returns (address, address) {
+    return getContractsSafu2(YALL_TOKEN_KEY, YALL_GSN_FEE_COLLECTOR_KEY);
   }
 }

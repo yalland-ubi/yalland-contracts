@@ -27,7 +27,7 @@ const { approveFunction, assertRelayedCall, assertYallWithdrawalChanged } = requ
 const keccak256 = web3.utils.soliditySha3;
 
 describe('YALLToken', () => {
-    const [pauser, alice, bob, charlie, dan, eve, frank, george, helen, jane, noYalls, yallMinter, distributorVerifier, feeManager, feeCollector, yallTokenManager] = accounts;
+    const [pauser, alice, bob, charlie, dan, eve, frank, george, helen, jane, gsnFeeCollector, yallMinter, distributorVerifier, feeManager, feeCollector, yallTokenManager] = accounts;
     const deployer = defaultSender;
 
     let registry;
@@ -51,6 +51,7 @@ describe('YALLToken', () => {
             pauser,
             yallTokenManager,
             feeCollector,
+            gsnFeeCollector,
             disableExchange: true,
             disableEmission: true,
             disableCommission: true
@@ -179,18 +180,18 @@ describe('YALLToken', () => {
 
             const aliceBalanceBefore = await yallToken.balanceOf(alice);
             const bobBalanceBefore = await yallToken.balanceOf(bob);
-            const feeCollectorBalanceBefore = await yallToken.balanceOf(feeCollector);
+            const gsnFeeCollectorBalanceBefore = await yallToken.balanceOf(gsnFeeCollector);
 
             let res = await yallToken.approve(charlie, transferCoinAmount, { from: alice, useGSN: true });
             assertRelayedCall(res);
 
             const aliceBalanaceAfter = await yallToken.balanceOf(alice);
             const bobBalanceAfter = await yallToken.balanceOf(bob);
-            const feeCollectorBalanceAfter = await yallToken.balanceOf(feeCollector);
+            const gsnFeeCollectorBalanceAfter = await yallToken.balanceOf(gsnFeeCollector);
 
             assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanaceAfter, gsnFee.multipliedBy(-1).toString());
             assertErc20BalanceChanged(bobBalanceBefore, bobBalanceAfter, '0');
-            assertErc20BalanceChanged(feeCollectorBalanceBefore, feeCollectorBalanceAfter, gsnFee.toString());
+            assertErc20BalanceChanged(gsnFeeCollectorBalanceBefore, gsnFeeCollectorBalanceAfter, gsnFee.toString());
         });
 
         it('should charge on each approval which uses GSN', async function () {
@@ -198,11 +199,11 @@ describe('YALLToken', () => {
 
             const aliceBalanceBefore = await yallToken.balanceOf(alice);
             const bobBalanceBefore = await yallToken.balanceOf(bob);
-            const feeCollectorBalanceBefore = await yallToken.balanceOf(feeCollector);
+            const gsnFeeCollectorBalanceBefore = await yallToken.balanceOf(gsnFeeCollector);
 
             assert.equal(aliceBalanceBefore, baseAliceBalance.toString());
             assert.equal(bobBalanceBefore, ether(0));
-            assert.equal(feeCollectorBalanceBefore, ether(0));
+            assert.equal(gsnFeeCollectorBalanceBefore, ether(0));
 
             await evmMineBlock();
 
@@ -217,11 +218,11 @@ describe('YALLToken', () => {
 
             const aliceBalanceAfter = await yallToken.balanceOf(alice);
             const bobBalanceAfter = await yallToken.balanceOf(bob);
-            const feeCollectorBalanceAfter = await yallToken.balanceOf(feeCollector);
+            const gsnFeeCollectorBalanceAfter = await yallToken.balanceOf(gsnFeeCollector);
 
             assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanceAfter, (gsnFee.multipliedBy(3).multipliedBy(-1)).toString());
             assertErc20BalanceChanged(bobBalanceBefore, bobBalanceAfter, '0');
-            assertErc20BalanceChanged(feeCollectorBalanceBefore, feeCollectorBalanceAfter, gsnFee.multipliedBy(3).toString());
+            assertErc20BalanceChanged(gsnFeeCollectorBalanceBefore, gsnFeeCollectorBalanceAfter, gsnFee.multipliedBy(3).toString());
         });
     });
 
@@ -262,6 +263,7 @@ describe('YALLToken', () => {
             const bobBalanceBefore = await yallToken.balanceOf(bob);
             const charlieBalanceBefore = await yallToken.balanceOf(charlie);
             const feeCollectorBalanceBefore = await yallToken.balanceOf(feeCollector);
+            const gsnFeeCollectorBalanceBefore = await yallToken.balanceOf(gsnFeeCollector);
 
             assert.equal(await yallToken.balanceOf(charlie), ten);
 
@@ -309,6 +311,7 @@ describe('YALLToken', () => {
             const bobBalanceAfter = await yallToken.balanceOf(bob);
             const charlieBalanceAfter = await yallToken.balanceOf(charlie);
             const feeCollectorBalanceAfter = await yallToken.balanceOf(feeCollector);
+            const gsnFeeCollectorBalanceAfter = await yallToken.balanceOf(gsnFeeCollector);
 
             const transferFee = transferCoinAmount.multipliedBy(feePercent).dividedBy(100);
             const totalFees = gsnFee.multipliedBy(3).plus(transferFee);
@@ -324,7 +327,8 @@ describe('YALLToken', () => {
                 charlieBalanceAfter,
                 zero.minus(totalFees).toString()
             );
-            assertErc20BalanceChanged(feeCollectorBalanceBefore, feeCollectorBalanceAfter, totalFees.toString());
+            assertErc20BalanceChanged(feeCollectorBalanceBefore, feeCollectorBalanceAfter, transferFee.toString());
+            assertErc20BalanceChanged(gsnFeeCollectorBalanceBefore, gsnFeeCollectorBalanceAfter, gsnFee.multipliedBy(3).toString());
 
             // final values
             assert.equal(
@@ -470,6 +474,7 @@ describe('YALLToken', () => {
             const aliceBalanaceBefore = await yallToken.balanceOf(alice);
             const bobBalanaceBefore = await yallToken.balanceOf(bob);
             const feeCollectorBalanceBefore = await yallToken.balanceOf(feeCollector);
+            const gsnFeeCollectorBalanceBefore = await yallToken.balanceOf(gsnFeeCollector);
 
             await evmMineBlock();
 
@@ -491,13 +496,15 @@ describe('YALLToken', () => {
             const aliceBalanaceAfter = await yallToken.balanceOf(alice);
             const bobBalanaceAfter = await yallToken.balanceOf(bob);
             const feeCollectorBalanceAfter = await yallToken.balanceOf(feeCollector);
+            const gsnFeeCollectorBalanceAfter = await yallToken.balanceOf(gsnFeeCollector);
 
             const transferFee = transferCoinAmount.multipliedBy(feePercent).dividedBy(100);
             const totalFees = gsnFee.multipliedBy(3).plus(transferFee);
 
             assertErc20BalanceChanged(aliceBalanaceBefore, aliceBalanaceAfter, zero.minus(transferCoinAmount).minus(totalFees).toString());
             assertErc20BalanceChanged(bobBalanaceBefore, bobBalanaceAfter, transferCoinAmount.toString());
-            assertErc20BalanceChanged(feeCollectorBalanceBefore, feeCollectorBalanceAfter, totalFees.toString());
+            assertErc20BalanceChanged(feeCollectorBalanceBefore, feeCollectorBalanceAfter, transferFee.toString());
+            assertErc20BalanceChanged(gsnFeeCollectorBalanceBefore, gsnFeeCollectorBalanceAfter, gsnFee.multipliedBy(3).toString());
 
             // final values
             assert.equal(

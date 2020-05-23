@@ -183,13 +183,17 @@ contract YALLRegistryHelpers {
     return yallRegistry.getYallFeeCollectorAddress();
   }
 
+  function _gsnFeeCollector() internal view returns (address) {
+    return yallRegistry.getYallGsnFeeCollectorAddress();
+  }
+
   function _yallDistributorAndFeeCollector() internal view returns (IYALLDistributor, address) {
     (address dist, address feeCollector) = yallRegistry.getYallDistributorAndFeeCollectorAddress();
     return (IYALLDistributor(dist), feeCollector);
   }
 
-  function _yallTokenIERC20AndFeeCollector() internal view returns (IERC20, address) {
-    (address token, address feeCollector) = yallRegistry.getYallTokenAndFeeCollectorAddress();
+  function _yallTokenIERC20AndGsnFeeCollector() internal view returns (IERC20, address) {
+    (address token, address feeCollector) = yallRegistry.getYallTokenAndGsnFeeCollectorAddress();
     return (IERC20(token), feeCollector);
   }
 }

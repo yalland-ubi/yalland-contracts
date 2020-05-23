@@ -166,6 +166,10 @@ async function buildCoinDistAndExchange(web3, governance, config) {
       await registry.YALL_FEE_COLLECTOR_KEY(),
       config.feeCollector || commission.address
     )
+    await registry.setContract(
+      await registry.YALL_GSN_FEE_COLLECTOR_KEY(),
+      config.gsnFeeCollector
+    )
 
     if (!config.onlyCustomACL) {
         await registry.setRole(dist.address, await yallToken.YALL_TOKEN_MINTER_ROLE(), true);
@@ -240,6 +244,7 @@ async function buildCoinDistAndExchange(web3, governance, config) {
     emission && await yallToken.setCanTransferWhitelistAddress(emission.address, true);
     // config.feeClaimer && await yallToken.setCanTransferWhitelistAddress(config.feeClaimer, true);
     config.feeCollector && await yallToken.setCanTransferWhitelistAddress(config.feeCollector, true);
+    config.gsnFeeCollector && await yallToken.setCanTransferWhitelistAddress(config.gsnFeeCollector, true);
 
     // no fee whitelist
     await yallToken.setNoTransferFeeWhitelistAddress(yallToken.address, true);

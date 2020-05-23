@@ -31,7 +31,7 @@ const OrderStatus = {
 const keccak256 = web3.utils.soliditySha3;
 
 describe('YALLExchange Integration tests', () => {
-    const [distributorVerifier, alice, bob, charlie, dan, yallMinter, exchangeOperator, exchangeSuperOperator, exchangeManager, feeManager, yallTokenManager] = accounts;
+    const [distributorVerifier, alice, bob, charlie, dan, gsnFeeCollector, feeCollector, yallMinter, exchangeOperator, exchangeSuperOperator, exchangeManager, feeManager, yallTokenManager] = accounts;
 
     let registry;
     let yallToken;
@@ -48,10 +48,14 @@ describe('YALLExchange Integration tests', () => {
             distributorVerifier,
             yallMinter,
             feeManager,
+            feeCollector,
+            gsnFeeCollector,
             exchangeManager,
             exchangeOperator,
             exchangeSuperOperator,
-            yallTokenManager
+            yallTokenManager,
+            disableEmission: true,
+            disableCommission: true
         }));
 
         await yallToken.setTransferFee(ether('0.02'), { from: feeManager });

@@ -94,8 +94,8 @@ contract YALLDistributor is
     (address from, bytes4 signature) = abi.decode(_context, (address, bytes4));
 
     if (signature == YALLDistributor(0).changeMyAddress.selector) {
-      (IERC20 token, address collector) = _yallTokenIERC20AndFeeCollector();
-      token.transferFrom(from, collector, gsnFee);
+      (IERC20 token, address gsnFeeCollector) = _yallTokenIERC20AndGsnFeeCollector();
+      token.transferFrom(from, gsnFeeCollector, gsnFee);
     }
   }
 
