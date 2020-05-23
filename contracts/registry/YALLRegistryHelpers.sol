@@ -31,7 +31,7 @@ contract YALLRegistryHelpers {
   // YALLToken Role Constants
   bytes32 public constant YALL_TOKEN_MINTER_ROLE = bytes32("YALL_TOKEN_MINTER");
   bytes32 public constant YALL_TOKEN_BURNER_ROLE = bytes32("YALL_TOKEN_BURNER");
-  bytes32 public constant YALL_TOKEN_WHITELIST_MANAGER_ROLE = bytes32("YALL_TOKEN_WHITELIST_MANAGER");
+  bytes32 public constant YALL_TOKEN_MANAGER_ROLE = bytes32("YALL_TOKEN_MANAGER");
   // YALLDistributor Role Constants
   bytes32 public constant DISTRIBUTOR_MANAGER_ROLE = bytes32("DISTRIBUTOR_MANAGER");
   bytes32 public constant DISTRIBUTOR_VERIFIER_ROLE = bytes32("DISTRIBUTOR_VERIFIER");
@@ -74,10 +74,10 @@ contract YALLRegistryHelpers {
     _;
   }
 
-  modifier onlyTransferWLManager() {
+  modifier onlyYallTokenManager() {
     require(
-      yallRegistry.hasRole(msg.sender, YALL_TOKEN_WHITELIST_MANAGER_ROLE),
-      "YALLToken: Only YALL_TOKEN_WHITELIST_MANAGER allowed"
+      yallRegistry.hasRole(msg.sender, YALL_TOKEN_MANAGER_ROLE),
+      "YALLToken: Only YALL_TOKEN_MANAGER allowed"
     );
     _;
   }

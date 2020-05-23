@@ -14,7 +14,7 @@ const {
     deployRelayHub,
     fundRecipient,
 } = require('@openzeppelin/gsn-helpers');
-const { buildCoinDistAndExchange } = require('./builders');
+const { buildCoinDistAndExchange, TransferRestrictionsMode } = require('./builders');
 
 const YALLToken = contract.fromArtifact('YALLToken');
 const zero = new BigNumber(0);
@@ -27,7 +27,7 @@ const { approveFunction, assertRelayedCall, assertYallWithdrawalChanged } = requ
 const keccak256 = web3.utils.soliditySha3;
 
 describe('YALLToken', () => {
-    const [pauser, alice, bob, charlie, dan, yallMinter, distributorVerifier, feeManager, feeCollector, feeClaimer, yallWLManager] = accounts;
+    const [pauser, alice, bob, charlie, dan, eve, frank, george, helen, jane, noYalls, yallMinter, distributorVerifier, feeManager, feeCollector, yallTokenManager] = accounts;
     const deployer = defaultSender;
 
     let registry;
@@ -48,9 +48,8 @@ describe('YALLToken', () => {
             distributorVerifier,
             yallMinter,
             feeManager,
-            feeClaimer,
             pauser,
-            yallWLManager,
+            yallTokenManager,
             feeCollector,
             disableExchange: true,
             disableEmission: true,
@@ -147,25 +146,8 @@ describe('YALLToken', () => {
         });
 
         it('should return true if the address is inside coin token whitelist', async function() {
-            await yallToken.setWhitelistAddress(dan, true, { from: yallWLManager });
+            await yallToken.setCanTransferWhitelistAddress(dan, true, { from: yallTokenManager });
             assert.equal(await yallToken.isMemberValid(dan), true);
-        });
-    });
-
-    describe('#setWhitelistAddress()', () => {
-        it('should deny non wl manager calling the method', async function() {
-            await assertRevert(
-                yallToken.setWhitelistAddress(dan, true, { from: defaultSender }),
-                'YALLToken: Only YALL_TOKEN_WHITELIST_MANAGER allowed.'
-            );
-        });
-
-        it('should change wl value', async function() {
-            assert.equal(await yallToken.opsWhitelist(dan), false);
-            await yallToken.setWhitelistAddress(dan, true, { from: yallWLManager });
-            assert.equal(await yallToken.opsWhitelist(dan), true);
-            await yallToken.setWhitelistAddress(dan, false, { from: yallWLManager });
-            assert.equal(await yallToken.opsWhitelist(dan), false);
         });
     });
 
@@ -175,7 +157,7 @@ describe('YALLToken', () => {
                 await dist.disableMembers([alice], { from: distributorVerifier });
                 await assertRevert(
                   yallToken.approve(bob, ether(1), { from: alice }),
-                  'YALLToken: The address has no YALL token ops permission'
+                  'YALLToken: The address has no YALL token transfer permission'
                 );
             });
 
@@ -183,7 +165,7 @@ describe('YALLToken', () => {
                 await dist.disableMembers([bob], { from: distributorVerifier });
                 await assertRevert(
                   yallToken.approve(bob, ether(1), { from: alice }),
-                  'YALLToken: The address has no YALL token ops permission'
+                  'YALLToken: The address has no YALL token transfer permission'
                 );
             });
 
@@ -248,19 +230,19 @@ describe('YALLToken', () => {
             it('should deny transferring if a from address is not active', async function() {
                 await yallToken.approve(charlie, ether(1), { from: alice });
                 await dist.disableMembers([alice], { from: distributorVerifier });
-                await assertRevert(yallToken.transferFrom(alice, bob, ether(1), { from: charlie }), 'YALLToken: The address has no YALL token ops permission');
+                await assertRevert(yallToken.transferFrom(alice, bob, ether(1), { from: charlie }), 'YALLToken: The address has no YALL token transfer permission');
             });
 
             it('should deny transferring if a to address is not active', async function() {
                 await yallToken.approve(charlie, ether(1), { from: alice });
                 await dist.disableMembers([bob], { from: distributorVerifier });
-                await assertRevert(yallToken.transferFrom(alice, bob, ether(1), { from: charlie }), 'YALLToken: The address has no YALL token ops permission');
+                await assertRevert(yallToken.transferFrom(alice, bob, ether(1), { from: charlie }), 'YALLToken: The address has no YALL token transfer permission');
             });
 
             it('should deny transferring if a tx sender is not active', async function() {
                 await yallToken.approve(charlie, ether(1), { from: alice });
                 await dist.disableMembers([charlie], { from: distributorVerifier });
-                await assertRevert(yallToken.transferFrom(alice, bob, ether(1), { from: charlie }), 'YALLToken: The address has no YALL token ops permission');
+                await assertRevert(yallToken.transferFrom(alice, bob, ether(1), { from: charlie }), 'YALLToken: The address has no YALL token transfer permission');
             });
 
             it('should allow transferring all from, to and tx sender are active', async function() {
@@ -400,6 +382,42 @@ describe('YALLToken', () => {
             );
         });
 
+        it('should not charge a transfer fee for a noTranferFeeWhitelist member', async function () {
+            await yallToken.setNoTransferFeeWhitelistAddress(bob, true, { from: yallTokenManager });
+            await yallToken.mint(bob, ether(baseAliceBalance), {from: yallMinter});
+            const transferCoinAmount = new BigNumber(ether(1000 * 1000));
+
+            const aliceBalanceBefore = await yallToken.balanceOf(alice);
+            const bobBalanceBefore = await yallToken.balanceOf(bob);
+            const feeCollectorBalanceBefore = await yallToken.balanceOf(feeCollector);
+
+            await yallToken.approve(bob, transferCoinAmount.toString(), { from: alice });
+            await yallToken.transferFrom(alice, bob, transferCoinAmount.dividedBy(2), {from: bob});
+            await yallToken.transferFrom(alice, bob, transferCoinAmount.dividedBy(2), {from: bob});
+
+            const aliceBalanaceAfter = await yallToken.balanceOf(alice);
+            const bobBalanceAfter = await yallToken.balanceOf(bob);
+            const feeCollectorBalanceAfter = await yallToken.balanceOf(feeCollector);
+
+            assertErc20BalanceChanged(
+              aliceBalanceBefore,
+              aliceBalanaceAfter,
+              transferCoinAmount.multipliedBy(-1).toString()
+            );
+            // bob has paid transferFee
+            assertErc20BalanceChanged(
+              bobBalanceBefore,
+              bobBalanceAfter,
+              transferCoinAmount.toString()
+            );
+            // yall token contract has received transferFee
+            assertErc20BalanceChanged(
+              feeCollectorBalanceBefore,
+              feeCollectorBalanceAfter,
+              '0'
+            );
+        });
+
         it('should revert if there is no fee to cover transfer fee expenses', async function () {
             await yallToken.mint(bob, ether(10), {from: yallMinter});
             assert.equal(await yallToken.balanceOf(bob), ether(10));
@@ -429,14 +447,14 @@ describe('YALLToken', () => {
                 await dist.disableMembers([alice], { from: distributorVerifier });
                 await assertRevert(
                   yallToken.transfer(bob, ether(1), { from: alice }),
-                  'YALLToken: The address has no YALL token ops permission'
+                  'YALLToken: The address has no YALL token transfer permission'
                 );
             });
             it('should deny transfer if the receiver is inactive', async function() {
                 await dist.disableMembers([bob], { from: distributorVerifier });
                 await assertRevert(
                   yallToken.transfer(bob, ether(1), { from: alice }),
-                  'YALLToken: The address has no YALL token ops permission'
+                  'YALLToken: The address has no YALL token transfer permission'
                 );
             });
 
@@ -509,6 +527,26 @@ describe('YALLToken', () => {
             assertErc20BalanceChanged(feeCollectorBalanceBefore, feeCollectorBalanceAfter, totalFees.toString());
         });
 
+        it('should not charge noTransferFee whitelist member', async function () {
+            await yallToken.setNoTransferFeeWhitelistAddress(alice, true, { from: yallTokenManager });
+            const transferCoinAmount = new BigNumber(ether(1000 * 1000));
+            const totalFees = transferCoinAmount.multipliedBy(feePercent).dividedBy(100);
+
+            const aliceBalanaceBefore = await yallToken.balanceOf(alice);
+            const bobBalanaceBefore = await yallToken.balanceOf(bob);
+            const feeCollectorBalanceBefore = await yallToken.balanceOf(feeCollector);
+
+            await yallToken.transfer(bob, transferCoinAmount, {from: alice});
+
+            const aliceBalanaceAfter = await yallToken.balanceOf(alice);
+            const bobBalanaceAfter = await yallToken.balanceOf(bob);
+            const feeCollectorBalanceAfter = await yallToken.balanceOf(feeCollector);
+
+            assertErc20BalanceChanged(aliceBalanaceBefore, aliceBalanaceAfter, zero.minus(transferCoinAmount).toString());
+            assertErc20BalanceChanged(bobBalanaceBefore, bobBalanaceAfter, transferCoinAmount.toString());
+            assertErc20BalanceChanged(feeCollectorBalanceBefore, feeCollectorBalanceAfter, '0');
+        });
+
         it('should revert if there is no fee to cover transfer fee expenses', async function () {
             await yallToken.mint(bob, ether(10), {from: yallMinter});
             assert.equal(await yallToken.balanceOf(bob), ether(10));
@@ -527,6 +565,258 @@ describe('YALLToken', () => {
             await yallToken.transfer(alice, ether('10'), { from: bob });
 
             assert.equal(await yallToken.balanceOf(bob), ether(0));
+        });
+    });
+
+    describe('YALL_TOKEN_MANAGER interface', () => {
+        describe('#setCanTransferWhitelistAddress()', () => {
+            it('should deny non wl manager calling the method', async function() {
+                await assertRevert(
+                  yallToken.setCanTransferWhitelistAddress(dan, true, { from: defaultSender }),
+                  'YALLToken: Only YALL_TOKEN_MANAGER allowed.'
+                );
+            });
+
+            it('should change wl value', async function() {
+                assert.equal(await yallToken.canTransferWhitelist(dan), false);
+                await yallToken.setCanTransferWhitelistAddress(dan, true, { from: yallTokenManager });
+                assert.equal(await yallToken.canTransferWhitelist(dan), true);
+                await yallToken.setCanTransferWhitelistAddress(dan, false, { from: yallTokenManager });
+                assert.equal(await yallToken.canTransferWhitelist(dan), false);
+            });
+        });
+
+        describe('#setNoTransferFeeWhitelistAddress()', () => {
+            it('should deny non yall manager calling the method', async function() {
+                await assertRevert(
+                  yallToken.setNoTransferFeeWhitelistAddress(dan, true, { from: defaultSender }),
+                  'YALLToken: Only YALL_TOKEN_MANAGER allowed.'
+                );
+            });
+
+            it('should change wl value', async function() {
+                assert.equal(await yallToken.noTransferFeeWhitelist(dan), false);
+                await yallToken.setNoTransferFeeWhitelistAddress(dan, true, { from: yallTokenManager });
+                assert.equal(await yallToken.noTransferFeeWhitelist(dan), true);
+                await yallToken.setNoTransferFeeWhitelistAddress(dan, false, { from: yallTokenManager });
+                assert.equal(await yallToken.noTransferFeeWhitelist(dan), false);
+            });
+        });
+
+        describe('#setTransferRestrictionMode()', () => {
+            it('should deny non yall manager calling the method', async function() {
+                await assertRevert(
+                  yallToken.setTransferRestrictionMode(TransferRestrictionsMode.OFF, { from: defaultSender }),
+                  'YALLToken: Only YALL_TOKEN_MANAGER allowed.'
+                );
+            });
+
+            it('should change mode value', async function() {
+                await yallToken.setTransferRestrictionMode(TransferRestrictionsMode.ONLY_MEMBERS_AND_WHITELIST, { from: yallTokenManager });
+                assert.equal(await yallToken.transferRestrictions(), TransferRestrictionsMode.ONLY_MEMBERS_AND_WHITELIST);
+                await yallToken.setTransferRestrictionMode(TransferRestrictionsMode.ONLY_MEMBERS, { from: yallTokenManager });
+                assert.equal(await yallToken.transferRestrictions(), TransferRestrictionsMode.ONLY_MEMBERS);
+            });
+
+            describe('transfer()/transferFrom() behaviour', () => {
+                beforeEach(async function() {
+                    await yallToken.mint(alice, ether(10), { from: yallMinter });
+                    await yallToken.mint(dan, ether(10), { from: yallMinter });
+
+                    await yallToken.setCanTransferWhitelistAddress(dan, true, { from: yallTokenManager });
+                    await yallToken.setCanTransferWhitelistAddress(eve, true, { from: yallTokenManager });
+                    await yallToken.setCanTransferWhitelistAddress(frank, true, { from: yallTokenManager });
+
+                    assert.equal(await dist.isActive(alice), true);
+                    assert.equal(await dist.isActive(bob), true);
+                    assert.equal(await dist.isActive(charlie), true);
+
+                    assert.equal(await dist.isActive(dan), false);
+                    assert.equal(await dist.isActive(eve), false);
+                    assert.equal(await dist.isActive(frank), false);
+
+                    assert.equal(await dist.isActive(george), false);
+                    assert.equal(await dist.isActive(helen), false);
+                    assert.equal(await dist.isActive(jane), false);
+
+                    assert.equal(await yallToken.canTransferWhitelist(alice), false);
+                    assert.equal(await yallToken.canTransferWhitelist(bob), false);
+                    assert.equal(await yallToken.canTransferWhitelist(charlie), false);
+
+                    assert.equal(await yallToken.canTransferWhitelist(dan), true);
+                    assert.equal(await yallToken.canTransferWhitelist(eve), true);
+                    assert.equal(await yallToken.canTransferWhitelist(frank), true);
+
+                    assert.equal(await yallToken.canTransferWhitelist(george), false);
+                    assert.equal(await yallToken.canTransferWhitelist(helen), false);
+                    assert.equal(await yallToken.canTransferWhitelist(jane), false);
+                })
+
+                it('allow any address txs when the mode is OFF', async function() {
+                    await yallToken.setTransferRestrictionMode(TransferRestrictionsMode.OFF, { from: yallTokenManager });
+
+                    await yallToken.transfer(helen, ether(1), { from: dan });
+                    await yallToken.approve(helen, ether(1), { from: dan });
+                    await yallToken.transferFrom(dan, alice, ether(1), { from: helen });
+                });
+
+                describe('ONLY_MEMBERS mode', () => {
+                    beforeEach(async function() {
+                        await yallToken.mint(dan, ether(10), { from: yallMinter });
+                        await yallToken.setTransferRestrictionMode(TransferRestrictionsMode.ONLY_MEMBERS, { from: yallTokenManager });
+                    });
+
+                    it('allow only members performing txs when the mode is ONLY_MEMBERS', async function() {
+                        await yallToken.transfer(bob, ether(1), { from: alice });
+                        await yallToken.approve(bob, ether(1), { from: alice });
+                        await yallToken.transferFrom(alice, charlie, ether(1), { from:  bob });
+                    });
+
+                    it('should deny a whitelisted address participate in transfer call', async function() {
+                        await assertRevert(
+                          yallToken.transfer(alice, ether(1), { from: dan }),
+                          'YALLToken: The address has no YALL token transfer permission');
+                        await assertRevert(
+                          yallToken.transfer(dan, ether(1), { from: alice }),
+                          'YALLToken: The address has no YALL token transfer permission'
+                        );
+                    });
+
+                    it('should deny whitelisted address participate in approve call', async function() {
+                        await assertRevert(
+                          yallToken.approve(alice, ether(1), { from: dan }),
+                          'YALLToken: The address has no YALL token transfer permission');
+                        await assertRevert(
+                          yallToken.approve(dan, ether(1), { from: alice }),
+                          'YALLToken: The address has no YALL token transfer permission'
+                        );
+                    });
+
+                    it('should deny whitelisted address participate in transferFrom call', async function() {
+                        await yallToken.approve(bob, ether(1), { from: alice });
+
+                        await assertRevert(
+                          yallToken.transferFrom(alice, dan, ether(1), { from: bob }),
+                          'YALLToken: The address has no YALL token transfer permission');
+                    });
+                });
+
+                describe('ONLY_WHITELIST mode', () => {
+                    beforeEach(async function() {
+                        await yallToken.mint(dan, ether(10), { from: yallMinter });
+                        await yallToken.mint(eve, ether(10), { from: yallMinter });
+                        await yallToken.setTransferRestrictionMode(TransferRestrictionsMode.ONLY_WHITELIST, { from: yallTokenManager });
+                    });
+
+                    it('allow only whitelisted addresses performing txs', async function() {
+                        await yallToken.transfer(eve, ether(1), { from: dan });
+                        await yallToken.approve(eve, ether(1), { from: dan });
+                        await yallToken.transferFrom(dan, frank, ether(1), { from:  eve });
+                    });
+
+                    it('should deny members participate in transfer call', async function() {
+                        await assertRevert(
+                          yallToken.transfer(alice, ether(1), { from: dan }),
+                          'YALLToken: The address has no YALL token transfer permission');
+                        await assertRevert(
+                          yallToken.transfer(dan, ether(1), { from: alice }),
+                          'YALLToken: The address has no YALL token transfer permission'
+                        );
+                    });
+
+                    it('should deny 3rd party participate in transfer call', async function() {
+                        await assertRevert(
+                          yallToken.transfer(helen, ether(1), { from: dan }),
+                          'YALLToken: The address has no YALL token transfer permission');
+                        await assertRevert(
+                          yallToken.transfer(dan, ether(1), { from: helen }),
+                          'YALLToken: The address has no YALL token transfer permission'
+                        );
+                    });
+
+                    it('should deny members participate in approve call', async function() {
+                        await assertRevert(
+                          yallToken.approve(alice, ether(1), { from: dan }),
+                          'YALLToken: The address has no YALL token transfer permission');
+                        await assertRevert(
+                          yallToken.approve(dan, ether(1), { from: alice }),
+                          'YALLToken: The address has no YALL token transfer permission'
+                        );
+                    });
+
+                    it('should deny 3rd party participate in approve call', async function() {
+                        await assertRevert(
+                          yallToken.approve(helen, ether(1), { from: dan }),
+                          'YALLToken: The address has no YALL token transfer permission');
+                        await assertRevert(
+                          yallToken.approve(dan, ether(1), { from: helen }),
+                          'YALLToken: The address has no YALL token transfer permission'
+                        );
+                    });
+
+                    it('should deny members participate in transferFrom call', async function() {
+                        await yallToken.approve(eve, ether(1), { from: dan });
+
+                        await assertRevert(
+                          yallToken.transferFrom(dan, alice, ether(1), { from: eve }),
+                          'YALLToken: The address has no YALL token transfer permission');
+                    });
+
+                    it('should deny 3rd party participate in transferFrom call', async function() {
+                        await yallToken.approve(eve, ether(1), { from: dan });
+
+                        await assertRevert(
+                          yallToken.transferFrom(dan, helen, ether(1), { from: eve }),
+                          'YALLToken: The address has no YALL token transfer permission');
+                    });
+                });
+
+                describe('ONLY_MEMBERS_AND_WHITELIST mode', () => {
+                    beforeEach(async function() {
+                        await yallToken.mint(bob, ether(10), { from: yallMinter });
+                        await yallToken.mint(dan, ether(10), { from: yallMinter });
+                        await yallToken.mint(eve, ether(10), { from: yallMinter });
+                        await yallToken.setTransferRestrictionMode(TransferRestrictionsMode.ONLY_MEMBERS_AND_WHITELIST, { from: yallTokenManager });
+                    });
+
+                    it('allow txs between members and whitelisted addresses', async function() {
+                        await yallToken.transfer(dan, ether(1), { from: alice });
+                        await yallToken.transfer(alice, ether(1), { from: dan });
+                        await yallToken.approve(eve, ether(1), { from: bob });
+                        await yallToken.approve(bob, ether(1), { from: dan });
+                        await yallToken.transferFrom(bob, frank, ether(1), { from:  eve });
+                        await yallToken.transferFrom(dan, frank, ether(1), { from:  bob });
+                    });
+
+                    it('should deny 3rd party participate in transfer call', async function() {
+                        await assertRevert(
+                          yallToken.transfer(helen, ether(1), { from: dan }),
+                          'YALLToken: The address has no YALL token transfer permission');
+                        await assertRevert(
+                          yallToken.transfer(dan, ether(1), { from: helen }),
+                          'YALLToken: The address has no YALL token transfer permission'
+                        );
+                    });
+
+                    it('should deny 3rd party participate in approve call', async function() {
+                        await assertRevert(
+                          yallToken.approve(helen, ether(1), { from: dan }),
+                          'YALLToken: The address has no YALL token transfer permission');
+                        await assertRevert(
+                          yallToken.approve(dan, ether(1), { from: helen }),
+                          'YALLToken: The address has no YALL token transfer permission'
+                        );
+                    });
+
+                    it('should deny 3rd party participate in transferFrom call', async function() {
+                        await yallToken.approve(eve, ether(1), { from: dan });
+
+                        await assertRevert(
+                          yallToken.transferFrom(dan, helen, ether(1), { from: eve }),
+                          'YALLToken: The address has no YALL token transfer permission');
+                    });
+                });
+            });
         });
     });
 });

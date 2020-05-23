@@ -29,7 +29,7 @@ describe.skip('YALLCommissionReward Integration tests', () => {
         exchangeManager,
         exchangeOperator,
         exchangeSuperOperator,
-        yallWLManager,
+        yallTokenManager,
         v1,
         v2,
         v3,
@@ -67,17 +67,17 @@ describe.skip('YALLCommissionReward Integration tests', () => {
             exchangeManager,
             exchangeOperator,
             exchangeSuperOperator,
-            yallWLManager,
+            yallTokenManager,
             mediatorOnTheOtherSide,
             commissionRewardPoolManager,
             bridge: bridge.address,
         }));
         await yallToken.setTransferFee(txFee, { from: feeManager });
-        await yallToken.setWhitelistAddress(v1, true, { from: yallWLManager });
-        await yallToken.setWhitelistAddress(v2, true, { from: yallWLManager });
-        await yallToken.setWhitelistAddress(v3, true, { from: yallWLManager });
-        await yallToken.setWhitelistAddress(v4, true, { from: yallWLManager });
-        await yallToken.setWhitelistAddress(alice, true, { from: yallWLManager });
+        await yallToken.setCanTransferWhitelistAddress(v1, true, { from: yallTokenManager });
+        await yallToken.setCanTransferWhitelistAddress(v2, true, { from: yallTokenManager });
+        await yallToken.setCanTransferWhitelistAddress(v3, true, { from: yallTokenManager });
+        await yallToken.setCanTransferWhitelistAddress(v4, true, { from: yallTokenManager });
+        await yallToken.setCanTransferWhitelistAddress(alice, true, { from: yallTokenManager });
     });
 
     it('should distribute commission rewards correctly', async function() {

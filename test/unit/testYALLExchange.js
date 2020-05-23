@@ -33,7 +33,7 @@ const OrderStatus = {
 };
 
 describe('YALLExchange Unit tests', () => {
-    const [distributorVerifier, alice, bob, charlie, dan, feeCollector, exchangeSuperOperator, pauser, yallMinter, yallBurner, exchangeOperator, exchangeManager, feeManager, feeClaimer, yallWLManager] = accounts;
+    const [distributorVerifier, alice, bob, charlie, dan, feeCollector, exchangeSuperOperator, pauser, yallMinter, yallBurner, exchangeOperator, exchangeManager, feeManager, feeClaimer, yallTokenManager] = accounts;
     const owner = defaultSender;
 
     // 7 days
@@ -62,7 +62,7 @@ describe('YALLExchange Unit tests', () => {
             pauser,
             yallMinter,
             yallBurner,
-            yallWLManager,
+            yallTokenManager,
             distributorVerifier,
             exchangeManager,
             exchangeOperator,
@@ -73,10 +73,10 @@ describe('YALLExchange Unit tests', () => {
         await yallToken.setTransferFee(ether('0.02'), { from: feeManager });
         await yallToken.setGsnFee(ether('1.7'), { from: feeManager });
 
-        await yallToken.setWhitelistAddress(dist.address, true, { from: yallWLManager });
-        await yallToken.setWhitelistAddress(exchange.address, true, { from: yallWLManager });
-        await yallToken.setWhitelistAddress(exchangeOperator, true, { from: yallWLManager });
-        await yallToken.setWhitelistAddress(exchangeSuperOperator, true, { from: yallWLManager });
+        await yallToken.setCanTransferWhitelistAddress(dist.address, true, { from: yallTokenManager });
+        await yallToken.setCanTransferWhitelistAddress(exchange.address, true, { from: yallTokenManager });
+        await yallToken.setCanTransferWhitelistAddress(exchangeOperator, true, { from: yallTokenManager });
+        await yallToken.setCanTransferWhitelistAddress(exchangeSuperOperator, true, { from: yallTokenManager });
 
         await dist.setGsnFee(ether('4.2'), { from: feeManager });
 
@@ -247,7 +247,7 @@ describe('YALLExchange Unit tests', () => {
                     await yallToken.approve(exchange.address, ether(13 + 3), { from: bob });
 
                     const newFeeCollector = (await MockMeter.new()).address;
-                    await yallToken.setWhitelistAddress(newFeeCollector, true, { from: yallWLManager });
+                    await yallToken.setCanTransferWhitelistAddress(newFeeCollector, true, { from: yallTokenManager });
                     await registry.setContract(
                       await registry.YALL_FEE_COLLECTOR_KEY(),
                       newFeeCollector

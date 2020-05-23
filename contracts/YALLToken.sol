@@ -33,7 +33,9 @@ contract YALLToken is
 
   event SetTransferFee(address indexed feeManager, uint256 share);
   event SetGsnFee(address indexed feeManager, uint256 value);
-  event SetWhitelistAddress(address addr, bool isActive);
+  event SetCanTransferWhitelistAddress(address addr, bool isActive);
+  event SetNoTransferFeeWhitelistAddress(address addr, bool isActive);
+  event SetTransferRestrictionMode(TransferRestrictionsMode transferRestrictions);
   event TransferWithMemo(address indexed from, address indexed to, uint256 value, string memo);
   event Mint(address indexed minter, address indexed to, uint256 value);
   event Burn(address indexed burner, address indexed from, uint256 value);
@@ -43,7 +45,10 @@ contract YALLToken is
   // in YALL wei
   uint256 public gsnFee = 0;
 
-  mapping(address => bool) public opsWhitelist;
+  TransferRestrictionsMode public transferRestrictions;
+
+  mapping(address => bool) public canTransferWhitelist;
+  mapping(address => bool) public noTransferFeeWhitelist;
 
   constructor(
     address _yallRegistry,
@@ -112,12 +117,24 @@ contract YALLToken is
     emit Burn(msg.sender, _account, _amount);
   }
 
-  // WHITELIST MANAGER INTERFACE
+  // YALL TOKEN MANAGER INTERFACE
 
-  function setWhitelistAddress(address _addr, bool _isActive) external onlyTransferWLManager {
-    opsWhitelist[_addr] = _isActive;
+  function setCanTransferWhitelistAddress(address _addr, bool _isActive) external onlyYallTokenManager {
+    canTransferWhitelist[_addr] = _isActive;
 
-    emit SetWhitelistAddress(_addr, _isActive);
+    emit SetCanTransferWhitelistAddress(_addr, _isActive);
+  }
+
+  function setNoTransferFeeWhitelistAddress(address _addr, bool _isActive) external onlyYallTokenManager {
+    noTransferFeeWhitelist[_addr] = _isActive;
+
+    emit SetNoTransferFeeWhitelistAddress(_addr, _isActive);
+  }
+
+  function setTransferRestrictionMode(TransferRestrictionsMode _transferRestrictions) external onlyYallTokenManager {
+    transferRestrictions = _transferRestrictions;
+
+    emit SetTransferRestrictionMode(_transferRestrictions);
   }
 
   // FEE MANAGER INTERFACE
@@ -146,11 +163,15 @@ contract YALLToken is
 
   function transfer(address _to, uint256 _value) public whenNotPaused returns (bool) {
     (IYALLDistributor dist, address feeCollector) = _yallDistributorAndFeeCollector();
-    _requireMembersAreValid2(dist, _to, _msgSender());
+    address msgSender = _msgSender();
+
+    _requireMembersAreValid2(dist, _to, msgSender);
 
     bool result = ERC20.transfer(_to, _value);
 
-    _chargeTransferFee(_msgSender(), feeCollector, _value);
+    if (noTransferFeeWhitelist[msgSender] == false) {
+      _chargeTransferFee(msgSender, feeCollector, _value);
+    }
 
     return result;
   }
@@ -162,11 +183,15 @@ contract YALLToken is
 
   function transferFrom(address _from, address _to, uint256 _value) public whenNotPaused returns (bool) {
     (IYALLDistributor dist, address feeCollector) = _yallDistributorAndFeeCollector();
-    _requireMembersAreValid3(dist, _from, _to, _msgSender());
+    address msgSender = _msgSender();
+
+    _requireMembersAreValid3(dist, _from, _to, msgSender);
 
     bool result = ERC20.transferFrom(_from, _to, _value);
 
-    _chargeTransferFee(_msgSender(), feeCollector, _value);
+    if (noTransferFeeWhitelist[msgSender] == false) {
+      _chargeTransferFee(msgSender, feeCollector, _value);
+    }
 
     return result;
   }
@@ -190,13 +215,35 @@ contract YALLToken is
   }
 
   function _isMemberValid(IYALLDistributor _dist, address _member) internal view returns(bool) {
-    return _dist.isActive(_member) || opsWhitelist[_member] == true;
+    TransferRestrictionsMode mode = transferRestrictions;
+
+    if (mode == TransferRestrictionsMode.ONLY_MEMBERS_AND_WHITELIST) {
+      return _dist.isActive(_member) || canTransferWhitelist[_member] == true;
+    } else if (mode == TransferRestrictionsMode.OFF) {
+      return true;
+    } else if (mode == TransferRestrictionsMode.ONLY_WHITELIST) {
+      return canTransferWhitelist[_member] == true;
+    }
+
+    // else if (mode == TransferRestrictionsMode.ONLY_MEMBERS)
+    return _dist.isActive(_member);
   }
 
   function _areMembersValid2(IYALLDistributor _dist, address _member1, address _member2) internal view returns(bool) {
-    (bool active1, bool active2) = _dist.areActive2(_member1, _member2);
+    TransferRestrictionsMode mode = transferRestrictions;
 
-    return (active1 || opsWhitelist[_member1] == true) && (active2 || opsWhitelist[_member2] == true);
+    if (mode == TransferRestrictionsMode.ONLY_MEMBERS_AND_WHITELIST) {
+      (bool active1, bool active2) = _dist.areActive2(_member1, _member2);
+      return (active1 || canTransferWhitelist[_member1] == true) && (active2 || canTransferWhitelist[_member2] == true);
+    } else if (mode == TransferRestrictionsMode.OFF) {
+      return true;
+    } else if (mode == TransferRestrictionsMode.ONLY_WHITELIST) {
+      return (canTransferWhitelist[_member1] == true && canTransferWhitelist[_member2] == true);
+    }
+
+    // else if (mode == TransferRestrictionsMode.ONLY_MEMBERS)
+    (bool active1, bool active2) = _dist.areActive2(_member1, _member2);
+    return (active1 && active2);
   }
 
   function _areMembersValid3(
@@ -209,16 +256,28 @@ contract YALLToken is
     view
     returns(bool)
   {
-    (bool active1, bool active2, bool active3) = _dist.areActive3(_member1, _member2, _member3);
+    TransferRestrictionsMode mode = transferRestrictions;
 
-    return (active1 || opsWhitelist[_member1] == true)
-        && (active2 || opsWhitelist[_member2] == true)
-        && (active3 || opsWhitelist[_member3] == true);
+    if (mode == TransferRestrictionsMode.ONLY_MEMBERS_AND_WHITELIST) {
+      (bool active1, bool active2, bool active3) = _dist.areActive3(_member1, _member2, _member3);
+
+      return (active1 || canTransferWhitelist[_member1] == true)
+          && (active2 || canTransferWhitelist[_member2] == true)
+          && (active3 || canTransferWhitelist[_member3] == true);
+    } else if (mode == TransferRestrictionsMode.OFF) {
+      return true;
+    } else if (mode == TransferRestrictionsMode.ONLY_WHITELIST) {
+      return (canTransferWhitelist[_member1] == true && canTransferWhitelist[_member2] == true && canTransferWhitelist[_member3] == true);
+    }
+
+    // else if (mode == TransferRestrictionsMode.ONLY_MEMBERS)
+    (bool active1, bool active2, bool active3) = _dist.areActive3(_member1, _member2, _member3);
+    return (active1 && active2 && active3);
   }
 
   // REQUIRES
   function _requireMembersAreValid2(IYALLDistributor _dist, address _member1, address _member2) internal view {
-    require(_areMembersValid2(_dist, _member1, _member2), "YALLToken: The address has no YALL token ops permission");
+    require(_areMembersValid2(_dist, _member1, _member2), "YALLToken: The address has no YALL token transfer permission");
   }
 
   function _requireMembersAreValid3(
@@ -232,7 +291,7 @@ contract YALLToken is
   {
     require(
       _areMembersValid3(_dist, _member1, _member2, _member3),
-      "YALLToken: The address has no YALL token ops permission"
+      "YALLToken: The address has no YALL token transfer permission"
     );
   }
 

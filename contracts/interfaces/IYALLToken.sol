@@ -11,6 +11,13 @@ pragma solidity ^0.5.13;
 
 
 interface IYALLToken {
+  enum TransferRestrictionsMode {
+    OFF,
+    ONLY_MEMBERS,
+    ONLY_WHITELIST,
+    ONLY_MEMBERS_AND_WHITELIST
+  }
+
   // CONSTANTS
   // solhint-disable-next-line func-name-mixedcase
   function HUNDRED_PCT() external pure returns (uint256);
@@ -18,9 +25,11 @@ interface IYALLToken {
   // PUBLIC VARIABLES
   function transferFee() external view returns(uint256);
   function gsnFee() external view returns(uint256);
+  function transferRestrictions() external view returns(TransferRestrictionsMode);
 
   // PUBLIC MAPPINGS
-  function opsWhitelist(address _addr) external view returns(bool);
+  function canTransferWhitelist(address _addr) external view returns(bool);
+  function noTransferFeeWhitelist(address _addr) external view returns(bool);
 
   // MINTER INTERFACE
   function mint(address to, uint256 amount) external returns (bool);
@@ -28,8 +37,10 @@ interface IYALLToken {
   // BURNER INTERFACE
   function burn(address account, uint256 amount) external;
 
-  // WHITELIST MANAGER INTERFACE
-  function setWhitelistAddress(address _addr, bool _isActive) external;
+  // YALL TOKEN MANAGER INTERFACE
+  function setCanTransferWhitelistAddress(address _addr, bool _isActive) external;
+  function setNoTransferFeeWhitelistAddress(address _addr, bool _isActive) external;
+  function setTransferRestrictionMode(TransferRestrictionsMode _transferRestrictions) external;
 
   // FEE MANAGER INTERFACE
   function setTransferFee(uint256 _transferFee) external;

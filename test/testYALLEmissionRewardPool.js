@@ -32,7 +32,7 @@ describe('YALLEmissionReward Integration tests', () => {
         exchangeManager,
         exchangeOperator,
         exchangeSuperOperator,
-        yallWLManager,
+        yallTokenManager,
         v1,
         v2,
         v3,
@@ -65,7 +65,7 @@ describe('YALLEmissionReward Integration tests', () => {
             exchangeManager,
             exchangeOperator,
             exchangeSuperOperator,
-            yallWLManager,
+            yallTokenManager,
             mediatorOnTheOtherSide,
             bridge: bridge.address,
         }));

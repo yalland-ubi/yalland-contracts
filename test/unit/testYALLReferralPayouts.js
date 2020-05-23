@@ -24,7 +24,7 @@ const { ether, now, assertRevert, assertErc20BalanceChanged } = require('@galtpr
 
 
 describe('YALLReferralPayouts Unit tests', () => {
-    const [alice, bob, charlie, superOperator, yallMinter, operator, feeManager, yallWLManager] = accounts;
+    const [alice, bob, charlie, superOperator, yallMinter, operator, feeManager, yallTokenManager] = accounts;
 
     // 7 days
     const startAfter = 10;
@@ -38,7 +38,7 @@ describe('YALLReferralPayouts Unit tests', () => {
             governance: alice,
             yallMinter,
             feeManager,
-            yallWLManager: yallWLManager,
+            yallTokenManager: yallTokenManager,
             periodVolume: ether(250)
         }));
 
@@ -50,11 +50,11 @@ describe('YALLReferralPayouts Unit tests', () => {
         await yallToken.setTransferFee(ether('0.02'), { from: feeManager });
         await yallToken.setGsnFee(ether('1.7'), { from: feeManager });
 
-        await yallToken.setWhitelistAddress(referral.address, true, { from: yallWLManager });
-        await yallToken.setWhitelistAddress(operator, true, { from: yallWLManager });
-        await yallToken.setWhitelistAddress(superOperator, true, { from: yallWLManager });
-        await yallToken.setWhitelistAddress(charlie, true, { from: yallWLManager });
-        await yallToken.setWhitelistAddress(alice, true, { from: yallWLManager });
+        await yallToken.setCanTransferWhitelistAddress(referral.address, true, { from: yallTokenManager });
+        await yallToken.setCanTransferWhitelistAddress(operator, true, { from: yallTokenManager });
+        await yallToken.setCanTransferWhitelistAddress(superOperator, true, { from: yallTokenManager });
+        await yallToken.setCanTransferWhitelistAddress(charlie, true, { from: yallTokenManager });
+        await yallToken.setCanTransferWhitelistAddress(alice, true, { from: yallTokenManager });
     });
 
     it('should deny second initialization', async function() {
