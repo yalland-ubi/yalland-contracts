@@ -7,7 +7,6 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-const fs = require('fs');
 const _ = require('lodash');
 const assert = require('assert');
 
@@ -20,14 +19,18 @@ const ProxyAdmin = artifacts.require('ProxyAdmin');
 const { web3 } = YALLDistributor;
 const { ether, now, increaseTime } = require('@galtproject/solidity-test-chest')(web3);
 const {
-    fundRecipient,
     deployRelayHub
 } = require('@openzeppelin/gsn-helpers');
 const keccak256 = web3.utils.soliditySha3;
 
 YALLDistributor.numberFormat = 'String';
 
-
+const TransferRestrictionsMode = {
+    OFF: 0,
+    ONLY_MEMBERS: 1,
+    ONLY_WHITELIST: 2,
+    ONLY_MEMBERS_OR_WHITELIST: 3
+}
 
 module.exports = async function (truffle, network, accounts) {
     if (network === 'test' || network === 'local_test' || network === 'development') {
@@ -53,11 +56,15 @@ module.exports = async function (truffle, network, accounts) {
     // Superuser address: fffff2b5e1b308331b8548960347f9d874824f40
     // Deployer private: 8e1b9e2b156bc61d74482427f522842d8b1e6252b284da4d80fcbd95638d9ee9
     // Deployer address: dddddf4630b0ca1d7f18b681e61f5f40c0a4a652
-    // Operations private: 9ee002502c20dea0ab361007c78e8b44aaa92aa6593d130a0a11acddeaf8fb40
-    // Operations address: aaaaa67b971f1181f5af957ea4a0fc53cc034f63
+    // Fee Collector private: 9ee002502c20dea0ab361007c78e8b44aaa92aa6593d130a0a11acddeaf8fb40
+    // Fee Collector address: aaaaa67b971f1181f5af957ea4a0fc53cc034f63
+    // GSN Fee Collector private: e24f7da8befa6aa68344dc4a3112b891e68f30ad09e0464f8f0915c6745ac65f
+    // GSN Fee Collector address: bbbbb53116526b87da15ac05ede1645b16a5e3fa
 
     const superuser = '0xffffF2B5e1b308331B8548960347f9d874824f40';
     const expectedDeployer = '0xDDddDf4630b0Ca1D7F18B681e61F5F40c0a4A652';
+    const feeCollector = 'aaaaa67b971f1181f5af957ea4a0fc53cc034f63';
+    const gsnFeeCollector = 'bbbbb53116526b87da15ac05ede1645b16a5e3fa';
 
     truffle.then(async () => {
         const networkName = network || 'ganache';
@@ -79,7 +86,7 @@ module.exports = async function (truffle, network, accounts) {
         const periodLength = 5 * 60;
         const periodVolume = ether(275 * 1000);
         const verifierRewardShare = ether(10);
-        // 10 min
+        // 5 min
         const startAfter = 5 * 60;
         const genesisTimestamp = parseInt(await now(), 10) + startAfter;
         const defaultExchangeRateNumerator = ether(42);
@@ -142,25 +149,20 @@ module.exports = async function (truffle, network, accounts) {
         console.log('GSN checks...');
         assert.equal(await dist.getHubAddr(), await yall.getHubAddr());
 
-        console.log('Funding GSN recipients...');
-        // await Promise.all([
-        //     fundRecipient(web3, { recipient: yall.address, amount: ether(1) }),
-        //     fundRecipient(web3, { recipient: dist.address, amount: ether(1) }),
-        //     fundRecipient(web3, { recipient: exchange.address, amount: ether(1) })
-        // ]);
-
         console.log('Setting up Registry and ACL records');
         await Promise.all([
             registry.setContract(await registry.YALL_TOKEN_KEY(), yall.address),
             registry.setContract(await registry.YALL_DISTRIBUTOR_KEY(), dist.address),
             registry.setContract(await registry.YALL_EXCHANGE_KEY(), exchange.address),
+            registry.setContract(await registry.YALL_FEE_COLLECTOR_KEY(), feeCollector),
+            registry.setContract(await registry.YALL_GSN_FEE_COLLECTOR_KEY(), gsnFeeCollector),
+
             registry.setRole(dist.address, await yall.YALL_TOKEN_MINTER_ROLE(), true),
             registry.setRole(dist.address, await yall.YALL_TOKEN_BURNER_ROLE(), true),
 
             registry.setRole(superuser, await dist.PAUSER_ROLE(), true),
             registry.setRole(superuser, await yall.FEE_MANAGER_ROLE(), true),
-            registry.setRole(superuser, await yall.FEE_CLAIMER_ROLE(), true),
-            registry.setRole(superuser, await yall.YALL_TOKEN_WHITELIST_MANAGER_ROLE(), true),
+            registry.setRole(superuser, await yall.YALL_TOKEN_MANAGER_ROLE(), true),
             registry.setRole(superuser, await yall.DISTRIBUTOR_MANAGER_ROLE(), true),
             registry.setRole(superuser, await yall.DISTRIBUTOR_VERIFIER_ROLE(), true),
             registry.setRole(superuser, await yall.DISTRIBUTOR_EMISSION_CLAIMER_ROLE(), true),
@@ -172,7 +174,7 @@ module.exports = async function (truffle, network, accounts) {
         console.log('Setting up temporary Registry and ACL records for deployer');
         await Promise.all([
             registry.setRole(deployer, await yall.FEE_MANAGER_ROLE(), true),
-            registry.setRole(deployer, await yall.YALL_TOKEN_WHITELIST_MANAGER_ROLE(), true),
+            registry.setRole(deployer, await yall.YALL_TOKEN_MANAGER_ROLE(), true),
             registry.setRole(deployer, await yall.DISTRIBUTOR_MANAGER_ROLE(), true),
             registry.setRole(deployer, await yall.DISTRIBUTOR_VERIFIER_ROLE(), true),
             registry.setRole(deployer, await yall.EXCHANGE_MANAGER_ROLE(), true)
@@ -187,12 +189,22 @@ module.exports = async function (truffle, network, accounts) {
             exchange.setGsnFee(gsnFee),
         ]);
 
-        console.log('Setting up whitelisted contracts for token transfers...');
+        console.log('Setting up YALLToken canTransfer whitelist...');
         await Promise.all([
-            yall.setWhitelistAddress(dist.address, true),
-            yall.setWhitelistAddress(exchange.address, true),
-            yall.setWhitelistAddress(superuser, true)
+            yall.setCanTransferWhitelistAddress(dist.address, true),
+            yall.setCanTransferWhitelistAddress(exchange.address, true),
+            yall.setCanTransferWhitelistAddress(superuser, true)
         ]);
+
+        console.log('Setting up YALLToken noTransferFee whitelist...');
+        await Promise.all([
+            yall.setNoTransferFeeWhitelistAddress(dist.address, true),
+            yall.setNoTransferFeeWhitelistAddress(exchange.address, true),
+            yall.setNoTransferFeeWhitelistAddress(superuser, true)
+        ]);
+
+        console.log('Setting up YALLToken transfer restrictions...');
+        await yall.setTransferRestrictionMode(TransferRestrictionsMode.ONLY_MEMBERS_OR_WHITELIST);
 
         console.log('Setting up exchange limits...');
         await Promise.all([
@@ -222,7 +234,7 @@ module.exports = async function (truffle, network, accounts) {
         console.log('Revoking temporary Registry and ACL records for deployer');
         await Promise.all([
             registry.setRole(deployer, await yall.FEE_MANAGER_ROLE(), false),
-            registry.setRole(deployer, await yall.YALL_TOKEN_WHITELIST_MANAGER_ROLE(), false),
+            registry.setRole(deployer, await yall.YALL_TOKEN_MANAGER_ROLE(), false),
             registry.setRole(deployer, await yall.DISTRIBUTOR_MANAGER_ROLE(), false),
             registry.setRole(deployer, await yall.DISTRIBUTOR_VERIFIER_ROLE(), false),
             registry.setRole(deployer, await yall.EXCHANGE_MANAGER_ROLE(), false)
