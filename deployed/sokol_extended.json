@@ -195,7 +195,7 @@
         }
       ],
       "constructorArguments": "",
-      "address": "0x6133ddcc74B9c20B701925475A4e7A555a009728"
+      "address": "0x0987cb009e73f885101f2C8e7cd4763823E1220D"
     },
     "yallRegistry": {
       "factory": "YALLRegistry",
@@ -345,6 +345,38 @@
           "stateMutability": "view",
           "type": "function",
           "signature": "0x4c9bd69d"
+        },
+        {
+          "constant": true,
+          "inputs": [],
+          "name": "YALL_FEE_COLLECTOR_KEY",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0x0ccc3823"
+        },
+        {
+          "constant": true,
+          "inputs": [],
+          "name": "YALL_GSN_FEE_COLLECTOR_KEY",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0x15d1d3ef"
         },
         {
           "constant": true,
@@ -560,6 +592,176 @@
         },
         {
           "constant": true,
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "_key1",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "_key2",
+              "type": "bytes32"
+            }
+          ],
+          "name": "getContracts2",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0xf4a0096a"
+        },
+        {
+          "constant": true,
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "_key1",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "_key2",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "_key3",
+              "type": "bytes32"
+            }
+          ],
+          "name": "getContracts3",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0x7c9d00cc"
+        },
+        {
+          "constant": true,
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "_key",
+              "type": "bytes32"
+            }
+          ],
+          "name": "getContractSafu",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0x02791e80"
+        },
+        {
+          "constant": true,
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "_key1",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "_key2",
+              "type": "bytes32"
+            }
+          ],
+          "name": "getContractsSafu2",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0xf6f92ca6"
+        },
+        {
+          "constant": true,
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "_key1",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "_key2",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "_key3",
+              "type": "bytes32"
+            }
+          ],
+          "name": "getContractsSafu3",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0x12ff3b4c"
+        },
+        {
+          "constant": true,
           "inputs": [],
           "name": "getYallTokenAddress",
           "outputs": [
@@ -669,12 +871,86 @@
           "stateMutability": "view",
           "type": "function",
           "signature": "0xd82b3fc2"
+        },
+        {
+          "constant": true,
+          "inputs": [],
+          "name": "getYallFeeCollectorAddress",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0x3329b7c3"
+        },
+        {
+          "constant": true,
+          "inputs": [],
+          "name": "getYallGsnFeeCollectorAddress",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0x841b56a3"
+        },
+        {
+          "constant": true,
+          "inputs": [],
+          "name": "getYallDistributorAndFeeCollectorAddress",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0xce0e6b90"
+        },
+        {
+          "constant": true,
+          "inputs": [],
+          "name": "getYallTokenAndGsnFeeCollectorAddress",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0x10cee8d2"
         }
       ],
-      "address": "0x495391a78B372BFe5dDD1fE865BF3392353c1f6d",
+      "address": "0xda7C99345b3218082b8769A6DFc58DB89ac5bfA7",
       "proxied": true,
-      "implementation": "0x38Aa6E5d999cdD8f926cca3C1ab3cFBA959eAC35",
-      "proxyArguments": "00000000000000000000000038aa6e5d999cdd8f926cca3c1ab3cfba959eac350000000000000000000000006133ddcc74b9c20b701925475a4e7a555a009728000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000048129fc1c00000000000000000000000000000000000000000000000000000000"
+      "implementation": "0x0C209c2C818e4d39F7c3fF8628fB8fc459FcB574",
+      "proxyArguments": "0000000000000000000000000c209c2c818e4d39f7c3ff8628fb8fc459fcb5740000000000000000000000000987cb009e73f885101f2c8e7cd4763823e1220d000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000048129fc1c00000000000000000000000000000000000000000000000000000000"
     },
     "yallDistributor": {
       "factory": "YALLDistributor",
@@ -1005,32 +1281,6 @@
           "signature": "0x5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa"
         },
         {
-          "anonymous": false,
-          "inputs": [
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "feeClaimer",
-              "type": "address"
-            },
-            {
-              "indexed": true,
-              "internalType": "bool",
-              "name": "success",
-              "type": "bool"
-            },
-            {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "amount",
-              "type": "uint256"
-            }
-          ],
-          "name": "WithdrawFee",
-          "type": "event",
-          "signature": "0x16056a46a1ff3d1178f52faef18c69fed5767a3b0193118908e52c414bfdb08c"
-        },
-        {
           "constant": true,
           "inputs": [],
           "name": "COMMISSION_POOL_MANAGER_ROLE",
@@ -1241,6 +1491,22 @@
         {
           "constant": true,
           "inputs": [],
+          "name": "YALL_TOKEN_MANAGER_ROLE",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0x09a5d7fe"
+        },
+        {
+          "constant": true,
+          "inputs": [],
           "name": "YALL_TOKEN_MINTER_ROLE",
           "outputs": [
             {
@@ -1253,22 +1519,6 @@
           "stateMutability": "view",
           "type": "function",
           "signature": "0x9f65df72"
-        },
-        {
-          "constant": true,
-          "inputs": [],
-          "name": "YALL_TOKEN_WHITELIST_MANAGER_ROLE",
-          "outputs": [
-            {
-              "internalType": "bytes32",
-              "name": "",
-              "type": "bytes32"
-            }
-          ],
-          "payable": false,
-          "stateMutability": "view",
-          "type": "function",
-          "signature": "0x8c18e453"
         },
         {
           "constant": true,
@@ -1676,16 +1926,6 @@
           "stateMutability": "nonpayable",
           "type": "function",
           "signature": "0x3f4ba83a"
-        },
-        {
-          "constant": false,
-          "inputs": [],
-          "name": "withdrawFee",
-          "outputs": [],
-          "payable": false,
-          "stateMutability": "nonpayable",
-          "type": "function",
-          "signature": "0xe941fa78"
         },
         {
           "constant": true,
@@ -2260,6 +2500,80 @@
           "constant": true,
           "inputs": [
             {
+              "internalType": "address",
+              "name": "_addr1",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "_addr2",
+              "type": "address"
+            }
+          ],
+          "name": "areActive2",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0x15515c40"
+        },
+        {
+          "constant": true,
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_addr1",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "_addr2",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "_addr3",
+              "type": "address"
+            }
+          ],
+          "name": "areActive3",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0x8ee0c383"
+        },
+        {
+          "constant": true,
+          "inputs": [
+            {
               "internalType": "uint256",
               "name": "_periodId",
               "type": "uint256"
@@ -2375,10 +2689,10 @@
           "signature": "0x3dd9899f"
         }
       ],
-      "address": "0x9A7A54F8B011eA3A76E34918F1Dd9b7FB4FD22e7",
+      "address": "0x2c8974dCFe1C67eA99db7f508Cf1fB81A2C91079",
       "proxied": true,
-      "implementation": "0x838A661E818D21297FEEc50fE18808A98F0E9A42",
-      "proxyArguments": "000000000000000000000000838a661e818d21297feec50fe18808a98f0e9a420000000000000000000000006133ddcc74b9c20b701925475a4e7a555a009728000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a43f490e71000000000000000000000000000000000000000000003a3bc7a5ab8e25e000000000000000000000000000000000000000000000000000008ac7230489e80000000000000000000000000000495391a78b372bfe5ddd1fe865bf3392353c1f6d000000000000000000000000000000000000000000000000000000000000012c000000000000000000000000000000000000000000000000000000005ec3d5b200000000000000000000000000000000000000000000000000000000"
+      "implementation": "0xeB821ee99F25A419eb2FD65f9E004E5f3bA69014",
+      "proxyArguments": "000000000000000000000000eb821ee99f25a419eb2fd65f9e004e5f3ba690140000000000000000000000000987cb009e73f885101f2c8e7cd4763823e1220d000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a43f490e71000000000000000000000000000000000000000000003a3bc7a5ab8e25e000000000000000000000000000000000000000000000000000008ac7230489e80000000000000000000000000000da7c99345b3218082b8769a6dfc58db89ac5bfa7000000000000000000000000000000000000000000000000000000000000012c000000000000000000000000000000000000000000000000000000005ecbdb3b00000000000000000000000000000000000000000000000000000000"
     },
     "yallExchange": {
       "factory": "YALLExchange",
@@ -2669,32 +2983,6 @@
           "signature": "0x54687608b3309a2a7fa1f154dc55738a6192f2db18d5d7d50346794e44b3ef04"
         },
         {
-          "anonymous": false,
-          "inputs": [
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "feeClaimer",
-              "type": "address"
-            },
-            {
-              "indexed": true,
-              "internalType": "bool",
-              "name": "success",
-              "type": "bool"
-            },
-            {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "amount",
-              "type": "uint256"
-            }
-          ],
-          "name": "WithdrawFee",
-          "type": "event",
-          "signature": "0x16056a46a1ff3d1178f52faef18c69fed5767a3b0193118908e52c414bfdb08c"
-        },
-        {
           "constant": true,
           "inputs": [],
           "name": "COMMISSION_POOL_MANAGER_ROLE",
@@ -2857,22 +3145,6 @@
         {
           "constant": true,
           "inputs": [],
-          "name": "HUNDRED_PCT",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "payable": false,
-          "stateMutability": "view",
-          "type": "function",
-          "signature": "0xc1b5dcb6"
-        },
-        {
-          "constant": true,
-          "inputs": [],
           "name": "PAUSER_ROLE",
           "outputs": [
             {
@@ -2921,6 +3193,22 @@
         {
           "constant": true,
           "inputs": [],
+          "name": "YALL_TOKEN_MANAGER_ROLE",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0x09a5d7fe"
+        },
+        {
+          "constant": true,
+          "inputs": [],
           "name": "YALL_TOKEN_MINTER_ROLE",
           "outputs": [
             {
@@ -2933,22 +3221,6 @@
           "stateMutability": "view",
           "type": "function",
           "signature": "0x9f65df72"
-        },
-        {
-          "constant": true,
-          "inputs": [],
-          "name": "YALL_TOKEN_WHITELIST_MANAGER_ROLE",
-          "outputs": [
-            {
-              "internalType": "bytes32",
-              "name": "",
-              "type": "bytes32"
-            }
-          ],
-          "payable": false,
-          "stateMutability": "view",
-          "type": "function",
-          "signature": "0x8c18e453"
         },
         {
           "constant": true,
@@ -3328,16 +3600,6 @@
           "stateMutability": "nonpayable",
           "type": "function",
           "signature": "0x3f4ba83a"
-        },
-        {
-          "constant": false,
-          "inputs": [],
-          "name": "withdrawFee",
-          "outputs": [],
-          "payable": false,
-          "stateMutability": "nonpayable",
-          "type": "function",
-          "signature": "0xe941fa78"
         },
         {
           "constant": true,
@@ -3851,10 +4113,10 @@
           "signature": "0x1fafd366"
         }
       ],
-      "address": "0x0Fd463E043fB35B838F4Ad59A505Eb21ff8442F1",
+      "address": "0x9D7e918cd48354Ef572C9664C7f40f76266bCf9a",
       "proxied": true,
-      "implementation": "0x976a889298909Af76635654f4aCe783E199caA92",
-      "proxyArguments": "000000000000000000000000976a889298909af76635654f4ace783e199caa920000000000000000000000006133ddcc74b9c20b701925475a4e7a555a00972800000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000044cd6dc687000000000000000000000000495391a78b372bfe5ddd1fe865bf3392353c1f6d00000000000000000000000000000000000000000000000246ddf9797668000000000000000000000000000000000000000000000000000000000000"
+      "implementation": "0xC56d4654816AD08cad216c52f52aEB63C7bc8F22",
+      "proxyArguments": "000000000000000000000000c56d4654816ad08cad216c52f52aeb63c7bc8f220000000000000000000000000987cb009e73f885101f2c8e7cd4763823e1220d00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000044cd6dc687000000000000000000000000da7c99345b3218082b8769a6dfc58db89ac5bfa700000000000000000000000000000000000000000000000246ddf9797668000000000000000000000000000000000000000000000000000000000000"
     },
     "yallToken": {
       "factory": "YALLToken",
@@ -4003,6 +4265,26 @@
           "anonymous": false,
           "inputs": [
             {
+              "indexed": false,
+              "internalType": "address",
+              "name": "addr",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "bool",
+              "name": "isActive",
+              "type": "bool"
+            }
+          ],
+          "name": "SetCanTransferWhitelistAddress",
+          "type": "event",
+          "signature": "0xd7ab9115280f56dcdba7cbdb47ae9d7714328815d337b7bc96cbcfc08d3cb951"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
               "indexed": true,
               "internalType": "address",
               "name": "feeManager",
@@ -4018,6 +4300,26 @@
           "name": "SetGsnFee",
           "type": "event",
           "signature": "0xe24dd9f6147d8b124d95914b959f9f2486c0c2cbc47bd7c164afc24df03f2d60"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "internalType": "address",
+              "name": "addr",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "bool",
+              "name": "isActive",
+              "type": "bool"
+            }
+          ],
+          "name": "SetNoTransferFeeWhitelistAddress",
+          "type": "event",
+          "signature": "0x45f56023c604adada546cde53f0f4dbd106979f9057e474f0380339f8836d972"
         },
         {
           "anonymous": false,
@@ -4044,20 +4346,14 @@
           "inputs": [
             {
               "indexed": false,
-              "internalType": "address",
-              "name": "addr",
-              "type": "address"
-            },
-            {
-              "indexed": false,
-              "internalType": "bool",
-              "name": "isActive",
-              "type": "bool"
+              "internalType": "enum IYALLToken.TransferRestrictionsMode",
+              "name": "transferRestrictions",
+              "type": "uint8"
             }
           ],
-          "name": "SetWhitelistAddress",
+          "name": "SetTransferRestrictionMode",
           "type": "event",
-          "signature": "0xbc6eeff9ce9d57af2e187d23e2b5f4c42b3921f1ee0cf62d00e78610f7e8f9e8"
+          "signature": "0x4155ae0be813eba4d3efc8b593f817425b24bb55012cb9998a6f3975c198b93a"
         },
         {
           "anonymous": false,
@@ -4130,32 +4426,6 @@
           "name": "Unpaused",
           "type": "event",
           "signature": "0x5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa"
-        },
-        {
-          "anonymous": false,
-          "inputs": [
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "feeClaimer",
-              "type": "address"
-            },
-            {
-              "indexed": true,
-              "internalType": "bool",
-              "name": "success",
-              "type": "bool"
-            },
-            {
-              "indexed": false,
-              "internalType": "uint256",
-              "name": "amount",
-              "type": "uint256"
-            }
-          ],
-          "name": "WithdrawFee",
-          "type": "event",
-          "signature": "0x16056a46a1ff3d1178f52faef18c69fed5767a3b0193118908e52c414bfdb08c"
         },
         {
           "constant": true,
@@ -4384,6 +4654,22 @@
         {
           "constant": true,
           "inputs": [],
+          "name": "YALL_TOKEN_MANAGER_ROLE",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0x09a5d7fe"
+        },
+        {
+          "constant": true,
+          "inputs": [],
           "name": "YALL_TOKEN_MINTER_ROLE",
           "outputs": [
             {
@@ -4396,22 +4682,6 @@
           "stateMutability": "view",
           "type": "function",
           "signature": "0x9f65df72"
-        },
-        {
-          "constant": true,
-          "inputs": [],
-          "name": "YALL_TOKEN_WHITELIST_MANAGER_ROLE",
-          "outputs": [
-            {
-              "internalType": "bytes32",
-              "name": "",
-              "type": "bytes32"
-            }
-          ],
-          "payable": false,
-          "stateMutability": "view",
-          "type": "function",
-          "signature": "0x8c18e453"
         },
         {
           "constant": true,
@@ -4531,6 +4801,28 @@
         },
         {
           "constant": true,
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "name": "canTransferWhitelist",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0x7e6ea9b5"
+        },
+        {
+          "constant": true,
           "inputs": [],
           "name": "decimals",
           "outputs": [
@@ -4624,7 +4916,7 @@
               "type": "address"
             }
           ],
-          "name": "opsWhitelist",
+          "name": "noTransferFeeWhitelist",
           "outputs": [
             {
               "internalType": "bool",
@@ -4635,7 +4927,7 @@
           "payable": false,
           "stateMutability": "view",
           "type": "function",
-          "signature": "0xcc3cf158"
+          "signature": "0x38ec8f7c"
         },
         {
           "constant": false,
@@ -4781,6 +5073,22 @@
           "signature": "0xacb2ad6f"
         },
         {
+          "constant": true,
+          "inputs": [],
+          "name": "transferRestrictions",
+          "outputs": [
+            {
+              "internalType": "enum IYALLToken.TransferRestrictionsMode",
+              "name": "",
+              "type": "uint8"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0x97522878"
+        },
+        {
           "constant": false,
           "inputs": [],
           "name": "unpause",
@@ -4789,16 +5097,6 @@
           "stateMutability": "nonpayable",
           "type": "function",
           "signature": "0x3f4ba83a"
-        },
-        {
-          "constant": false,
-          "inputs": [],
-          "name": "withdrawFee",
-          "outputs": [],
-          "payable": false,
-          "stateMutability": "nonpayable",
-          "type": "function",
-          "signature": "0xe941fa78"
         },
         {
           "constant": true,
@@ -4878,12 +5176,49 @@
               "type": "bool"
             }
           ],
-          "name": "setWhitelistAddress",
+          "name": "setCanTransferWhitelistAddress",
           "outputs": [],
           "payable": false,
           "stateMutability": "nonpayable",
           "type": "function",
-          "signature": "0x3f914aef"
+          "signature": "0x628d9c94"
+        },
+        {
+          "constant": false,
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_addr",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "_isActive",
+              "type": "bool"
+            }
+          ],
+          "name": "setNoTransferFeeWhitelistAddress",
+          "outputs": [],
+          "payable": false,
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "signature": "0x316496dc"
+        },
+        {
+          "constant": false,
+          "inputs": [
+            {
+              "internalType": "enum IYALLToken.TransferRestrictionsMode",
+              "name": "_transferRestrictions",
+              "type": "uint8"
+            }
+          ],
+          "name": "setTransferRestrictionMode",
+          "outputs": [],
+          "payable": false,
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "signature": "0xb3f3fb43"
         },
         {
           "constant": false,
@@ -5137,6 +5472,28 @@
           "constant": true,
           "inputs": [
             {
+              "internalType": "uint256",
+              "name": "_amount",
+              "type": "uint256"
+            }
+          ],
+          "name": "deductTransferSafu",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0x88b1b4df"
+        },
+        {
+          "constant": true,
+          "inputs": [
+            {
               "internalType": "address",
               "name": "_member",
               "type": "address"
@@ -5154,6 +5511,65 @@
           "stateMutability": "view",
           "type": "function",
           "signature": "0xd0fab885"
+        },
+        {
+          "constant": true,
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_member1",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "_member2",
+              "type": "address"
+            }
+          ],
+          "name": "areMembersValid2",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0xc6ce6b97"
+        },
+        {
+          "constant": true,
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_member1",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "_member2",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "_member3",
+              "type": "address"
+            }
+          ],
+          "name": "areMembersValid3",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0xc6ca0770"
         },
         {
           "constant": true,
@@ -5178,8 +5594,8 @@
           "signature": "0x28912822"
         }
       ],
-      "constructorArguments": "000000000000000000000000495391a78b372bfe5ddd1fe865bf3392353c1f6d000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000000c59616c6c616e6420546573740000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000459414c5400000000000000000000000000000000000000000000000000000000",
-      "address": "0x875f35451ae3C1451B33Af523E73B89e31344062"
+      "constructorArguments": "000000000000000000000000da7c99345b3218082b8769a6dfc58db89ac5bfa7000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000000c59616c6c616e6420546573740000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000459414c5400000000000000000000000000000000000000000000000000000000",
+      "address": "0x1EefC0216aC65358432AF87df9E3184798e0Fb1c"
     }
   },
   "compiler": {

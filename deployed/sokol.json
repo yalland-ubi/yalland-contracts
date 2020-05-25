@@ -1,5 +1,5 @@
 {
-  "yallProxyAdminAddress": "0x6133ddcc74B9c20B701925475A4e7A555a009728",
+  "yallProxyAdminAddress": "0x0987cb009e73f885101f2C8e7cd4763823E1220D",
   "yallProxyAdminAbi": [
     {
       "anonymous": false,
@@ -192,7 +192,7 @@
       "signature": "0x9623609d"
     }
   ],
-  "yallRegistryAddress": "0x495391a78B372BFe5dDD1fE865BF3392353c1f6d",
+  "yallRegistryAddress": "0xda7C99345b3218082b8769A6DFc58DB89ac5bfA7",
   "yallRegistryAbi": [
     {
       "anonymous": false,
@@ -339,6 +339,38 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0x4c9bd69d"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "YALL_FEE_COLLECTOR_KEY",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x0ccc3823"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "YALL_GSN_FEE_COLLECTOR_KEY",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x15d1d3ef"
     },
     {
       "constant": true,
@@ -554,6 +586,176 @@
     },
     {
       "constant": true,
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_key1",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_key2",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getContracts2",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xf4a0096a"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_key1",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_key2",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_key3",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getContracts3",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x7c9d00cc"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_key",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getContractSafu",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x02791e80"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_key1",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_key2",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getContractsSafu2",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xf6f92ca6"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_key1",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_key2",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_key3",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getContractsSafu3",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x12ff3b4c"
+    },
+    {
+      "constant": true,
       "inputs": [],
       "name": "getYallTokenAddress",
       "outputs": [
@@ -663,9 +865,83 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0xd82b3fc2"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getYallFeeCollectorAddress",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x3329b7c3"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getYallGsnFeeCollectorAddress",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x841b56a3"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getYallDistributorAndFeeCollectorAddress",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xce0e6b90"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getYallTokenAndGsnFeeCollectorAddress",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x10cee8d2"
     }
   ],
-  "yallDistributorAddress": "0x9A7A54F8B011eA3A76E34918F1Dd9b7FB4FD22e7",
+  "yallDistributorAddress": "0x2c8974dCFe1C67eA99db7f508Cf1fB81A2C91079",
   "yallDistributorAbi": [
     {
       "inputs": [],
@@ -993,32 +1269,6 @@
       "signature": "0x5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa"
     },
     {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "feeClaimer",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "bool",
-          "name": "success",
-          "type": "bool"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "WithdrawFee",
-      "type": "event",
-      "signature": "0x16056a46a1ff3d1178f52faef18c69fed5767a3b0193118908e52c414bfdb08c"
-    },
-    {
       "constant": true,
       "inputs": [],
       "name": "COMMISSION_POOL_MANAGER_ROLE",
@@ -1229,6 +1479,22 @@
     {
       "constant": true,
       "inputs": [],
+      "name": "YALL_TOKEN_MANAGER_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x09a5d7fe"
+    },
+    {
+      "constant": true,
+      "inputs": [],
       "name": "YALL_TOKEN_MINTER_ROLE",
       "outputs": [
         {
@@ -1241,22 +1507,6 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0x9f65df72"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "YALL_TOKEN_WHITELIST_MANAGER_ROLE",
-      "outputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0x8c18e453"
     },
     {
       "constant": true,
@@ -1664,16 +1914,6 @@
       "stateMutability": "nonpayable",
       "type": "function",
       "signature": "0x3f4ba83a"
-    },
-    {
-      "constant": false,
-      "inputs": [],
-      "name": "withdrawFee",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0xe941fa78"
     },
     {
       "constant": true,
@@ -2248,6 +2488,80 @@
       "constant": true,
       "inputs": [
         {
+          "internalType": "address",
+          "name": "_addr1",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_addr2",
+          "type": "address"
+        }
+      ],
+      "name": "areActive2",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x15515c40"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_addr1",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_addr2",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_addr3",
+          "type": "address"
+        }
+      ],
+      "name": "areActive3",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x8ee0c383"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
           "internalType": "uint256",
           "name": "_periodId",
           "type": "uint256"
@@ -2363,7 +2677,7 @@
       "signature": "0x3dd9899f"
     }
   ],
-  "yallExchangeAddress": "0x0Fd463E043fB35B838F4Ad59A505Eb21ff8442F1",
+  "yallExchangeAddress": "0x9D7e918cd48354Ef572C9664C7f40f76266bCf9a",
   "yallExchangeAbi": [
     {
       "inputs": [],
@@ -2651,32 +2965,6 @@
       "signature": "0x54687608b3309a2a7fa1f154dc55738a6192f2db18d5d7d50346794e44b3ef04"
     },
     {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "feeClaimer",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "bool",
-          "name": "success",
-          "type": "bool"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "WithdrawFee",
-      "type": "event",
-      "signature": "0x16056a46a1ff3d1178f52faef18c69fed5767a3b0193118908e52c414bfdb08c"
-    },
-    {
       "constant": true,
       "inputs": [],
       "name": "COMMISSION_POOL_MANAGER_ROLE",
@@ -2839,22 +3127,6 @@
     {
       "constant": true,
       "inputs": [],
-      "name": "HUNDRED_PCT",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0xc1b5dcb6"
-    },
-    {
-      "constant": true,
-      "inputs": [],
       "name": "PAUSER_ROLE",
       "outputs": [
         {
@@ -2903,6 +3175,22 @@
     {
       "constant": true,
       "inputs": [],
+      "name": "YALL_TOKEN_MANAGER_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x09a5d7fe"
+    },
+    {
+      "constant": true,
+      "inputs": [],
       "name": "YALL_TOKEN_MINTER_ROLE",
       "outputs": [
         {
@@ -2915,22 +3203,6 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0x9f65df72"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "YALL_TOKEN_WHITELIST_MANAGER_ROLE",
-      "outputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0x8c18e453"
     },
     {
       "constant": true,
@@ -3310,16 +3582,6 @@
       "stateMutability": "nonpayable",
       "type": "function",
       "signature": "0x3f4ba83a"
-    },
-    {
-      "constant": false,
-      "inputs": [],
-      "name": "withdrawFee",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0xe941fa78"
     },
     {
       "constant": true,
@@ -3833,7 +4095,7 @@
       "signature": "0x1fafd366"
     }
   ],
-  "yallTokenAddress": "0x875f35451ae3C1451B33Af523E73B89e31344062",
+  "yallTokenAddress": "0x1EefC0216aC65358432AF87df9E3184798e0Fb1c",
   "yallTokenAbi": [
     {
       "inputs": [
@@ -3979,6 +4241,26 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": false,
+          "internalType": "address",
+          "name": "addr",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "isActive",
+          "type": "bool"
+        }
+      ],
+      "name": "SetCanTransferWhitelistAddress",
+      "type": "event",
+      "signature": "0xd7ab9115280f56dcdba7cbdb47ae9d7714328815d337b7bc96cbcfc08d3cb951"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
           "indexed": true,
           "internalType": "address",
           "name": "feeManager",
@@ -3994,6 +4276,26 @@
       "name": "SetGsnFee",
       "type": "event",
       "signature": "0xe24dd9f6147d8b124d95914b959f9f2486c0c2cbc47bd7c164afc24df03f2d60"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "addr",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "isActive",
+          "type": "bool"
+        }
+      ],
+      "name": "SetNoTransferFeeWhitelistAddress",
+      "type": "event",
+      "signature": "0x45f56023c604adada546cde53f0f4dbd106979f9057e474f0380339f8836d972"
     },
     {
       "anonymous": false,
@@ -4020,20 +4322,14 @@
       "inputs": [
         {
           "indexed": false,
-          "internalType": "address",
-          "name": "addr",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "bool",
-          "name": "isActive",
-          "type": "bool"
+          "internalType": "enum IYALLToken.TransferRestrictionsMode",
+          "name": "transferRestrictions",
+          "type": "uint8"
         }
       ],
-      "name": "SetWhitelistAddress",
+      "name": "SetTransferRestrictionMode",
       "type": "event",
-      "signature": "0xbc6eeff9ce9d57af2e187d23e2b5f4c42b3921f1ee0cf62d00e78610f7e8f9e8"
+      "signature": "0x4155ae0be813eba4d3efc8b593f817425b24bb55012cb9998a6f3975c198b93a"
     },
     {
       "anonymous": false,
@@ -4106,32 +4402,6 @@
       "name": "Unpaused",
       "type": "event",
       "signature": "0x5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "feeClaimer",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "bool",
-          "name": "success",
-          "type": "bool"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "WithdrawFee",
-      "type": "event",
-      "signature": "0x16056a46a1ff3d1178f52faef18c69fed5767a3b0193118908e52c414bfdb08c"
     },
     {
       "constant": true,
@@ -4360,6 +4630,22 @@
     {
       "constant": true,
       "inputs": [],
+      "name": "YALL_TOKEN_MANAGER_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x09a5d7fe"
+    },
+    {
+      "constant": true,
+      "inputs": [],
       "name": "YALL_TOKEN_MINTER_ROLE",
       "outputs": [
         {
@@ -4372,22 +4658,6 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0x9f65df72"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "YALL_TOKEN_WHITELIST_MANAGER_ROLE",
-      "outputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0x8c18e453"
     },
     {
       "constant": true,
@@ -4507,6 +4777,28 @@
     },
     {
       "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "canTransferWhitelist",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x7e6ea9b5"
+    },
+    {
+      "constant": true,
       "inputs": [],
       "name": "decimals",
       "outputs": [
@@ -4600,7 +4892,7 @@
           "type": "address"
         }
       ],
-      "name": "opsWhitelist",
+      "name": "noTransferFeeWhitelist",
       "outputs": [
         {
           "internalType": "bool",
@@ -4611,7 +4903,7 @@
       "payable": false,
       "stateMutability": "view",
       "type": "function",
-      "signature": "0xcc3cf158"
+      "signature": "0x38ec8f7c"
     },
     {
       "constant": false,
@@ -4757,6 +5049,22 @@
       "signature": "0xacb2ad6f"
     },
     {
+      "constant": true,
+      "inputs": [],
+      "name": "transferRestrictions",
+      "outputs": [
+        {
+          "internalType": "enum IYALLToken.TransferRestrictionsMode",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x97522878"
+    },
+    {
       "constant": false,
       "inputs": [],
       "name": "unpause",
@@ -4765,16 +5073,6 @@
       "stateMutability": "nonpayable",
       "type": "function",
       "signature": "0x3f4ba83a"
-    },
-    {
-      "constant": false,
-      "inputs": [],
-      "name": "withdrawFee",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0xe941fa78"
     },
     {
       "constant": true,
@@ -4854,12 +5152,49 @@
           "type": "bool"
         }
       ],
-      "name": "setWhitelistAddress",
+      "name": "setCanTransferWhitelistAddress",
       "outputs": [],
       "payable": false,
       "stateMutability": "nonpayable",
       "type": "function",
-      "signature": "0x3f914aef"
+      "signature": "0x628d9c94"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_addr",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "_isActive",
+          "type": "bool"
+        }
+      ],
+      "name": "setNoTransferFeeWhitelistAddress",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0x316496dc"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "enum IYALLToken.TransferRestrictionsMode",
+          "name": "_transferRestrictions",
+          "type": "uint8"
+        }
+      ],
+      "name": "setTransferRestrictionMode",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0xb3f3fb43"
     },
     {
       "constant": false,
@@ -5113,6 +5448,28 @@
       "constant": true,
       "inputs": [
         {
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "deductTransferSafu",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x88b1b4df"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
           "internalType": "address",
           "name": "_member",
           "type": "address"
@@ -5136,6 +5493,65 @@
       "inputs": [
         {
           "internalType": "address",
+          "name": "_member1",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_member2",
+          "type": "address"
+        }
+      ],
+      "name": "areMembersValid2",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xc6ce6b97"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_member1",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_member2",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_member3",
+          "type": "address"
+        }
+      ],
+      "name": "areMembersValid3",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xc6ca0770"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
           "name": "_addr",
           "type": "address"
         }
@@ -5153,853 +5569,5 @@
       "type": "function",
       "signature": "0x28912822"
     }
-  ],
-  "homeBridgeMediatorAddress": "0x5c841596d46bbd2a10b6896cB5660a4d8AD2082F",
-  "homeBridgeMediatorAbi": [
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_receiver",
-          "type": "address"
-        },
-        {
-          "name": "_value",
-          "type": "uint256"
-        }
-      ],
-      "name": "relayTokens",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0x01e4f53a"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_dataHash",
-          "type": "bytes32"
-        }
-      ],
-      "name": "fixFailedMessage",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0x0950d515"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_bridgeContract",
-          "type": "address"
-        }
-      ],
-      "name": "setBridgeContract",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0x0b26cf66"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "erc677token",
-      "outputs": [
-        {
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0x18d8f9c9"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "name": "_txHash",
-          "type": "bytes32"
-        }
-      ],
-      "name": "fixedAssets",
-      "outputs": [
-        {
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0x2888bb9c"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "name": "_day",
-          "type": "uint256"
-        }
-      ],
-      "name": "totalSpentPerDay",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0x2bd0bb05"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "isInitialized",
-      "outputs": [
-        {
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0x392e53cd"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_dailyLimit",
-          "type": "uint256"
-        }
-      ],
-      "name": "setExecutionDailyLimit",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0x3dd95d1b"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "getCurrentDay",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0x3e6968b6"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "getBridgeMode",
-      "outputs": [
-        {
-          "name": "_data",
-          "type": "bytes4"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "pure",
-      "type": "function",
-      "signature": "0x437764df"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "executionDailyLimit",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0x43b37dd3"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "name": "_day",
-          "type": "uint256"
-        }
-      ],
-      "name": "totalExecutedPerDay",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0x4fb3fef7"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_recipient",
-          "type": "address"
-        },
-        {
-          "name": "_value",
-          "type": "uint256"
-        },
-        {
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "name": "handleBridgedTokens",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0x6435914e"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "dailyLimit",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0x67eeba0c"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_token",
-          "type": "address"
-        },
-        {
-          "name": "_to",
-          "type": "address"
-        }
-      ],
-      "name": "claimTokens",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0x69ffa08a"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_mediatorContract",
-          "type": "address"
-        }
-      ],
-      "name": "setMediatorContractOnOtherSide",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0x6e5d6bea"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_bridgeContract",
-          "type": "address"
-        },
-        {
-          "name": "_mediatorContract",
-          "type": "address"
-        },
-        {
-          "name": "_erc677token",
-          "type": "address"
-        },
-        {
-          "name": "_dailyLimitMaxPerTxMinPerTxArray",
-          "type": "uint256[]"
-        },
-        {
-          "name": "_executionDailyLimitExecutionMaxPerTxArray",
-          "type": "uint256[]"
-        },
-        {
-          "name": "_requestGasLimit",
-          "type": "uint256"
-        },
-        {
-          "name": "_decimalShift",
-          "type": "uint256"
-        },
-        {
-          "name": "_owner",
-          "type": "address"
-        }
-      ],
-      "name": "initialize",
-      "outputs": [
-        {
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0x7acee4b0"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "MEDIATOR_CHAIN",
-      "outputs": [
-        {
-          "name": "",
-          "type": "string"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0x84308d23"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "mediatorContractOnOtherSide",
-      "outputs": [
-        {
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0x871c0760"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "name": "_amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "withinExecutionLimit",
-      "outputs": [
-        {
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0x879ce676"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "executionMaxPerTx",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0x8aa1949a"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "owner",
-      "outputs": [
-        {
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0x8da5cb5b"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "name": "_hash",
-          "type": "bytes32"
-        }
-      ],
-      "name": "messageHashFixed",
-      "outputs": [
-        {
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0x99650862"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_txHash",
-          "type": "bytes32"
-        }
-      ],
-      "name": "requestFailedMessageFix",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0x9a4a4395"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "getBridgeInterfacesVersion",
-      "outputs": [
-        {
-          "name": "major",
-          "type": "uint64"
-        },
-        {
-          "name": "minor",
-          "type": "uint64"
-        },
-        {
-          "name": "patch",
-          "type": "uint64"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "pure",
-      "type": "function",
-      "signature": "0x9cb7595a"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "outOfLimitAmount",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0xa0189345"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_minPerTx",
-          "type": "uint256"
-        }
-      ],
-      "name": "setMinPerTx",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0xa2a6ca27"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_from",
-          "type": "address"
-        },
-        {
-          "name": "_value",
-          "type": "uint256"
-        },
-        {
-          "name": "_data",
-          "type": "bytes"
-        }
-      ],
-      "name": "onTokenTransfer",
-      "outputs": [
-        {
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0xa4c0ed36"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "txHash",
-          "type": "bytes32"
-        },
-        {
-          "name": "unlockOnForeign",
-          "type": "bool"
-        },
-        {
-          "name": "valueToUnlock",
-          "type": "uint256"
-        }
-      ],
-      "name": "fixAssetsAboveLimits",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0xa7444c0d"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_from",
-          "type": "address"
-        },
-        {
-          "name": "_receiver",
-          "type": "address"
-        },
-        {
-          "name": "_value",
-          "type": "uint256"
-        }
-      ],
-      "name": "relayTokens",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0xad58bdd1"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_dailyLimit",
-          "type": "uint256"
-        }
-      ],
-      "name": "setDailyLimit",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0xb20d30a9"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "requestGasLimit",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0xbe3b625b"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_maxPerTx",
-          "type": "uint256"
-        }
-      ],
-      "name": "setMaxPerTx",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0xc6f6f216"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "bridgeContract",
-      "outputs": [
-        {
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0xcd596583"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "decimalShift",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0xdae5f0fd"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "minPerTx",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0xdf25f3f0"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "name": "_amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "withinLimit",
-      "outputs": [
-        {
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0xea9f4968"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_maxPerTx",
-          "type": "uint256"
-        }
-      ],
-      "name": "setExecutionMaxPerTx",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0xf20151e1"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "newOwner",
-          "type": "address"
-        }
-      ],
-      "name": "transferOwnership",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0xf2fde38b"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_requestGasLimit",
-          "type": "uint256"
-        }
-      ],
-      "name": "setRequestGasLimit",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function",
-      "signature": "0xf3b83791"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "maxPerTx",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function",
-      "signature": "0xf968adbe"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "name": "dataHash",
-          "type": "bytes32"
-        },
-        {
-          "indexed": false,
-          "name": "recipient",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "name": "value",
-          "type": "uint256"
-        }
-      ],
-      "name": "FailedMessageFixed",
-      "type": "event",
-      "signature": "0x06297b0797e3363e96e454edd4ab62862051bf559a7a431ce09415306771d133"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "name": "newLimit",
-          "type": "uint256"
-        }
-      ],
-      "name": "DailyLimitChanged",
-      "type": "event",
-      "signature": "0xad4123ae17c414d9c6d2fec478b402e6b01856cc250fd01fbfd252fda0089d3c"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "name": "newLimit",
-          "type": "uint256"
-        }
-      ],
-      "name": "ExecutionDailyLimitChanged",
-      "type": "event",
-      "signature": "0x9bebf928b90863f24cc31f726a3a7545efd409f1dcf552301b1ee3710da70d3b"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "name": "recipient",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "name": "value",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "name": "transactionHash",
-          "type": "bytes32"
-        }
-      ],
-      "name": "AmountLimitExceeded",
-      "type": "event",
-      "signature": "0x159c0773f543f1e17d5e78327702770947055eb4e871b529bbc78bc9fde45692"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "name": "transactionHash",
-          "type": "bytes32"
-        },
-        {
-          "indexed": false,
-          "name": "value",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "name": "remaining",
-          "type": "uint256"
-        }
-      ],
-      "name": "AssetAboveLimitsFixed",
-      "type": "event",
-      "signature": "0x5bcec6564fe8d2cbb4e4eb8237510ceb6b291a5c2ee2e429948d25e9c924c1fa"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
-          "name": "previousOwner",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "name": "newOwner",
-          "type": "address"
-        }
-      ],
-      "name": "OwnershipTransferred",
-      "type": "event",
-      "signature": "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0"
-    }
-  ],
-  "foreignBridgeMediatorAddress": "0xc22aEa155590D13060403eC30d4cBcC33a19f7ce"
+  ]
 }
