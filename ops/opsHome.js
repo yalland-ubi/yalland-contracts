@@ -92,16 +92,16 @@ async function claimFundsGSN(dist) {
     console.log('>>> currentPeriodId ', await dist.getCurrentPeriodId());
     console.log('>>> me active ', await dist.member(myMemberId));
 
-    await dist.claimFunds({ from: me, useGSN: true });
+    await dist.claimFunds({ from: me, useGSN: true, approveFunction });
 }
 
 // WARNING: doesnt' work, will be fixed later
 async function fundGSNContracts(dist, token, exchange) {
     const relayHub = await RelayHub.at('0xd216153c06e857cd7f72665e0af1d7d82172f494');
 
-    await relayHub.depositFor(dist.address, { value: ether(1), from: defaultSender });
-    await relayHub.depositFor(token.address, { value: ether(1), from: defaultSender });
-    await relayHub.depositFor(exchange.address, { value: ether(1), from: defaultSender });
+    await relayHub.depositFor(dist.address, { value: ether(0.5), from: defaultSender });
+    await relayHub.depositFor(token.address, { value: ether(0.5), from: defaultSender });
+    await relayHub.depositFor(exchange.address, { value: ether(0.5), from: defaultSender });
 }
 
 async function setMediatorOnOtherSide(mediator) {
@@ -116,7 +116,7 @@ async function addWhitelistedAddress(registry, token, dist) {
       "Sender has no WL manager role"
     );
     const addressToAdd = config.homeBridgeMediatorAddress;
-    await token.setWhitelistAddress(addressToAdd, true, { from: superuser });
+    await token.setCanTransferWhitelistAddress(addressToAdd, true, { from: superuser });
 }
 
 async function totalSupply(token) {
@@ -128,6 +128,15 @@ async function balanceOf(token, mediator) {
     console.log('>>> YALLToken address ', await token.address);
     console.log('>>> YALLToken balanceOf mediator', await token.balanceOf(mediator.address));
     console.log('>>> YALLToken balanceOf me', await token.balanceOf(me));
+}
+
+async function transferMeHe(token) {
+    console.log('>>> gsnFee', await token.gsnFee());
+    console.log('>>> mine balance', await token.balanceOf(me));
+    console.log('>>> yall token balance', await token.balanceOf(token.address));
+    console.log('>>> me can pay for GSN tx', await token.canPayForGsnCall(me));
+
+    await token.transfer(he, ether(1), { from: me, useGSN: true, approveFunction });
 }
 
 async function estimateExchange(dist, token, exchange) {
@@ -162,10 +171,12 @@ async function estimateExchange(dist, token, exchange) {
 async function main() {
     console.log('web3::eth::id::', await web3.eth.net.getId());
 
+    // WARNING: don't forget include approveFunction as an option for GSN calls like `{ from: me, approveFunction}`
+
     const token = await YALLToken.at(config.yallTokenAddress);
     const dist = await YALLDistributor.at(config.yallDistributorAddress);
     const exchange = await YALLExchange.at(config.yallExchangeAddress);
-    const mediator = await HomeMediator.at(config.homeBridgeMediatorAddress);
+    // const mediator = await HomeMediator.at(config.homeBridgeMediatorAddress);
     const registry = await YALLRegistry.at(config.yallRegistryAddress)
     console.log('>>> Starting...');
 
@@ -180,6 +191,7 @@ async function main() {
     // await setMediatorOnOtherSide(mediator);
     // await totalSupply(token);
     // await balanceOf(token, mediator);
+    // await transferMeHe(token);
     // await estimateExchange(dist, token, exchange);
 }
 
