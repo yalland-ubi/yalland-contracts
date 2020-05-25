@@ -11,6 +11,7 @@ const { loader, provider, defaultSender } = getLoader({
         defaultGasPrice: 12 * 10 ** 9
     },
     gsnOptions: {
+        txfee: 70,
         preferredRelayer: {
             RelayServerAddress: '0xae9fd8783cf13a722d1b2aff9b749f73cb61999e',
             relayUrl: 'https://gsn-relayer.sokol.galtproject.io/',
