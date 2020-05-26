@@ -16,12 +16,12 @@ interface IYALLDistributor {
   function HUNDRED_PCT() external pure returns (uint256);
 
   // PUBLIC VARIABLES
-  function genesisTimestamp() external returns (uint256);
-  function periodLength() external returns (uint256);
-  function periodVolume() external returns (uint256);
-  function activeMemberCount() external returns (uint256);
-  function emissionPoolRewardShare() external returns (uint256);
-  function gsnFee() external returns (uint256);
+  function genesisTimestamp() external view returns (uint256);
+  function periodLength() external view returns (uint256);
+  function periodVolume() external view returns (uint256);
+  function activeMemberCount() external view returns (uint256);
+  function emissionPoolRewardShare() external view returns (uint256);
+  function gsnFee() external view returns (uint256);
 
   // PUBLIC MAPPINGS
   function member(bytes32 _memberId)

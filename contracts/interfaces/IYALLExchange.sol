@@ -24,12 +24,12 @@ interface IYALLExchange {
   function RATE_DIVIDER() external pure returns (uint256);
 
   // PUBLIC VARIABLES
-  function defaultExchangeRate() external returns (uint256);
-  function defaultMemberPeriodLimit() external returns (uint256);
-  function totalPeriodLimit() external returns (uint256);
-  function gsnFee() external returns (uint256);
-  function totalExchangedYall() external returns (uint256);
-  function yallExchangedByPeriod(uint256 _periodId) external returns (uint256);
+  function defaultExchangeRate() external view returns (uint256);
+  function defaultMemberPeriodLimit() external view returns (uint256);
+  function totalPeriodLimit() external view returns (uint256);
+  function gsnFee() external view returns (uint256);
+  function totalExchangedYall() external view returns (uint256);
+  function yallExchangedByPeriod(uint256 _periodId) external view returns (uint256);
 
   // PUBLIC MAPPINGS
   function members(bytes32 _memberId)
