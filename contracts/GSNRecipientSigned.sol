@@ -13,7 +13,8 @@ contract GSNRecipientSigned is GSNRecipient {
     METHOD_NOT_SUPPORTED,
     OK,
     DENIED,
-    INSUFFICIENT_BALANCE
+    INSUFFICIENT_BALANCE,
+    SIGNER_DOESNT_MATCH_FROM
   }
 
   constructor() public {}
@@ -48,6 +49,10 @@ contract GSNRecipientSigned is GSNRecipient {
       address(this) // Prevents replays in multiple recipients
     );
     address signer = keccak256(blob).toEthSignedMessageHash().recover(approvalData);
+
+    if (signer != from) {
+      return _rejectRelayedCall(uint256(GSNRecipientSignatureErrorCodes.SIGNER_DOESNT_MATCH_FROM));
+    }
 
     (GSNRecipientSignatureErrorCodes code, bytes memory context) = _handleRelayedCall(encodedFunction, signer);
 

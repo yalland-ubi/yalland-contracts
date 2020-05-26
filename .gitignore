@@ -5,3 +5,4 @@ node_modules
 build/
 dist
 deployed/ganache.json
+deployed/ganache_extended.json

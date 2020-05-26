@@ -32,32 +32,24 @@ ops-foreign:
 	NETWORK=kovan node ops/opsForeign
 	-tput bel
 
-migrate-yalland-test:
-	RESULT_FILE=yalland_netconfig_test ./node_modules/.bin/truffle migrate -f 14 --to 999 --network yalland
-	-tput bel
-
-migrate-yalland:
+deploy-yalland:
 	RESULT_FILE=yalland_netconfig ./node_modules/.bin/truffle migrate -f 14 --to 999 --network yalland
 	-tput bel
 
-migrate-kovan:
+deploy-kovan:
 	./node_modules/.bin/truffle migrate -f 2001 --to 2999 --network kovan --reset
 	-tput bel
 
-migrate-sokol:
+deploy-sokol:
 	./node_modules/.bin/truffle migrate -f 1001 --to 1999 --network sokol --reset
 	-tput bel
 
-migrate-ganache:
+deploy-ganache:
 	./node_modules/.bin/truffle migrate -f 1001 --to 1999 --network ganache --reset
 	-tput bel
 
-migrate:
-	DEPLOYMENT_KEY= npm run migrate
-	-tput bel
-
 deploy:
-	-npm run deploy
+	DEPLOYMENT_KEY= npm run migrate
 	-tput bel
 
 coverage:

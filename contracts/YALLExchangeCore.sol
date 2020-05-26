@@ -69,8 +69,6 @@ contract YALLExchangeCore is
     mapping(uint256 => uint256) yallExchangedByPeriod;
   }
 
-  uint256 internal idCounter;
-
   uint256 public defaultExchangeRate;
   uint256 public defaultMemberPeriodLimit;
   uint256 public totalPeriodLimit;
