@@ -7,9 +7,7 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-pragma solidity ^0.5.13;
-
-import "@openzeppelin/contracts/math/SafeMath.sol";
+pragma solidity ^0.5.17;
 
 
 /**
@@ -17,8 +15,6 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
  * @author Galt Project
  **/
 contract YALLRewardClaimer {
-  using SafeMath for uint256;
-
   function _requireCanClaimReward(
     bool _active,
     uint256 _currentPeriodId,

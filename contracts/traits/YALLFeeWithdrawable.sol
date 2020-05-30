@@ -9,15 +9,11 @@
 pragma solidity ^0.5.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../interfaces/IYALLToken.sol";
 import "../interfaces/IYALLFeeWithdrawable.sol";
 import "../registry/YALLRegistryHelpers.sol";
 
 
 contract YALLFeeWithdrawable is IYALLFeeWithdrawable, YALLRegistryHelpers {
-  using SafeMath for uint256;
-
   uint256 public constant HUNDRED_PCT = 100 ether;
 
   event WithdrawFee(address indexed feeClaimer, bool indexed success, uint256 amount);
@@ -42,8 +38,8 @@ contract YALLFeeWithdrawable is IYALLFeeWithdrawable, YALLRegistryHelpers {
 
     payout = _yallToken().deductTransferFee(payout);
 
-    IERC20(tokenAddress).transfer(msg.sender, payout);
-
     emit WithdrawFee(msg.sender, true, payout);
+
+    IERC20(tokenAddress).transfer(msg.sender, payout);
   }
 }
