@@ -7,7 +7,7 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-pragma solidity ^0.5.13;
+pragma solidity ^0.5.17;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
@@ -310,7 +310,7 @@ contract YALLToken is
     }
   }
 
-  function deductTransferFee(uint256 _amount) public view returns(uint256) {
+  function deductTransferFee(uint256 _amount) external view returns(uint256) {
     if (transferFee > 0) {
       uint256 net = (_amount.mul(HUNDRED_PCT)) / (transferFee + HUNDRED_PCT);
       return net;
@@ -319,7 +319,7 @@ contract YALLToken is
     }
   }
 
-  function deductTransferSafu(uint256 _amount) public view returns(uint256) {
+  function deductTransferSafu(uint256 _amount) external view returns(uint256) {
     if (transferFee > 0) {
       uint256 net = (_amount.mul(HUNDRED_PCT)) / (transferFee + HUNDRED_PCT);
       // NOTICE: this check could be redundant, not sure
@@ -330,15 +330,15 @@ contract YALLToken is
     }
   }
 
-  function isMemberValid(address _member) public view returns(bool) {
+  function isMemberValid(address _member) external view returns(bool) {
     return _isMemberValid(IYALLDistributor(yallRegistry.getYallDistributorAddress()), _member);
   }
 
-  function areMembersValid2(address _member1, address _member2) public view returns(bool) {
+  function areMembersValid2(address _member1, address _member2) external view returns(bool) {
     return _areMembersValid2(IYALLDistributor(yallRegistry.getYallDistributorAddress()), _member1, _member2);
   }
 
-  function areMembersValid3(address _member1, address _member2, address _member3) public view returns(bool) {
+  function areMembersValid3(address _member1, address _member2, address _member3) external view returns(bool) {
     return _areMembersValid3(IYALLDistributor(yallRegistry.getYallDistributorAddress()), _member1, _member2, _member3);
   }
 

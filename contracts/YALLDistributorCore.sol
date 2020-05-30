@@ -7,15 +7,11 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-pragma solidity ^0.5.13;
+pragma solidity ^0.5.17;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/upgrades/contracts/Initializable.sol";
-import "./interfaces/IYALLToken.sol";
-import "./interfaces/IYALLDistributor.sol";
-import "./GSNRecipientSigned.sol";
 import "./registry/YALLRegistryHelpers.sol";
 import "./traits/ACLPausable.sol";
 
