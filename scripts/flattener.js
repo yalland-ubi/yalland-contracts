@@ -5,6 +5,7 @@ const flattenedFolder = './build/flattened/';
 module.exports = function flatten(fileName) {
   try {
     fs.mkdirSync(flattenedFolder);
+    // eslint-disable-next-line no-empty
   } catch (e) {}
 
   if (!fileName) {
@@ -21,6 +22,7 @@ module.exports = function flatten(fileName) {
     const source = fs.readFileSync(`build/src/${name}`, 'utf-8').toString();
     const currentLevelContracts = [];
     let match;
+    // eslint-disable-next-line no-cond-assign
     while ((match = rex.exec(source)) !== null) {
       currentLevelContracts.push(match[1]);
     }
@@ -38,7 +40,8 @@ module.exports = function flatten(fileName) {
   getImports(fileName, 0);
 
   // TODO: user C3 linearization
-  let keys = require('./toposort.js')(deps).reverse();
+  // eslint-disable-next-line global-require
+  const keys = require('./toposort.js')(deps).reverse();
 
   if (keys.indexOf(fileName) === -1) {
     keys.push(fileName);

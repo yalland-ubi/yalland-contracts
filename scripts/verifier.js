@@ -1,19 +1,14 @@
-
 const axios = require('axios/index');
-const async = require('async');
 const assert = require('assert');
 const fs = require('fs');
-const Web3 = require('web3');
-const _ = require('lodash');
 const querystring = require('querystring');
 
-axios.interceptors.request.use(request => {
+axios.interceptors.request.use((request) => {
   console.log('Starting Request', request);
   return request;
 });
 
 const network = 'kovan';
-const base = 'https://blockscout.com/';
 
 const verifyPost = async (
   name,
@@ -26,6 +21,8 @@ const verifyPost = async (
   constructorArgs,
   libs
 ) => {
+  const base = 'https://blockscout.com/';
+
   console.log(name, 'verification');
   assert.ok(name);
   assert.ok(addressHash);
@@ -41,7 +38,7 @@ const verifyPost = async (
     optimization_runs: optimizationRuns,
     evm_version: evmVersion,
     constructor_arguments: constructorArgs,
-    optimization: !!optimization
+    optimization: !!optimization,
   };
 
   if (libs) {
@@ -57,7 +54,7 @@ const verifyPost = async (
       url: `/poa/${network}/api/v1/verified_smart_contracts`,
       method: 'post',
       baseURL: base,
-      data: params
+      data: params,
     });
     const { data } = response;
     console.log(data);
@@ -66,7 +63,6 @@ const verifyPost = async (
     console.log(`${name} - ${addressHash} verification error: ${JSON.stringify(error.response.data)}`);
   }
 };
-
 
 const verifyKovanEtherscan = async (
   name,
@@ -77,8 +73,7 @@ const verifyKovanEtherscan = async (
   compilerVersion,
   contractSourceCode,
   constructorArgs,
-  libs,
-  proxy
+  libs
 ) => {
   console.log(name, 'verification');
   assert.ok(name);
@@ -99,7 +94,7 @@ const verifyKovanEtherscan = async (
     runs: optimizationRuns,
     evmversion: evmVersion,
     constructorArguements: constructorArgs ? `0x${constructorArgs}` : '',
-    optimizationUsed: optimization ? 1 : 0
+    optimizationUsed: optimization ? 1 : 0,
   };
 
   if (libs) {
@@ -115,11 +110,12 @@ const verifyKovanEtherscan = async (
       url: '/api',
       method: 'POST',
       baseURL: base,
-      data: querystring.stringify(params)
+      data: querystring.stringify(params),
     });
     const { data } = response;
     console.log(data);
 
+    // eslint-disable-next-line eqeqeq
     if (data.status == 1) {
       response = await axios({
         url: '/api',
@@ -128,8 +124,8 @@ const verifyKovanEtherscan = async (
         params: {
           guid: data.result,
           module: 'contract',
-          action: 'checkverifystatus'
-        }
+          action: 'checkverifystatus',
+        },
       });
       console.log(response);
     }
@@ -145,11 +141,6 @@ const verifyKovanEtherscan = async (
 
 const chainSpec = JSON.parse(fs.readFileSync(`deployed/${network}_extended.json`));
 
-async function sleep(timeout) {
-  return new Promise(resolve => {
-    setTimeout(resolve, timeout);
-  });
-}
 (async () => {
   const verify = network === 'sokol' ? verifyPost : verifyKovanEtherscan;
 
@@ -158,7 +149,7 @@ async function sleep(timeout) {
   const proxy = process.argv[3];
 
   const contract = chainSpec.contracts[key];
-  assert(contract.address.length > 0, `Missing deployment data for '${key}'`)
+  assert(contract.address.length > 0, `Missing deployment data for '${key}'`);
 
   console.log('Verifying', key, 'at address', contract.address);
 
@@ -173,7 +164,7 @@ async function sleep(timeout) {
         `v${chainSpec.compiler.version}`,
         fs.readFileSync(`scripts/assets/AdminUpgradeabilityProxy.sol`).toString(),
         contract.proxyArguments.substring(2)
-      )
+      );
     } else {
       await verify(
         contract.factory,
@@ -184,7 +175,7 @@ async function sleep(timeout) {
         `v${chainSpec.compiler.version}`,
         fs.readFileSync(`build/flattened/${contract.factory}.sol`).toString(),
         null
-      )
+      );
     }
   } else {
     await verify(
@@ -196,7 +187,6 @@ async function sleep(timeout) {
       `v${chainSpec.compiler.version}`,
       fs.readFileSync(`build/flattened/${contract.factory}.sol`).toString(),
       contract.constructorArguments
-    )
+    );
   }
 })();
-

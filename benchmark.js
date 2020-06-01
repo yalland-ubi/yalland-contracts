@@ -6,12 +6,11 @@ function benchmark(callback) {
   this.runs = [];
   this.table = new Table({
     head: ['Description', 'Consumed Gas'],
-    colWidths: [100, 15]
+    colWidths: [100, 15],
   });
 
   callback.call(this);
   execute.call(this);
-
 }
 
 async function execute() {
@@ -19,7 +18,8 @@ async function execute() {
   const befores = this.befores;
   for (let i = 0; i < befores.length; i++) {
     try {
-      await befores[i]()
+      // eslint-disable-next-line no-await-in-loop
+      await befores[i]();
     } catch (e) {
       console.log('Error:', e);
       process.exit(1);
