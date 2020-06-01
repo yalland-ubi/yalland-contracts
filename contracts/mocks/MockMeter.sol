@@ -11,7 +11,6 @@ pragma solidity ^0.5.17;
 
 import "../registry/YALLRegistry.sol";
 
-
 contract MockMeter {
   event GasUsedEvent(uint256 gasUsed);
 

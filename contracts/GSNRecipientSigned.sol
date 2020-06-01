@@ -3,11 +3,11 @@ pragma solidity ^0.5.17;
 import "@openzeppelin/contracts/GSN/GSNRecipient.sol";
 import "@openzeppelin/contracts/cryptography/ECDSA.sol";
 
-
 contract GSNRecipientSigned is GSNRecipient {
   using ECDSA for bytes32;
 
-  address constant internal DEFAULT_RELAY_HUB = 0xD216153c06E857cD7f72665E0aF1d7D82172F494;
+  // solhint-disable-next-line private-vars-leading-underscore
+  address internal constant DEFAULT_RELAY_HUB = 0xD216153c06E857cD7f72665E0aF1d7D82172F494;
 
   enum GSNRecipientSignatureErrorCodes {
     METHOD_NOT_SUPPORTED,
@@ -32,11 +32,7 @@ contract GSNRecipientSigned is GSNRecipient {
     uint256 nonce,
     bytes calldata approvalData,
     uint256
-  )
-    external
-    view
-    returns (uint256, bytes memory)
-  {
+  ) external view returns (uint256, bytes memory) {
     bytes memory blob = abi.encodePacked(
       relay,
       from,
@@ -64,18 +60,23 @@ contract GSNRecipientSigned is GSNRecipient {
   }
 
   function _handleRelayedCall(bytes memory _encodedFunction, address _caller)
-    internal view returns (GSNRecipientSignatureErrorCodes, bytes memory);
+    internal
+    view
+    returns (GSNRecipientSignatureErrorCodes, bytes memory);
 
-  function getDataSignature(bytes memory _encodedFunction) public pure returns (bytes4 signature){
+  function getDataSignature(bytes memory _encodedFunction) public pure returns (bytes4 signature) {
     assembly {
       // solhint-disable-previous-line no-inline-assembly
       signature := mload(add(_encodedFunction, 0x20))
     }
   }
 
-  function _preRelayedCall(bytes memory) internal returns (bytes32) {
-  }
+  function _preRelayedCall(bytes memory) internal returns (bytes32) {}
 
-  function _postRelayedCall(bytes memory, bool, uint256, bytes32) internal {
-  }
+  function _postRelayedCall(
+    bytes memory,
+    bool,
+    uint256,
+    bytes32
+  ) internal {}
 }

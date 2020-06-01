@@ -16,7 +16,6 @@ import "./GSNRecipientSigned.sol";
 import "./YALLDistributorCore.sol";
 import "./traits/YALLRewardClaimer.sol";
 
-
 /**
  * @title YALLDistributor contract
  * @author Galt Project
@@ -35,22 +34,17 @@ contract YALLDistributor is
     _;
   }
 
-  constructor() public {
-  }
+  constructor() public {}
 
   function initialize(
     // can be changed later:
     uint256 _periodVolume,
     uint256 _emissionPoolRewardShare,
-
     // can't be changed later:
     address _yallRegistry,
     uint256 _periodLength,
     uint256 _genesisTimestamp
-  )
-    external
-    initializer
-  {
+  ) external initializer {
     periodVolume = _periodVolume;
     emissionPoolRewardShare = _emissionPoolRewardShare;
 
@@ -61,10 +55,7 @@ contract YALLDistributor is
     _upgradeRelayHub(DEFAULT_RELAY_HUB);
   }
 
-  function _handleRelayedCall(
-    bytes memory _encodedFunction,
-    address _caller
-  )
+  function _handleRelayedCall(bytes memory _encodedFunction, address _caller)
     internal
     view
     returns (GSNRecipientSignatureErrorCodes, bytes memory)
@@ -114,8 +105,9 @@ contract YALLDistributor is
 
       // imbalance will be left at the contract
       // uint256 currentPeriodRewardPerMember = (periodVolume * (100 ether - emissionPoolRewardShare)) / (activeMemberCount * 100 ether);
-      uint256 currentPeriodRewardPerMember = (periodVolume.mul(HUNDRED_PCT.sub(emissionPoolRewardShare)))
-      .div(activeMemberCount.mul(HUNDRED_PCT));
+      uint256 currentPeriodRewardPerMember = (periodVolume.mul(HUNDRED_PCT.sub(emissionPoolRewardShare))).div(
+        activeMemberCount.mul(HUNDRED_PCT)
+      );
 
       assert(currentPeriodRewardPerMember > 0);
       currentPeriod.rewardPerMember = currentPeriodRewardPerMember;
@@ -172,10 +164,7 @@ contract YALLDistributor is
    * @param _memberIds unique credential keccack256() hashes
    * @param _memberAddresses corresponding to _memberIds addresses
    */
-  function addMembersBeforeGenesis(
-    bytes32[] calldata _memberIds,
-    address[] calldata _memberAddresses
-  )
+  function addMembersBeforeGenesis(bytes32[] calldata _memberIds, address[] calldata _memberAddresses)
     external
     onlyDistributorVerifier
   {
@@ -189,10 +178,7 @@ contract YALLDistributor is
    * @param _memberIds unique credential keccack256() hashes
    * @param _memberAddresses corresponding to _memberIds addresses
    */
-  function addMembers(
-    bytes32[] calldata _memberIds,
-    address[] calldata _memberAddresses
-  )
+  function addMembers(bytes32[] calldata _memberIds, address[] calldata _memberAddresses)
     external
     triggerTransition
     onlyDistributorVerifier
@@ -205,14 +191,7 @@ contract YALLDistributor is
    * @param _memberId a unique credential keccack256()
    * @param _memberAddress corresponding to _memberIds address
    */
-  function addMember(
-    bytes32 _memberId,
-    address _memberAddress
-  )
-    external
-    triggerTransition
-    onlyDistributorVerifier
-  {
+  function addMember(bytes32 _memberId, address _memberAddress) external triggerTransition onlyDistributorVerifier {
     _addMember(_memberId, _memberAddress);
 
     _incrementActiveMemberCount(1);
@@ -222,13 +201,7 @@ contract YALLDistributor is
    * @dev Activates multiple members
    * @param _memberAddresses to enable
    */
-  function enableMembers(
-    address[] calldata _memberAddresses
-  )
-    external
-    triggerTransition
-    onlyDistributorVerifier
-  {
+  function enableMembers(address[] calldata _memberAddresses) external triggerTransition onlyDistributorVerifier {
     uint256 len = _memberAddresses.length;
 
     require(len > 0, "YALLDistributor: Missing input members");
@@ -243,7 +216,7 @@ contract YALLDistributor is
       m.active = true;
       m.lastEnabledAt = now;
 
-      activeAddressesCache.add(addr);
+      _activeAddressesCache.add(addr);
 
       emit EnableMember(memberId, addr);
     }
@@ -255,13 +228,7 @@ contract YALLDistributor is
    * @dev Deactivates multiple members
    * @param _memberAddresses to disable
    */
-  function disableMembers(
-    address[] calldata _memberAddresses
-  )
-    external
-    triggerTransition
-    onlyDistributorVerifier
-  {
+  function disableMembers(address[] calldata _memberAddresses) external triggerTransition onlyDistributorVerifier {
     uint256 len = _memberAddresses.length;
 
     require(len > 0, "YALLDistributor: Missing input members");
@@ -276,7 +243,7 @@ contract YALLDistributor is
       m.active = false;
       m.lastDisabledAt = now;
 
-      activeAddressesCache.remove(addr);
+      _activeAddressesCache.remove(addr);
 
       emit DisableMember(memberId, addr);
     }
@@ -289,10 +256,7 @@ contract YALLDistributor is
    * @param _fromAddresses to change from
    * @param _toAddresses to change to
    */
-  function changeMemberAddresses(
-    address[] calldata _fromAddresses,
-    address[] calldata _toAddresses
-  )
+  function changeMemberAddresses(address[] calldata _fromAddresses, address[] calldata _toAddresses)
     external
     onlyDistributorVerifier
   {
@@ -317,9 +281,7 @@ contract YALLDistributor is
    * @dev Acts on behalf of multiple fund members, distributes funds to their corresponding addresses
    * @params _memberAddresses to claim funds for
    */
-  function claimFundsMultiple(
-    address[] calldata _memberAddresses
-  )
+  function claimFundsMultiple(address[] calldata _memberAddresses)
     external
     triggerTransition
     whenNotPaused
@@ -332,12 +294,7 @@ contract YALLDistributor is
     uint256 len = _memberAddresses.length;
 
     for (uint256 i = 0; i < len; i++) {
-      _claimFunds(
-        _memberAddresses[i],
-        rewardPerMember,
-        currentPeriodId,
-        currentPeriodBeginsAt
-      );
+      _claimFunds(_memberAddresses[i], rewardPerMember, currentPeriodId, currentPeriodBeginsAt);
     }
   }
 
@@ -367,7 +324,7 @@ contract YALLDistributor is
     m.active = true;
     m.createdAt = now;
 
-    activeAddressesCache.add(_memberAddress);
+    _activeAddressesCache.add(_memberAddress);
 
     emit AddMember(_memberId, _memberAddress);
   }
@@ -386,8 +343,8 @@ contract YALLDistributor is
     memberAddress2Id[from] = bytes32(0);
     memberAddress2Id[_to] = memberId;
 
-    activeAddressesCache.remove(from);
-    activeAddressesCache.add(_to);
+    _activeAddressesCache.remove(from);
+    _activeAddressesCache.add(_to);
 
     emit ChangeMemberAddress(memberId, from, _to);
 
@@ -425,16 +382,14 @@ contract YALLDistributor is
     uint256 _periodId,
     address _to,
     uint256 _amount
-  )
-    external
-    triggerTransition
-    whenNotPaused
-    onlyDistributorEmissionClaimer
-  {
+  ) external triggerTransition whenNotPaused onlyDistributorEmissionClaimer {
     Period storage givenPeriod = period[_periodId];
 
     uint256 newClaimedAmount = givenPeriod.emissionPoolRewardClaimed.add(_amount);
-    require(newClaimedAmount <= givenPeriod.emissionPoolRewardTotal, "YALLDistributor: Exceeds the period emission reward");
+    require(
+      newClaimedAmount <= givenPeriod.emissionPoolRewardTotal,
+      "YALLDistributor: Exceeds the period emission reward"
+    );
 
     givenPeriod.emissionPoolRewardClaimed = newClaimedAmount;
 
@@ -452,12 +407,7 @@ contract YALLDistributor is
   function claimFunds() external triggerTransition whenNotPaused {
     uint256 currentPeriodId = getCurrentPeriodId();
 
-    _claimFunds(
-      _msgSender(),
-      period[currentPeriodId].rewardPerMember,
-      currentPeriodId,
-      getCurrentPeriodBeginsAt()
-    );
+    _claimFunds(_msgSender(), period[currentPeriodId].rewardPerMember, currentPeriodId, getCurrentPeriodBeginsAt());
   }
 
   function _claimFunds(
@@ -465,14 +415,8 @@ contract YALLDistributor is
     uint256 _rewardPerMember,
     uint256 _currentPeriodId,
     uint256 _currentPeriodStart
-  )
-    internal
-  {
-    _requireCanClaimFunds(
-      _memberAddress,
-      _currentPeriodId,
-      _currentPeriodStart
-    );
+  ) internal {
+    _requireCanClaimFunds(_memberAddress, _currentPeriodId, _currentPeriodStart);
 
     bytes32 memberId = memberAddress2Id[_memberAddress];
     Member storage m = member[memberId];
@@ -490,10 +434,7 @@ contract YALLDistributor is
     address _memberAddress,
     uint256 _currentPeriodId,
     uint256 _currentPeriodStart
-  )
-    internal
-    view
-  {
+  ) internal view {
     bytes32 memberId = memberAddress2Id[_memberAddress];
     Member storage m = member[memberId];
 
@@ -560,19 +501,15 @@ contract YALLDistributor is
   }
 
   function requireCanClaimFundsByAddress(address _memberAddress) external view whenNotPaused {
-    _requireCanClaimFunds(
-      _memberAddress,
-      getCurrentPeriodId(),
-      getCurrentPeriodBeginsAt()
-    );
+    _requireCanClaimFunds(_memberAddress, getCurrentPeriodId(), getCurrentPeriodBeginsAt());
   }
 
   function getActiveAddressList() external view returns (address[] memory) {
-    return activeAddressesCache.enumerate();
+    return _activeAddressesCache.enumerate();
   }
 
   function getActiveAddressSize() external view returns (uint256) {
-    return activeAddressesCache.length();
+    return _activeAddressesCache.length();
   }
 
   function isCurrentPeriodClaimedByMember(bytes32 _memberId) external view returns (bool) {
@@ -599,7 +536,19 @@ contract YALLDistributor is
     return (isActive(_addr1), isActive(_addr2));
   }
 
-  function areActive3(address _addr1, address _addr2, address _addr3) external view returns (bool, bool, bool) {
+  function areActive3(
+    address _addr1,
+    address _addr2,
+    address _addr3
+  )
+    external
+    view
+    returns (
+      bool,
+      bool,
+      bool
+    )
+  {
     return (isActive(_addr1), isActive(_addr2), isActive(_addr3));
   }
 
@@ -630,14 +579,6 @@ contract YALLDistributor is
   {
     bytes32 memberId = memberAddress2Id[_memberAddress];
     Member storage m = member[memberId];
-    return (
-      memberId,
-      m.active,
-      m.addr,
-      m.createdAt,
-      m.lastEnabledAt,
-      m.lastDisabledAt,
-      m.totalClaimed
-    );
+    return (memberId, m.active, m.addr, m.createdAt, m.lastEnabledAt, m.lastDisabledAt, m.totalClaimed);
   }
 }

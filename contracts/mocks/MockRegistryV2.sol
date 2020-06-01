@@ -11,7 +11,6 @@ pragma solidity ^0.5.17;
 
 import "../registry/YALLRegistryCore.sol";
 
-
 contract MockRegistryV2 is YALLRegistryCore {
   uint256 public theAnswer;
 

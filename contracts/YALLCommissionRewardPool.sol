@@ -13,7 +13,6 @@ import "./interfaces/IYALLDistributor.sol";
 import "./interfaces/IYALLFeeWithdrawable.sol";
 import "./YALLCommissionRewardPoolCore.sol";
 
-
 /**
  * @title YALLCommissionRewardPool contract
  * @author Galt Project
@@ -25,18 +24,14 @@ contract YALLCommissionRewardPool is YALLCommissionRewardPoolCore {
     _;
   }
 
-  constructor() public {
-  }
+  constructor() public {}
 
   function initialize(
     address _yallRegistry,
     uint256 _delegatorsShare,
     uint256 _verifiersShare,
     uint256 _membersShare
-  )
-    external
-    initializer
-  {
+  ) external initializer {
     yallRegistry = YALLRegistry(_yallRegistry);
     _setShares(_delegatorsShare, _verifiersShare, _membersShare);
   }
@@ -113,16 +108,16 @@ contract YALLCommissionRewardPool is YALLCommissionRewardPoolCore {
     uint256 _delegatorsShare,
     uint256 _verifiersShare,
     uint256 _membersShare
-  )
-    external
-    onlyCommissionRewardPoolManager
-  {
+  ) external onlyCommissionRewardPoolManager {
     _setShares(_delegatorsShare, _verifiersShare, _membersShare);
   }
 
   // DELEGATOR INTERFACE
   function claimDelegatorReward(uint256 _periodId) external triggerTransition {
-    require(delegatorClaimedPeriods[_periodId][msg.sender] == false, "YALLCommissionRewardPool: Already claimed for the current period");
+    require(
+      delegatorClaimedPeriods[_periodId][msg.sender] == false,
+      "YALLCommissionRewardPool: Already claimed for the current period"
+    );
 
     Period storage period = periods[_periodId];
     uint256 periodBeginsAt = _yallDistributor().getPeriodBeginsAt(_periodId);
@@ -198,7 +193,11 @@ contract YALLCommissionRewardPool is YALLCommissionRewardPoolCore {
   }
 
   // INTERNAL METHODS
-  function _setShares(uint256 _delegatorsShare, uint256 _verifiersShare, uint256 _membersShare) internal {
+  function _setShares(
+    uint256 _delegatorsShare,
+    uint256 _verifiersShare,
+    uint256 _membersShare
+  ) internal {
     require(
       _delegatorsShare.add(_verifiersShare).add(_membersShare) == 100 ether,
       "YALLCommissionRewardPool: Shares sum should be 100eth"
@@ -238,13 +237,9 @@ contract YALLCommissionRewardPool is YALLCommissionRewardPoolCore {
       "YALLCommissionRewardPool: Already claimed for the current period"
     );
 
-    (
-      bool active,
-      ,
-      uint256 createdAt,
-      uint256 lastEnabledAt,
-      uint256 lastDisabledAt
-    ) = _yallVerification().verifiers(_verifier);
+    (bool active, , uint256 createdAt, uint256 lastEnabledAt, uint256 lastDisabledAt) = _yallVerification().verifiers(
+      _verifier
+    );
 
     _requireCanClaimReward(
       active,
@@ -264,14 +259,8 @@ contract YALLCommissionRewardPool is YALLCommissionRewardPoolCore {
       "YALLCommissionRewardPool: Already claimed for the current period"
     );
 
-    (
-      ,
-      bool active,
-      ,
-      uint256 createdAt,
-      uint256 lastEnabledAt,
-      uint256 lastDisabledAt,
-    ) = _yallDistributor().getMemberByAddress(_member);
+    (, bool active, , uint256 createdAt, uint256 lastEnabledAt, uint256 lastDisabledAt, ) = _yallDistributor()
+      .getMemberByAddress(_member);
 
     _requireCanClaimReward(
       active,

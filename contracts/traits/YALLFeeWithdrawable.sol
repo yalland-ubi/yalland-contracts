@@ -12,7 +12,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IYALLFeeWithdrawable.sol";
 import "../registry/YALLRegistryHelpers.sol";
 
-
 contract YALLFeeWithdrawable is IYALLFeeWithdrawable, YALLRegistryHelpers {
   uint256 public constant HUNDRED_PCT = 100 ether;
 

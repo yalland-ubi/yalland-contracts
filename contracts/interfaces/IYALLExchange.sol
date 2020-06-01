@@ -9,15 +9,8 @@
 
 pragma solidity ^0.5.17;
 
-
 interface IYALLExchange {
-  enum OrderStatus {
-    NULL,
-    OPEN,
-    CLOSED,
-    CANCELLED,
-    VOIDED
-  }
+  enum OrderStatus {NULL, OPEN, CLOSED, CANCELLED, VOIDED}
 
   // CONSTANTS
   // solhint-disable-next-line func-name-mixedcase
@@ -25,17 +18,22 @@ interface IYALLExchange {
 
   // PUBLIC VARIABLES
   function defaultExchangeRate() external view returns (uint256);
+
   function defaultMemberPeriodLimit() external view returns (uint256);
+
   function totalPeriodLimit() external view returns (uint256);
+
   function gsnFee() external view returns (uint256);
+
   function totalExchangedYall() external view returns (uint256);
+
   function yallExchangedByPeriod(uint256 _periodId) external view returns (uint256);
 
   // PUBLIC MAPPINGS
   function members(bytes32 _memberId)
     external
     view
-    returns(
+    returns (
       uint256 customExchangeRate,
       uint256 customPeriodLimit,
       uint256 totalExchanged,
@@ -57,9 +55,13 @@ interface IYALLExchange {
 
   // EXTERNAL MANAGER INTERFACE
   function setDefaultExchangeRate(uint256 _defaultExchangeRate) external;
+
   function setCustomExchangeRate(bytes32 _memberId, uint256 _customExchangeRate) external;
+
   function setTotalPeriodLimit(uint256 _totalPeriodLimit) external;
+
   function setDefaultMemberPeriodLimit(uint256 _defaultMemberPeriodLimit) external;
+
   function setCustomPeriodLimit(bytes32 _memberId, uint256 _customPeriodLimit) external;
 
   // FEE MANAGER INTERFACE
@@ -67,6 +69,7 @@ interface IYALLExchange {
 
   // OPERATOR INTERFACE
   function closeOrder(uint256 _orderId, string calldata _paymentDetails) external;
+
   function cancelOrder(uint256 _orderId, string calldata _cancelReason) external;
 
   // SUPER OPERATOR INTERFACE
@@ -76,15 +79,29 @@ interface IYALLExchange {
   function createOrder(uint256 _yallAmount) external;
 
   // GETTERS
-  function calculateBuyAmount(bytes32 _memberId, uint256 _yallAmount) external view returns(uint256);
-  function calculateMemberExchangeRate(bytes32 _memberId) external view returns(uint256);
-  function calculateMaxYallToSell(bytes32 _memberId) external view returns(uint256);
-  function calculateMaxYallToSellByAddress(address _memberAddress) external view returns(uint256);
+  function calculateBuyAmount(bytes32 _memberId, uint256 _yallAmount) external view returns (uint256);
+
+  function calculateMemberExchangeRate(bytes32 _memberId) external view returns (uint256);
+
+  function calculateMaxYallToSell(bytes32 _memberId) external view returns (uint256);
+
+  function calculateMaxYallToSellByAddress(address _memberAddress) external view returns (uint256);
+
   function checkExchangeFitsLimit1(bytes32 _memberId, uint256 _yallAmount) external view returns (bool);
-  function checkExchangeFitsLimit2(bytes32 _memberId, uint256 _yallAmount, uint256 _periodId) external view returns (bool);
+
+  function checkExchangeFitsLimit2(
+    bytes32 _memberId,
+    uint256 _yallAmount,
+    uint256 _periodId
+  ) external view returns (bool);
+
   function checkExchangeFitsLimit3(uint256 _yallAmount, uint256 _periodId) external view returns (bool);
+
   function getCustomExchangeRate(bytes32 _memberId) external view returns (uint256);
+
   function getCustomPeriodLimit(bytes32 _memberId) external view returns (uint256);
+
   function getMemberYallExchangedInCurrentPeriod(bytes32 _memberId) external view returns (uint256);
+
   function getMemberYallExchangedByPeriod(bytes32 _memberId, uint256 _periodId) external view returns (uint256);
 }

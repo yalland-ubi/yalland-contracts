@@ -16,18 +16,12 @@ import "./registry/YALLRegistryHelpers.sol";
 import "./traits/ACLPausable.sol";
 import "./traits/YALLRewardClaimer.sol";
 
-
 /**
  * @title YALLEmissionRewardPool contract
  * @author Galt Project
  * @notice YALLEmissionRewardPool Data Structure
  **/
-contract YALLEmissionRewardPoolCore is
-  Initializable,
-  YALLRegistryHelpers,
-  ACLPausable,
-  YALLRewardClaimer
-{
+contract YALLEmissionRewardPoolCore is Initializable, YALLRegistryHelpers, ACLPausable, YALLRewardClaimer {
   using SafeMath for uint256;
 
   uint256 public constant RATE_DIVIDER = 100 ether;

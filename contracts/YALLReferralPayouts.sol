@@ -13,7 +13,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/upgrades/contracts/Initializable.sol";
 import "./traits/OwnedAccessControl.sol";
 
-
 /**
  * @title YALLReferralPayouts contract
  * @author Galt Project
@@ -31,13 +30,7 @@ contract YALLReferralPayouts is Initializable, OwnedAccessControl {
     _;
   }
 
-  function initialize(
-    address _initialOwner,
-    address _yallToken
-  )
-    external
-    initializer
-  {
+  function initialize(address _initialOwner, address _yallToken) external initializer {
     require(_yallToken != address(0), "YALLReferralPayouts: YALLToken address can't be 0");
 
     yallToken = IERC20(_yallToken);
@@ -48,7 +41,11 @@ contract YALLReferralPayouts is Initializable, OwnedAccessControl {
 
   event Payout(address indexed operator, address indexed _to, uint256 _id, uint256 _amount);
 
-  function payout(uint256 _id, address _to, uint256 _amount) external onlyOperator {
+  function payout(
+    uint256 _id,
+    address _to,
+    uint256 _amount
+  ) external onlyOperator {
     require(payouts[_id] == false, "YALLReferralPayouts: Payout already registered");
 
     payouts[_id] = true;
