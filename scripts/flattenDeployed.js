@@ -10,11 +10,11 @@ fs.mkdirSync(flattenedFolder);
 const chainSpec = require(`../deployed/sokol_extended.json`);
 
 Object.keys(chainSpec.contracts)
-  .map(contract => {
+  .map((contract) => {
     return chainSpec.contracts[contract];
   })
   .concat([{ factory: 'AdminUpgradeabilityProxy' }])
-  .map(contract => {
+  .map((contract) => {
     try {
       flattener(`${contract.factory}.sol`);
     } catch (e) {

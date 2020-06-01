@@ -5,7 +5,7 @@
  * @returns {Array}
  */
 
-module.exports = function(edges) {
+module.exports = function (edges) {
   return toposort(uniqueNodes(edges), edges);
 };
 
@@ -13,15 +13,15 @@ module.exports.array = toposort;
 
 function toposort(nodes, edges) {
   let cursor = nodes.length;
-  let sorted = new Array(cursor);
-  let visited = {};
+  const sorted = new Array(cursor);
+  const visited = {};
   let i = cursor;
   // Better data structures make algorithm much faster.
-  let outgoingEdges = makeOutgoingEdges(edges);
-  let nodesHash = makeNodesHash(nodes);
+  const outgoingEdges = makeOutgoingEdges(edges);
+  const nodesHash = makeNodesHash(nodes);
 
   // check for unknown nodes
-  edges.forEach(function(edge) {
+  edges.forEach(function (edge) {
     if (!nodesHash.has(edge[0]) || !nodesHash.has(edge[1])) {
       throw new Error('Unknown node. There is an unknown node in the supplied edges.');
     }
@@ -33,6 +33,7 @@ function toposort(nodes, edges) {
 
   return sorted;
 
+  // eslint-disable-next-line no-shadow
   function visit(node, i, predecessors) {
     if (predecessors.has(node)) {
       let nodeRep;
@@ -60,7 +61,7 @@ function toposort(nodes, edges) {
     if ((i = outgoing.length)) {
       predecessors.add(node);
       do {
-        let child = outgoing[--i];
+        const child = outgoing[--i];
         visit(child, nodesHash.get(child), predecessors);
       } while (i);
       predecessors.delete(node);
@@ -71,9 +72,9 @@ function toposort(nodes, edges) {
 }
 
 function uniqueNodes(arr) {
-  let res = new Set();
+  const res = new Set();
   for (let i = 0, len = arr.length; i < len; i++) {
-    let edge = arr[i];
+    const edge = arr[i];
     res.add(edge[0]);
     res.add(edge[1]);
   }
@@ -81,9 +82,9 @@ function uniqueNodes(arr) {
 }
 
 function makeOutgoingEdges(arr) {
-  let edges = new Map();
+  const edges = new Map();
   for (let i = 0, len = arr.length; i < len; i++) {
-    let edge = arr[i];
+    const edge = arr[i];
     if (!edges.has(edge[0])) edges.set(edge[0], new Set());
     if (!edges.has(edge[1])) edges.set(edge[1], new Set());
     edges.get(edge[0]).add(edge[1]);
@@ -92,7 +93,7 @@ function makeOutgoingEdges(arr) {
 }
 
 function makeNodesHash(arr) {
-  let res = new Map();
+  const res = new Map();
   for (let i = 0, len = arr.length; i < len; i++) {
     res.set(arr[i], i);
   }

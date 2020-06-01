@@ -14,13 +14,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 
-
-contract YALLTokenEthereum is
-  Ownable,
-  ERC20,
-  ERC20Burnable,
-  ERC20Detailed
-{
+contract YALLTokenEthereum is Ownable, ERC20, ERC20Burnable, ERC20Detailed {
   uint256 public constant INITIAL_SUPPLY = 0;
 
   event Mint(address indexed to, uint256 value);
@@ -28,9 +22,7 @@ contract YALLTokenEthereum is
 
   address public minter;
 
-  constructor()
-    public
-    ERC20Detailed("YALLEthereum", "YALL", uint8(18)) {}
+  constructor() public ERC20Detailed("YALLEthereum", "YALL", uint8(18)) {}
 
   modifier onlyMinter() {
     require(msg.sender == minter, "YALLTokenEthereum: Only minter allowed");

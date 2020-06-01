@@ -17,18 +17,12 @@ import "./registry/YALLRegistryHelpers.sol";
 import "./traits/ACLPausable.sol";
 import "./traits/YALLRewardClaimer.sol";
 
-
 /**
  * @title YALLCommissionRewardPoolCore contract
  * @author Galt Project
  * @notice YALLCommissionRewardPool Data Structure
  **/
-contract YALLCommissionRewardPoolCore is
-  Initializable,
-  YALLRegistryHelpers,
-  ACLPausable,
-  YALLRewardClaimer
-{
+contract YALLCommissionRewardPoolCore is Initializable, YALLRegistryHelpers, ACLPausable, YALLRewardClaimer {
   using SafeMath for uint256;
   using EnumerableSet for EnumerableSet.AddressSet;
 

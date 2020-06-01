@@ -75,10 +75,7 @@ contract YALLRegistryHelpers {
   }
 
   modifier onlyYallTokenManager() {
-    require(
-      yallRegistry.hasRole(msg.sender, YALL_TOKEN_MANAGER_ROLE),
-      "YALLToken: Only YALL_TOKEN_MANAGER allowed"
-    );
+    require(yallRegistry.hasRole(msg.sender, YALL_TOKEN_MANAGER_ROLE), "YALLToken: Only YALL_TOKEN_MANAGER allowed");
     _;
   }
 
@@ -113,10 +110,7 @@ contract YALLRegistryHelpers {
   // YALLExchange Role Checkers
 
   modifier onlyExchangeFundManager() {
-    require(
-      yallRegistry.hasRole(msg.sender, EXCHANGE_MANAGER_ROLE),
-      "YALLExchange: Only EXCHANGE_MANAGER allowed"
-    );
+    require(yallRegistry.hasRole(msg.sender, EXCHANGE_MANAGER_ROLE), "YALLExchange: Only EXCHANGE_MANAGER allowed");
     _;
   }
 

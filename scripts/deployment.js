@@ -1,8 +1,7 @@
 const assert = require('assert');
 const fs = require('fs');
-const _ = require('lodash');
 
-module.exports = function(web3, proxyContract) {
+module.exports = function (web3, proxyContract) {
   // eslint-disable-next-line
 
   function Deployment(truffle, network, deployerAccount) {
@@ -13,14 +12,14 @@ module.exports = function(web3, proxyContract) {
     this.dataExtended = { contracts: {} };
   }
 
-  Deployment.existing = async function(truffle, network, deployerAccount) {
+  Deployment.existing = async function (truffle, network, deployerAccount) {
     const deployment = new Deployment(truffle, network, deployerAccount);
 
     deployment.data = JSON.parse(fs.readFileSync(`../deployed/${this.networkId}.json`));
     deployment.dataExtended = JSON.parse(fs.readFileSync(`../deployed/${this.networkId}_extended.json`));
   };
 
-  Deployment.prototype.factory = function(factory) {
+  Deployment.prototype.factory = function (factory) {
     return new Contract(
       factory,
       this.truffle,
@@ -30,7 +29,7 @@ module.exports = function(web3, proxyContract) {
         this.data[`${contractName}Abi`] = value.abi;
         this.dataExtended.contracts[contractName] = value;
       },
-      contractName => {
+      (contractName) => {
         return this.dataExtended.contracts[contractName];
       },
       // logProxyData
@@ -40,11 +39,11 @@ module.exports = function(web3, proxyContract) {
         this.dataExtended.contracts[contractName].address = proxy.address;
         this.dataExtended.contracts[contractName].proxyArguments = proxyArguments;
         this.data[`${contractName}Address`] = proxy.address;
-      },
+      }
     );
   };
 
-  Deployment.prototype.existing = function(contractInstance) {
+  Deployment.prototype.existing = function (contractInstance) {
     return new ExistingContract(contractInstance, (contractName, value) => {
       this.data[`${contractName}Address`] = value.address;
       this.data[`${contractName}Abi`] = value.abi;
@@ -52,12 +51,12 @@ module.exports = function(web3, proxyContract) {
     });
   };
 
-  Deployment.prototype.onlyAbi = function(factory, contractName) {
+  Deployment.prototype.onlyAbi = function (factory, contractName) {
     // eslint-disable-next-line
     this.data[`${contractName}Abi`] = factory._json.abi;
   };
 
-  Deployment.prototype.save = async function() {
+  Deployment.prototype.save = async function () {
     try {
       const keys = Object.keys(this.dataExtended.contracts);
       if (keys.length > 0) {
@@ -67,13 +66,14 @@ module.exports = function(web3, proxyContract) {
         this.dataExtended.compiler = {
           optimizer: metadata.settings.optimizer,
           evmVersion: metadata.settings.evmVersion,
-          version: metadata.compiler.version
-        }
+          version: metadata.compiler.version,
+        };
       }
 
       fs.writeFileSync(`./deployed/${this.network}.json`, JSON.stringify(this.data, null, 2), { flag: 'w' });
-      fs.writeFileSync(`./deployed/${this.network}_extended.json`, JSON.stringify(this.dataExtended, null, 2), { flag: 'w' });
-
+      fs.writeFileSync(`./deployed/${this.network}_extended.json`, JSON.stringify(this.dataExtended, null, 2), {
+        flag: 'w',
+      });
     } catch (e) {
       console.log('Deployment: error saving network artifacts', e);
     }
@@ -85,7 +85,7 @@ module.exports = function(web3, proxyContract) {
    * @param contractName
    * @returns { string }
    */
-  Deployment.prototype.addr = function(contractName) {
+  Deployment.prototype.addr = function (contractName) {
     if (!(contractName in this.dataExtended.contracts)) {
       throw new Error(
         `Missing extended data for contract '${contractName}'. Available keys: ${JSON.stringify(
@@ -116,17 +116,17 @@ module.exports = function(web3, proxyContract) {
     this.logDeploymentData = logDeploymentData;
   }
 
-  ExistingContract.prototype.name = function(name) {
+  ExistingContract.prototype.name = function (name) {
     this.name = name;
     return this;
   };
 
-  ExistingContract.prototype.factory = function(factory) {
+  ExistingContract.prototype.factory = function (factory) {
     this.factory = factory;
     return this;
   };
 
-  ExistingContract.prototype.save = function() {
+  ExistingContract.prototype.save = function () {
     const logData = {
       address: this.contractInstance.address,
       abi: this.contractInstance.abi,
@@ -148,17 +148,17 @@ module.exports = function(web3, proxyContract) {
     this.args = [];
   }
 
-  Contract.prototype.name = function(name) {
+  Contract.prototype.name = function (name) {
     this.name = name;
     return this;
   };
 
-  Contract.prototype.arguments = function(...args) {
+  Contract.prototype.arguments = function (...args) {
     this.args = args;
     return this;
   };
 
-  Contract.prototype.link = function(contractName) {
+  Contract.prototype.link = function (contractName) {
     const contract = this.getDeploymentData(contractName);
     if (!contract) {
       throw new Error(`No such contract in the dataExtended registry: ${contractName}`);
@@ -169,7 +169,7 @@ module.exports = function(web3, proxyContract) {
     return this;
   };
 
-  Contract.prototype.deploy = async function(withProxy = false) {
+  Contract.prototype.deploy = async function (withProxy = false) {
     assert.ok(this.name);
     assert.ok(this.factory);
     if (Array.isArray(this.args) === false) {
@@ -199,10 +199,12 @@ module.exports = function(web3, proxyContract) {
       contract = await this.truffle.deploy(this.factory);
     } else {
       contract = await this.truffle.deploy(this.factory, ...this.args);
-      const abi = contract.contract.deploy({
-        data: contract.constructor.deployedBytecode,
-        arguments: this.args
-      }).encodeABI();
+      const abi = contract.contract
+        .deploy({
+          data: contract.constructor.deployedBytecode,
+          arguments: this.args,
+        })
+        .encodeABI();
       logData.constructorArguments = abi.substring(contract.constructor.deployedBytecode.length);
     }
 
@@ -213,7 +215,7 @@ module.exports = function(web3, proxyContract) {
     return contract;
   };
 
-  Contract.prototype.deployWithProxy = async function(proxyAdmin) {
+  Contract.prototype.deployWithProxy = async function (proxyAdmin) {
     assert(proxyAdmin, 'Missing proxyAdmin');
 
     // deploy implementation
@@ -225,14 +227,10 @@ module.exports = function(web3, proxyContract) {
           `Missing #initialize() function for ${this.name}, remove arguments or implement an initializer`
         );
       }
-      throw new Error('Contracts without #initialize method dont supported')
+      throw new Error('Contracts without #initialize method dont supported');
     }
 
-    const proxyArgumetns = [
-      v1.address,
-      proxyAdmin,
-      v1.contract.methods.initialize(...this.args).encodeABI()
-    ]
+    const proxyArgumetns = [v1.address, proxyAdmin, v1.contract.methods.initialize(...this.args).encodeABI()];
 
     const proxy = await proxyContract.new(...proxyArgumetns);
 
@@ -242,11 +240,11 @@ module.exports = function(web3, proxyContract) {
       web3.eth.abi.encodeParameters(['address', 'address', 'bytes'], proxyArgumetns).substring(2)
     );
 
-    return await this.factory.at(proxy.address);
+    return this.factory.at(proxy.address);
   };
 
   return {
     Deployment,
-    Contract
+    Contract,
   };
 };

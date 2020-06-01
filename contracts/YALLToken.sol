@@ -18,15 +18,7 @@ import "./registry/YALLRegistry.sol";
 import "./registry/YALLRegistryHelpers.sol";
 import "./traits/ACLPausable.sol";
 
-
-contract YALLToken is
-  IYALLToken,
-  ERC20,
-  ERC20Detailed,
-  YALLRegistryHelpers,
-  ACLPausable,
-  GSNRecipientSigned
-{
+contract YALLToken is IYALLToken, ERC20, ERC20Detailed, YALLRegistryHelpers, ACLPausable, GSNRecipientSigned {
   uint256 public constant INITIAL_SUPPLY = 0;
 
   uint256 public constant HUNDRED_PCT = 100 ether;
@@ -55,18 +47,11 @@ contract YALLToken is
     string memory _name,
     string memory _symbol,
     uint8 _decimals
-  )
-    public
-    ERC20Detailed(_name, _symbol, _decimals)
-    GSNRecipientSigned()
-  {
+  ) public ERC20Detailed(_name, _symbol, _decimals) GSNRecipientSigned() {
     yallRegistry = YALLRegistry(_yallRegistry);
   }
 
-  function _handleRelayedCall(
-    bytes memory _encodedFunction,
-    address _caller
-  )
+  function _handleRelayedCall(bytes memory _encodedFunction, address _caller)
     internal
     view
     returns (GSNRecipientSignatureErrorCodes, bytes memory)
@@ -76,10 +61,10 @@ contract YALLToken is
     address payer;
 
     if (
-      signature == YALLToken(0).transfer.selector
-      || signature == YALLToken(0).transferFrom.selector
-      || signature == YALLToken(0).approve.selector
-      || signature == YALLToken(0).transferWithMemo.selector
+      signature == YALLToken(0).transfer.selector ||
+      signature == YALLToken(0).transferFrom.selector ||
+      signature == YALLToken(0).approve.selector ||
+      signature == YALLToken(0).transferWithMemo.selector
     ) {
       payer = _caller;
     } else {
@@ -176,12 +161,20 @@ contract YALLToken is
     return result;
   }
 
-  function transferWithMemo(address _to, uint256 _value, string calldata _memo) external returns (bool) {
+  function transferWithMemo(
+    address _to,
+    uint256 _value,
+    string calldata _memo
+  ) external returns (bool) {
     emit TransferWithMemo(_msgSender(), _to, _value, _memo);
     return transfer(_to, _value);
   }
 
-  function transferFrom(address _from, address _to, uint256 _value) public whenNotPaused returns (bool) {
+  function transferFrom(
+    address _from,
+    address _to,
+    uint256 _value
+  ) public whenNotPaused returns (bool) {
     (IYALLDistributor dist, address feeCollector) = _yallDistributorAndFeeCollector();
     address msgSender = _msgSender();
 
@@ -205,7 +198,11 @@ contract YALLToken is
   }
 
   // INTERNAL
-  function _chargeTransferFee(address _from, address _feeCollector, uint256 _value) private {
+  function _chargeTransferFee(
+    address _from,
+    address _feeCollector,
+    uint256 _value
+  ) private {
     uint256 fee = getTransferFee(_value);
 
     if (fee > 0) {
@@ -214,7 +211,7 @@ contract YALLToken is
     }
   }
 
-  function _isMemberValid(IYALLDistributor _dist, address _member) internal view returns(bool) {
+  function _isMemberValid(IYALLDistributor _dist, address _member) internal view returns (bool) {
     TransferRestrictionsMode mode = transferRestrictions;
 
     if (mode == TransferRestrictionsMode.ONLY_MEMBERS_OR_WHITELIST) {
@@ -231,7 +228,11 @@ contract YALLToken is
     return _dist.isActive(_member);
   }
 
-  function _areMembersValid2(IYALLDistributor _dist, address _member1, address _member2) internal view returns(bool) {
+  function _areMembersValid2(
+    IYALLDistributor _dist,
+    address _member1,
+    address _member2
+  ) internal view returns (bool) {
     TransferRestrictionsMode mode = transferRestrictions;
 
     if (mode == TransferRestrictionsMode.ONLY_MEMBERS_OR_WHITELIST) {
@@ -255,25 +256,24 @@ contract YALLToken is
     address _member1,
     address _member2,
     address _member3
-  )
-    internal
-    view
-    returns(bool)
-  {
+  ) internal view returns (bool) {
     TransferRestrictionsMode mode = transferRestrictions;
 
     if (mode == TransferRestrictionsMode.ONLY_MEMBERS_OR_WHITELIST) {
       (bool active1, bool active2, bool active3) = _dist.areActive3(_member1, _member2, _member3);
 
-      return (active1 || canTransferWhitelist[_member1] == true)
-          && (active2 || canTransferWhitelist[_member2] == true)
-          && (active3 || canTransferWhitelist[_member3] == true);
+      return
+        (active1 || canTransferWhitelist[_member1] == true) &&
+        (active2 || canTransferWhitelist[_member2] == true) &&
+        (active3 || canTransferWhitelist[_member3] == true);
     }
     if (mode == TransferRestrictionsMode.OFF) {
       return true;
     }
     if (mode == TransferRestrictionsMode.ONLY_WHITELIST) {
-      return (canTransferWhitelist[_member1] == true && canTransferWhitelist[_member2] == true && canTransferWhitelist[_member3] == true);
+      return (canTransferWhitelist[_member1] == true &&
+        canTransferWhitelist[_member2] == true &&
+        canTransferWhitelist[_member3] == true);
     }
 
     // if (mode == TransferRestrictionsMode.ONLY_MEMBERS)
@@ -282,8 +282,15 @@ contract YALLToken is
   }
 
   // REQUIRES
-  function _requireMembersAreValid2(IYALLDistributor _dist, address _member1, address _member2) internal view {
-    require(_areMembersValid2(_dist, _member1, _member2), "YALLToken: The address has no YALL token transfer permission");
+  function _requireMembersAreValid2(
+    IYALLDistributor _dist,
+    address _member1,
+    address _member2
+  ) internal view {
+    require(
+      _areMembersValid2(_dist, _member1, _member2),
+      "YALLToken: The address has no YALL token transfer permission"
+    );
   }
 
   function _requireMembersAreValid3(
@@ -291,10 +298,7 @@ contract YALLToken is
     address _member1,
     address _member2,
     address _member3
-  )
-    internal
-    view
-  {
+  ) internal view {
     require(
       _areMembersValid3(_dist, _member1, _member2, _member3),
       "YALLToken: The address has no YALL token transfer permission"
@@ -302,7 +306,7 @@ contract YALLToken is
   }
 
   // GETTERS
-  function getTransferFee(uint256 amount) public view returns(uint256) {
+  function getTransferFee(uint256 amount) public view returns (uint256) {
     if (transferFee > 0) {
       return amount.mul(transferFee) / HUNDRED_PCT;
     } else {
@@ -310,7 +314,7 @@ contract YALLToken is
     }
   }
 
-  function deductTransferFee(uint256 _amount) external view returns(uint256) {
+  function deductTransferFee(uint256 _amount) external view returns (uint256) {
     if (transferFee > 0) {
       uint256 net = (_amount.mul(HUNDRED_PCT)) / (transferFee + HUNDRED_PCT);
       return net;
@@ -319,7 +323,7 @@ contract YALLToken is
     }
   }
 
-  function deductTransferSafu(uint256 _amount) external view returns(uint256) {
+  function deductTransferSafu(uint256 _amount) external view returns (uint256) {
     if (transferFee > 0) {
       uint256 net = (_amount.mul(HUNDRED_PCT)) / (transferFee + HUNDRED_PCT);
       // NOTICE: this check could be redundant, not sure
@@ -330,15 +334,19 @@ contract YALLToken is
     }
   }
 
-  function isMemberValid(address _member) external view returns(bool) {
+  function isMemberValid(address _member) external view returns (bool) {
     return _isMemberValid(IYALLDistributor(yallRegistry.getYallDistributorAddress()), _member);
   }
 
-  function areMembersValid2(address _member1, address _member2) external view returns(bool) {
+  function areMembersValid2(address _member1, address _member2) external view returns (bool) {
     return _areMembersValid2(IYALLDistributor(yallRegistry.getYallDistributorAddress()), _member1, _member2);
   }
 
-  function areMembersValid3(address _member1, address _member2, address _member3) external view returns(bool) {
+  function areMembersValid3(
+    address _member1,
+    address _member2,
+    address _member3
+  ) external view returns (bool) {
     return _areMembersValid3(IYALLDistributor(yallRegistry.getYallDistributorAddress()), _member1, _member2, _member3);
   }
 

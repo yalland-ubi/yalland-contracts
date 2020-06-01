@@ -8,7 +8,6 @@
  */
 pragma solidity ^0.5.17;
 
-
 contract NumericIdCounter {
   uint256 internal _idCounter;
 

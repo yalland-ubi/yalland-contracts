@@ -12,11 +12,11 @@ pragma solidity ^0.5.17;
 import "../registry/YALLRegistryCore.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-
 contract ERC20Managed {
   IERC20 public erc20;
 
   event GasUsedEvent(uint256 gasUsed);
+
   constructor(address _erc20) public {
     erc20 = IERC20(_erc20);
   }
@@ -25,7 +25,11 @@ contract ERC20Managed {
     erc20.approve(_to, _amount);
   }
 
-  function transferFrom(address _from, address _to, uint256 _amount) external {
+  function transferFrom(
+    address _from,
+    address _to,
+    uint256 _amount
+  ) external {
     uint256 before = gasleft();
     erc20.transferFrom(_from, _to, _amount);
     emit GasUsedEvent(before - gasleft());

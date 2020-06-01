@@ -7,8 +7,8 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-var Migrations = artifacts.require("./Migrations.sol");
+const Migrations = artifacts.require('./Migrations.sol');
 
-module.exports = function(deployer) {
+module.exports = function (deployer) {
   deployer.deploy(Migrations);
 };

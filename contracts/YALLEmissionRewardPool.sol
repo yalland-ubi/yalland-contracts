@@ -12,7 +12,6 @@ pragma solidity ^0.5.17;
 import "./interfaces/IYALLDistributor.sol";
 import "./YALLEmissionRewardPoolCore.sol";
 
-
 /**
  * @title YALLEmissionRewardPool contract
  * @author Galt Project
@@ -24,17 +23,13 @@ contract YALLEmissionRewardPool is YALLEmissionRewardPoolCore {
     _;
   }
 
-  constructor() public {
-  }
+  constructor() public {}
 
   function initialize(
     address _yallRegistry,
     uint256 _delegatorsShare,
     uint256 _verifiersShare
-  )
-    external
-    initializer
-  {
+  ) external initializer {
     yallRegistry = YALLRegistry(_yallRegistry);
     _setShares(_delegatorsShare, _verifiersShare);
   }
@@ -72,7 +67,10 @@ contract YALLEmissionRewardPool is YALLEmissionRewardPoolCore {
 
   // DELEGATOR INTERFACE
   function claimDelegatorReward(uint256 _periodId) external triggerTransition {
-    require(delegatorClaimedPeriods[_periodId][msg.sender] == false, "YALLEmissionRewardPool: Already claimed for the current period");
+    require(
+      delegatorClaimedPeriods[_periodId][msg.sender] == false,
+      "YALLEmissionRewardPool: Already claimed for the current period"
+    );
 
     uint256 periodBeginsAt = _yallDistributor().getPeriodBeginsAt(_periodId);
     uint256 balance = _homeMediator().balanceOfAt(msg.sender, periodBeginsAt);
@@ -126,13 +124,9 @@ contract YALLEmissionRewardPool is YALLEmissionRewardPoolCore {
       "YALLEmissionRewardPool: Already claimed for the current period"
     );
 
-    (
-      bool active,
-      ,
-      uint256 createdAt,
-      uint256 lastEnabledAt,
-      uint256 lastDisabledAt
-    ) = _yallVerification().verifiers(_verifier);
+    (bool active, , uint256 createdAt, uint256 lastEnabledAt, uint256 lastDisabledAt) = _yallVerification().verifiers(
+      _verifier
+    );
 
     _requireCanClaimReward(
       active,

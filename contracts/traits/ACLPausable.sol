@@ -2,7 +2,6 @@ pragma solidity ^0.5.0;
 
 import "../registry/YALLRegistryHelpers.sol";
 
-
 contract ACLPausable is YALLRegistryHelpers {
   event Paused(address account);
   event Unpaused(address account);
@@ -13,7 +12,7 @@ contract ACLPausable is YALLRegistryHelpers {
    * @dev Initializes the contract in unpaused state. Assigns the Pauser role
    * to the deployer.
    */
-  constructor () internal {
+  constructor() internal {
     _paused = false;
   }
 

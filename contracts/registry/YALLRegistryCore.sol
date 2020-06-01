@@ -12,22 +12,22 @@ pragma solidity ^0.5.17;
 import "@openzeppelin/upgrades/contracts/Initializable.sol";
 import "@openzeppelin/contracts/ownership/Ownable.sol";
 
-
 /**
  * @title YALLRegistry contract
  * @author Galt Project
  * @notice Contract address and ACL registry
  **/
 contract YALLRegistryCore is Initializable, Ownable {
+  // solhint-disable-next-line private-vars-leading-underscore
   address internal constant ZERO_ADDRESS = address(0);
 
   event SetContract(bytes32 indexed key, address addr);
   event SetRole(bytes32 indexed role, address indexed candidate, bool allowed);
 
   // Mapping (contractKey => currentAddress)
-  mapping(bytes32 => address) internal contracts;
+  mapping(bytes32 => address) internal _contracts;
   // Mapping (roleName => (address => isAllowed))
-  mapping(bytes32 => mapping(address => bool)) internal roles;
+  mapping(bytes32 => mapping(address => bool)) internal _roles;
 
   // @dev owner is set to tx.origin
   function initialize() public initializer {
@@ -42,7 +42,7 @@ contract YALLRegistryCore is Initializable, Ownable {
    * @param _value contract address
    */
   function setContract(bytes32 _key, address _value) external onlyOwner {
-    contracts[_key] = _value;
+    _contracts[_key] = _value;
     emit SetContract(_key, _value);
   }
 
@@ -53,17 +53,21 @@ contract YALLRegistryCore is Initializable, Ownable {
    * @param _role bytes32 encoded role name
    * @param _allow true to enable, false to disable
    */
-  function setRole(address _candidate, bytes32 _role, bool _allow) external onlyOwner {
-    roles[_role][_candidate] = _allow;
+  function setRole(
+    address _candidate,
+    bytes32 _role,
+    bool _allow
+  ) external onlyOwner {
+    _roles[_role][_candidate] = _allow;
     emit SetRole(_role, _candidate, _allow);
   }
 
   // GETTERS
   function getContract(bytes32 _key) external view returns (address) {
-    return contracts[_key];
+    return _contracts[_key];
   }
 
   function hasRole(address _candidate, bytes32 _role) external view returns (bool) {
-    return roles[_role][_candidate];
+    return _roles[_role][_candidate];
   }
 }

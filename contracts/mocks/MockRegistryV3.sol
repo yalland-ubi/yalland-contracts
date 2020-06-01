@@ -11,7 +11,6 @@ pragma solidity ^0.5.17;
 
 import "./MockRegistryV2.sol";
 
-
 contract MockRegistryV3 is MockRegistryV2 {
   function whoAmI() external pure returns (string memory) {
     return "im a mock v3";

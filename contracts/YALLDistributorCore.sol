@@ -15,17 +15,12 @@ import "@openzeppelin/upgrades/contracts/Initializable.sol";
 import "./registry/YALLRegistryHelpers.sol";
 import "./traits/ACLPausable.sol";
 
-
 /**
  * @title YALLDistributor contract
  * @author Galt Project
  * @notice YALLDistributor Data Structure
  **/
-contract YALLDistributorCore is
-  Initializable,
-  YALLRegistryHelpers,
-  ACLPausable
-{
+contract YALLDistributorCore is Initializable, YALLRegistryHelpers, ACLPausable {
   using SafeMath for uint256;
   using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -85,5 +80,5 @@ contract YALLDistributorCore is
   // periodId => periodDetails
   mapping(uint256 => Period) public period;
 
-  EnumerableSet.AddressSet internal activeAddressesCache;
+  EnumerableSet.AddressSet internal _activeAddressesCache;
 }

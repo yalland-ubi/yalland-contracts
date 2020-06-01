@@ -9,7 +9,6 @@
 
 pragma solidity ^0.5.17;
 
-
 /**
  * @title YALLRewardClaimer contract
  * @author Galt Project
@@ -22,19 +21,16 @@ contract YALLRewardClaimer {
     uint256 _createdAt,
     uint256 _le,
     uint256 _ld
-  )
-    internal
-    pure
-  {
+  ) internal pure {
     require(_active == true, "YALLRewardClaimer: Not active participant");
     require(_createdAt < _currentPeriodStart, "YALLRewardClaimer: Can't assign rewards for the creation period");
 
     if (_ld != 0 && _currentPeriodId != 0) {
       require(
         // both disabled and enabled in the current period
-        (_ld >= _currentPeriodStart && _le >= _currentPeriodStart)
-        // both disabled and enabled before the current period started
-        || (_ld < _currentPeriodStart && _le < _currentPeriodStart),
+        (_ld >= _currentPeriodStart && _le >= _currentPeriodStart) ||
+          // both disabled and enabled before the current period started
+          (_ld < _currentPeriodStart && _le < _currentPeriodStart),
         "YALLRewardClaimer: One period should be skipped after re-enabling"
       );
     }

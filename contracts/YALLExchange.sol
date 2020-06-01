@@ -15,7 +15,6 @@ import "./interfaces/IYALLExchange.sol";
 import "./GSNRecipientSigned.sol";
 import "./YALLExchangeCore.sol";
 
-
 /**
  * @title YALLExchange contract
  * @author Galt Project
@@ -27,16 +26,9 @@ contract YALLExchange is
   // GSNRecipientSigned occupies 1 storage slot
   GSNRecipientSigned
 {
-  constructor() public {
-  }
+  constructor() public {}
 
-  function initialize(
-    address _yallRegistry,
-    uint256 _defaultExchangeRate
-  )
-    external
-    initializer
-  {
+  function initialize(address _yallRegistry, uint256 _defaultExchangeRate) external initializer {
     require(_defaultExchangeRate > 0, "YALLExchange: Default rate can't be 0");
     require(_yallRegistry != address(0), "YALLExchange: YALLRegistry address can't be 0");
 
@@ -49,10 +41,7 @@ contract YALLExchange is
     emit SetDefaultExchangeRate(msg.sender, _defaultExchangeRate);
   }
 
-  function _handleRelayedCall(
-    bytes memory _encodedFunction,
-    address _caller
-  )
+  function _handleRelayedCall(bytes memory _encodedFunction, address _caller)
     internal
     view
     returns (GSNRecipientSignatureErrorCodes, bytes memory)
@@ -232,13 +221,13 @@ contract YALLExchange is
     uint256 currentPeriod = yallDistributor.getCurrentPeriodId();
 
     // Limit #1 check
-    requireLimit1NotReached(memberId, _yallAmount);
+    _requireLimit1NotReached(memberId, _yallAmount);
 
     // Limit #2 check
-    requireLimit2NotReached(memberId, _yallAmount, currentPeriod);
+    _requireLimit2NotReached(memberId, _yallAmount, currentPeriod);
 
     // Limit #3 check
-    requireLimit3NotReached(_yallAmount, currentPeriod);
+    _requireLimit3NotReached(_yallAmount, currentPeriod);
 
     uint256 buyAmount = calculateBuyAmount(memberId, _yallAmount);
 
@@ -268,33 +257,34 @@ contract YALLExchange is
 
   // INTERNAL
 
-  function _isActiveAddress(address _addr) internal view returns(bool) {
+  function _isActiveAddress(address _addr) internal view returns (bool) {
     return _yallDistributor().isActive(_addr);
   }
 
-  function _getTotalClaimed(bytes32 _memberId) internal view returns(uint256) {
+  function _getTotalClaimed(bytes32 _memberId) internal view returns (uint256) {
     return _yallDistributor().getTotalClaimed(_memberId);
   }
 
-  function _getMemberAddress(bytes32 _memberId) internal view returns(address) {
+  function _getMemberAddress(bytes32 _memberId) internal view returns (address) {
     return _yallDistributor().getMemberAddress(_memberId);
   }
 
-  function requireLimit1NotReached(bytes32 _memberId, uint256 _yallAmount) internal view {
-    require(
-      checkExchangeFitsLimit1(_memberId, _yallAmount),
-      "YALLExchange: exceeds Limit #1 (member volume)"
-    );
+  function _requireLimit1NotReached(bytes32 _memberId, uint256 _yallAmount) internal view {
+    require(checkExchangeFitsLimit1(_memberId, _yallAmount), "YALLExchange: exceeds Limit #1 (member volume)");
   }
 
-  function requireLimit2NotReached(bytes32 _memberId, uint256 _yallAmount, uint256 _periodId) internal view {
+  function _requireLimit2NotReached(
+    bytes32 _memberId,
+    uint256 _yallAmount,
+    uint256 _periodId
+  ) internal view {
     require(
       checkExchangeFitsLimit2(_memberId, _yallAmount, _periodId) == true,
       "YALLExchange: exceeds Limit #2 (member period limit)"
     );
   }
 
-  function requireLimit3NotReached(uint256 _yallAmount, uint256 _periodId) internal view {
+  function _requireLimit3NotReached(uint256 _yallAmount, uint256 _periodId) internal view {
     require(
       checkExchangeFitsLimit3(_yallAmount, _periodId) == true,
       "YALLExchange: exceeds Limit #3 (total period limit)"
@@ -303,13 +293,11 @@ contract YALLExchange is
 
   // GETTERS
 
-  function calculateBuyAmount(bytes32 _memberId, uint256 _yallAmount) public view returns(uint256) {
-    return _yallAmount
-      .mul(calculateMemberExchangeRate(_memberId))
-      .div(RATE_DIVIDER);
+  function calculateBuyAmount(bytes32 _memberId, uint256 _yallAmount) public view returns (uint256) {
+    return _yallAmount.mul(calculateMemberExchangeRate(_memberId)).div(RATE_DIVIDER);
   }
 
-  function calculateMemberExchangeRate(bytes32 _memberId) public view returns(uint256) {
+  function calculateMemberExchangeRate(bytes32 _memberId) public view returns (uint256) {
     uint256 rate = members[_memberId].customExchangeRate;
 
     if (rate == 0) {
@@ -319,27 +307,18 @@ contract YALLExchange is
     return rate;
   }
 
-  function calculateMaxYallToSell(bytes32 _memberId) public view returns(uint256) {
+  function calculateMaxYallToSell(bytes32 _memberId) public view returns (uint256) {
     uint256 totalClaimed = _getTotalClaimed(_memberId);
     Member storage m = members[_memberId];
 
-    return totalClaimed
-      .sub(m.totalExchanged)
-      .add(m.totalVoided);
+    return totalClaimed.sub(m.totalExchanged).add(m.totalVoided);
   }
 
-  function calculateMaxYallToSellByAddress(address _memberAddress) external view returns(uint256) {
+  function calculateMaxYallToSellByAddress(address _memberAddress) external view returns (uint256) {
     return calculateMaxYallToSell(_yallDistributor().memberAddress2Id(_memberAddress));
   }
 
-  function checkExchangeFitsLimit1(
-    bytes32 _memberId,
-    uint256 _yallAmount
-  )
-    public
-    view
-    returns (bool)
-  {
+  function checkExchangeFitsLimit1(bytes32 _memberId, uint256 _yallAmount) public view returns (bool) {
     return _yallAmount <= calculateMaxYallToSell(_memberId);
   }
 
@@ -347,11 +326,7 @@ contract YALLExchange is
     bytes32 _memberId,
     uint256 _yallAmount,
     uint256 _periodId
-  )
-    public
-    view
-    returns (bool)
-  {
+  ) public view returns (bool) {
     Member storage m = members[_memberId];
 
     uint256 limit = m.customPeriodLimit;
@@ -362,14 +337,7 @@ contract YALLExchange is
     return limit == 0 || m.yallExchangedByPeriod[_periodId].add(_yallAmount) <= limit;
   }
 
-  function checkExchangeFitsLimit3(
-    uint256 _yallAmount,
-    uint256 _periodId
-  )
-    public
-    view
-    returns (bool)
-  {
+  function checkExchangeFitsLimit3(uint256 _yallAmount, uint256 _periodId) public view returns (bool) {
     return totalPeriodLimit == 0 || yallExchangedByPeriod[_periodId].add(_yallAmount) <= totalPeriodLimit;
   }
 

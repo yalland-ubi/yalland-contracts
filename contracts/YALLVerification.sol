@@ -12,19 +12,13 @@ pragma solidity ^0.5.17;
 import "./registry/YALLRegistryHelpers.sol";
 import "./YALLVerificationCore.sol";
 
-
 /**
  * @title YALLVerification contract
  * @author Galt Project
  * @notice Verification interface for verifiers
  **/
 contract YALLVerification is YALLVerificationCore {
-  function initialize(
-    address _yallRegistry
-  )
-    external
-    initializer
-  {
+  function initialize(address _yallRegistry) external initializer {
     yallRegistry = YALLRegistry(_yallRegistry);
   }
 
@@ -52,7 +46,7 @@ contract YALLVerification is YALLVerificationCore {
       v.active = false;
       v.lastDisabledAt = now;
 
-//      emit DisableMember(memberId, addr);
+      //      emit DisableMember(memberId, addr);
     }
 
     _decrementActiveVerifierCount(len);
@@ -65,16 +59,16 @@ contract YALLVerification is YALLVerificationCore {
     v.active = true;
     v.createdAt = now;
 
-    activeAddressesCache.add(_verifierAddress);
+    _activeAddressesCache.add(_verifierAddress);
 
-//    emit AddMember(_verifierId, _verifierAddress);
+    //    emit AddMember(_verifierId, _verifierAddress);
   }
 
   function _incrementActiveVerifierCount(uint256 _n) internal {
     uint256 newActiveVerifierCount = activeVerifierCount.add(_n);
     activeVerifierCount = newActiveVerifierCount;
 
-//    emit ActiveMemberCountChanged(newActiveVerifierCount);
+    //    emit ActiveMemberCountChanged(newActiveVerifierCount);
   }
 
   function _decrementActiveVerifierCount(uint256 _n) internal {

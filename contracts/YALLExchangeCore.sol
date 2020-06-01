@@ -16,19 +16,12 @@ import "./traits/ACLPausable.sol";
 import "./interfaces/IYALLExchange.sol";
 import "./traits/NumericIdCounter.sol";
 
-
 /**
  * @title YALLExchangeCore contract
  * @author Galt Project
  * @notice YALLExchange Data Structure
  **/
-contract YALLExchangeCore is
-  IYALLExchange,
-  Initializable,
-  YALLRegistryHelpers,
-  ACLPausable,
-  NumericIdCounter
-{
+contract YALLExchangeCore is IYALLExchange, Initializable, YALLRegistryHelpers, ACLPausable, NumericIdCounter {
   using SafeMath for uint256;
 
   uint256 public constant RATE_DIVIDER = 100 ether;
@@ -57,10 +50,8 @@ contract YALLExchangeCore is
   struct Member {
     uint256 customExchangeRate;
     uint256 customPeriodLimit;
-
     uint256 totalExchanged;
     uint256 totalVoided;
-
     // periodId => yallToken exchanged
     mapping(uint256 => uint256) yallExchangedByPeriod;
   }
@@ -82,6 +73,5 @@ contract YALLExchangeCore is
   // periodId => totalExchanged
   mapping(uint256 => uint256) public yallExchangedByPeriod;
 
-  constructor() public {
-  }
+  constructor() public {}
 }
