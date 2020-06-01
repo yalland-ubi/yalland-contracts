@@ -75,7 +75,7 @@ describe('YALLEmissionReward Integration tests', () => {
   });
 
   // Test Cases:
-  it.only('should correctly handle emission distribution', async function () {
+  it('should correctly handle emission distribution', async function () {
     const step1 = (await now()) - 100;
     const step2 = (await now()) - 50;
 

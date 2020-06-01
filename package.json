@@ -27,7 +27,7 @@
   "homepage": "https://github.com/yalland-ubi/yalland-contracts",
   "dependencies": {
     "@galtproject/eslint-config-galt": "github:galtproject/eslint-config-galt#ae71c5c49fa0e6b42fe40e89ec2825be19fb30e8",
-    "@galtproject/solidity-test-chest": "https://github.com/galtproject/solidity-test-chest#e3d4ba7eee3ea0c8452c0387842280e1d1e038ac",
+    "@galtproject/solidity-test-chest": "https://github.com/galtproject/solidity-test-chest#46d6bc2a189ab0336ab4e08fceae1b06ffa17004",
     "@openzeppelin/contracts": "2.5.1",
     "@openzeppelin/gsn-helpers": "^0.2.3",
     "@openzeppelin/gsn-provider": "^0.1.10",
