@@ -8,18 +8,25 @@
  */
 
 const { accounts, contract, web3, defaultSender } = require('@openzeppelin/test-environment');
-const { ether, now, increaseTime, assertRevert } = require('@galtproject/solidity-test-chest')(web3);
+const {
+  ether,
+  now,
+  increaseTime,
+  assertRevert,
+  assertErc20BalanceChanged,
+} = require('@galtproject/solidity-test-chest')(web3);
 const BigNumber = require('bignumber.js');
 const { assert } = require('chai');
 const { buildCoinDistAndExchange } = require('./builders');
 
+const YALLFeeCollector = contract.fromArtifact('YALLFeeCollector');
 const AMBMock = contract.fromArtifact('AMBMock');
 
 const keccak256 = web3.utils.soliditySha3;
 BigNumber.set({ ROUNDING_MODE: BigNumber.ROUND_DOWN, DECIMAL_PLACES: 0, EXPONENTIAL_AT: [-30, 30] });
 const HUNDRED_PCT = new BigNumber(ether(100));
 
-describe.skip('YALLCommissionReward Integration tests', () => {
+describe('YALLCommissionReward Integration tests', () => {
   const [
     alice,
     bob,
@@ -29,9 +36,6 @@ describe.skip('YALLCommissionReward Integration tests', () => {
     distributorVerifier,
     yallMinter,
     feeManager,
-    exchangeManager,
-    exchangeOperator,
-    exchangeSuperOperator,
     yallTokenManager,
     v1,
     v2,
@@ -53,28 +57,33 @@ describe.skip('YALLCommissionReward Integration tests', () => {
   let bridge;
   let yallToken;
   let dist;
-  let exchange;
   let commission;
   let verification;
+  let registry;
+  let feeCollector;
 
   beforeEach(async function () {
     bridge = await AMBMock.new();
     await bridge.setMaxGasPerTx(2000000);
-    ({ yallToken, dist, exchange, homeMediator, verification, commission } = await buildCoinDistAndExchange(
+    ({ registry, yallToken, dist, homeMediator, verification, commission } = await buildCoinDistAndExchange(
       defaultSender,
       {
         distributorVerifier,
         yallMinter,
         feeManager,
-        exchangeManager,
-        exchangeOperator,
-        exchangeSuperOperator,
         yallTokenManager,
         mediatorOnTheOtherSide,
         commissionRewardPoolManager,
+        feeCollector: alice,
+        gsnFeeCollector: alice,
         bridge: bridge.address,
+        disableExchange: true,
+        disableEmission: true,
       }
     ));
+    feeCollector = await YALLFeeCollector.new(registry.address);
+    await registry.setContract(await registry.YALL_FEE_COLLECTOR_KEY(), feeCollector.address);
+
     await yallToken.setTransferFee(txFee, { from: feeManager });
     await yallToken.setCanTransferWhitelistAddress(v1, true, { from: yallTokenManager });
     await yallToken.setCanTransferWhitelistAddress(v2, true, { from: yallTokenManager });
@@ -100,34 +109,27 @@ describe.skip('YALLCommissionReward Integration tests', () => {
     assert.equal(await dist.emissionPoolRewardShare(), ether(10));
 
     await verification.addVerifiers([v1, v2, v3]);
-    await commission.setSources([dist.address, yallToken.address, exchange.address], {
-      from: commissionRewardPoolManager,
-    });
 
     await increaseTime(21);
 
     // Transfer some funds to the sources
-    await yallToken.mint(yallToken.address, ether(12), { from: yallMinter });
-    await yallToken.mint(exchange.address, ether(10), { from: yallMinter });
-    await yallToken.mint(dist.address, ether(20), { from: yallMinter });
+    await yallToken.setCanTransferWhitelistAddress(feeCollector.address, true, { from: yallTokenManager });
+    await yallToken.setNoTransferFeeWhitelistAddress(feeCollector.address, true, { from: yallTokenManager });
+    await yallToken.mint(feeCollector.address, ether(42), { from: yallMinter });
 
-    // (12 + 10 + 20) = 42
-    // minus
-    // (3 contracts each keep 1 YALL)
-    // * 100 / (100 + 0.02)
-    const expectedTotalRewardP0 = new BigNumber('38996000040143940816');
+    const expectedTotalRewardP0 = new BigNumber(ether(41));
     const expectedVerifierRewardP0 = expectedTotalRewardP0.multipliedBy(ether(10)).dividedBy(HUNDRED_PCT).dividedBy(3);
     const expectedMemberRewardP0 = expectedTotalRewardP0.multipliedBy(ether(50)).dividedBy(HUNDRED_PCT).dividedBy(2);
-    // const expectedAliceRewardP0 = expectedTotalRewardP0
-    //   .multipliedBy(ether(40))
-    //   .dividedBy(HUNDRED_PCT)
-    //   .multipliedBy(30)
-    //   .dividedBy(50);
-    // const expectedBobsRewardP0 = expectedTotalRewardP0
-    //   .multipliedBy(ether(40))
-    //   .dividedBy(HUNDRED_PCT)
-    //   .multipliedBy(20)
-    //   .dividedBy(50);
+    const expectedAliceRewardP0 = expectedTotalRewardP0
+      .multipliedBy(ether(40))
+      .dividedBy(HUNDRED_PCT)
+      .multipliedBy(30)
+      .dividedBy(50);
+    const expectedBobsRewardP0 = expectedTotalRewardP0
+      .multipliedBy(ether(40))
+      .dividedBy(HUNDRED_PCT)
+      .multipliedBy(20)
+      .dividedBy(50);
 
     let res = await commission.handlePeriodTransitionIfRequired();
     let periodChangeLog = res.logs[1].args;
@@ -177,16 +179,16 @@ describe.skip('YALLCommissionReward Integration tests', () => {
     assert.equal(res.claimedMembersReward, 0);
 
     // verifier can claim reward for 0th period
-    // const v1BalanceBefore = await yallToken.balanceOf(v1);
-    // await commission.claimVerifierReward({ from: v1 });
-    // const v1BalanceAfter = await yallToken.balanceOf(v1);
-    // await assertErc20BalanceChanged(v1BalanceBefore, v1BalanceAfter, expectedVerifierRewardP0.deductTxFee().toString());
+    const v1BalanceBefore = await yallToken.balanceOf(v1);
+    await commission.claimVerifierReward({ from: v1 });
+    const v1BalanceAfter = await yallToken.balanceOf(v1);
+    await assertErc20BalanceChanged(v1BalanceBefore, v1BalanceAfter, expectedVerifierRewardP0.toString());
 
     // delegator bob can  claim reward for 0th period
-    // const bobsBalanceBefore = await yallToken.balanceOf(bob);
-    // await commission.claimDelegatorReward(0, { from: bob });
-    // const bobsBalanceAfter = await yallToken.balanceOf(bob);
-    // await assertErc20BalanceChanged(bobsBalanceBefore, bobsBalanceAfter, expectedBobsRewardP0.toString());
+    const bobsBalanceBefore = await yallToken.balanceOf(bob);
+    await commission.claimDelegatorReward(0, { from: bob });
+    const bobsBalanceAfter = await yallToken.balanceOf(bob);
+    await assertErc20BalanceChanged(bobsBalanceBefore, bobsBalanceAfter, expectedBobsRewardP0.toString());
 
     // can't claim again
     await assertRevert(
@@ -208,7 +210,7 @@ describe.skip('YALLCommissionReward Integration tests', () => {
     // change members
     await dist.addMembers([memberId4], [alice], { from: distributorVerifier });
 
-    await yallToken.mint(exchange.address, ether(20), { from: yallMinter });
+    await yallToken.mint(feeCollector.address, ether(20), { from: yallMinter });
 
     // period #0 has finished, delegates [alice], verifiers[v2, v3] and members [bob, charlie] did't claim their rewards
     // period #1 starts
@@ -221,9 +223,9 @@ describe.skip('YALLCommissionReward Integration tests', () => {
 
     // the reward was withdrawn only from exchange, where 20eth were minted, 1 left from previous period
     // and also 1 was kept again
-    const expectedTotalRewardP1 = new BigNumber('19996000799840031994');
-    const p0VerifiersLeftover = new BigNumber('2599733336009596054');
-    const p0MembersLeftover = new BigNumber('19498000020071970408');
+    const expectedTotalRewardP1 = new BigNumber('20000000000000000000');
+    const p0VerifiersLeftover = new BigNumber('2733333333333333334');
+    const p0MembersLeftover = new BigNumber('20500000000000000000');
     const expectedVerifiersRewardP1 = expectedTotalRewardP1
       .multipliedBy(ether(60))
       .dividedBy(HUNDRED_PCT)
@@ -234,22 +236,17 @@ describe.skip('YALLCommissionReward Integration tests', () => {
       .plus(p0MembersLeftover);
     const expectedVerifierRewardP1 = expectedVerifiersRewardP1.dividedBy(3);
     const expectedMemberRewardP1 = expectedMembersRewardP1.dividedBy(3);
-    // const expectedAliceRewardP1 = expectedTotalRewardP1
-    //   .multipliedBy(ether(10))
-    //   .dividedBy(HUNDRED_PCT)
-    //   .multipliedBy(30)
-    //   .dividedBy(50);
-    // const expectedBobsRewardP1 = expectedTotalRewardP1
-    //   .multipliedBy(ether(10))
-    //   .dividedBy(HUNDRED_PCT)
-    //   .multipliedBy(20)
-    //   .dividedBy(50);
-    //
-    // // alice claims reward for 0th period
-    // let aliceBalanceBefore = await yallToken.balanceOf(alice);
-    // res = await commission.claimDelegatorReward(0, { from: alice });
-    // let aliceBalanceAfter = await yallToken.balanceOf(alice);
-    // await assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanceAfter, expectedAliceRewardP0.toString());
+    const expectedAliceRewardP1 = expectedTotalRewardP1
+      .multipliedBy(ether(10))
+      .dividedBy(HUNDRED_PCT)
+      .multipliedBy(30)
+      .dividedBy(50);
+
+    // alice claims reward for 0th period
+    let aliceBalanceBefore = await yallToken.balanceOf(alice);
+    res = await commission.claimDelegatorReward(0, { from: alice });
+    let aliceBalanceAfter = await yallToken.balanceOf(alice);
+    await assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanceAfter, expectedAliceRewardP0.toString());
     periodChangeLog = res.logs[1].args;
     assert.equal(periodChangeLog.newPeriodId, 1);
     assert.equal(periodChangeLog.totalReward, expectedTotalRewardP1.toString());
@@ -296,10 +293,10 @@ describe.skip('YALLCommissionReward Integration tests', () => {
     assert.equal(res.claimedMembersReward, 0);
 
     // alice claims reward for 1th period
-    // aliceBalanceBefore = await yallToken.balanceOf(alice);
-    // await commission.claimDelegatorReward(1, { from: alice });
-    // aliceBalanceAfter = await yallToken.balanceOf(alice);
-    // await assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanceAfter, expectedAliceRewardP1.toString());
+    aliceBalanceBefore = await yallToken.balanceOf(alice);
+    await commission.claimDelegatorReward(1, { from: alice });
+    aliceBalanceAfter = await yallToken.balanceOf(alice);
+    await assertErc20BalanceChanged(aliceBalanceBefore, aliceBalanceAfter, expectedAliceRewardP1.toString());
 
     // can't claim again
     await assertRevert(
@@ -331,9 +328,9 @@ describe.skip('YALLCommissionReward Integration tests', () => {
     assert.equal(periodChangeLog.newPeriodId, 2);
     assert.equal(periodChangeLog.totalReward, 0);
     assert.equal(periodChangeLog.totalDelegatorsReward, 0);
-    assert.equal(periodChangeLog.totalVerifiersReward, 0);
+    assert.equal(periodChangeLog.totalVerifiersReward, 1);
     assert.equal(periodChangeLog.totalMembersReward, 1);
-    assert.equal(periodChangeLog.previousUnclaimedVerifiersReward, 0);
+    assert.equal(periodChangeLog.previousUnclaimedVerifiersReward, 1);
     assert.equal(periodChangeLog.previousUnclaimedMembersReward, 1);
     assert.equal(periodChangeLog.verifierReward, 0);
     assert.equal(periodChangeLog.memberReward, 0);

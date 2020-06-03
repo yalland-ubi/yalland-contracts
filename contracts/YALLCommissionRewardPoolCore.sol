@@ -33,13 +33,12 @@ contract YALLCommissionRewardPoolCore is Initializable, YALLRegistryHelpers, ACL
   event ClaimDelegatorReward(
     address indexed delegator,
     uint256 indexed periodId,
-    uint256 grossAmount,
-    uint256 netAmount,
+    uint256 amount,
     uint256 stakeBalance,
     uint256 stakeTotalSupply
   );
-  event ClaimVerifierReward(address indexed verifier, uint256 indexed periodId, uint256 grossAmount, uint256 netAmount);
-  event ClaimMemberReward(address indexed verifier, uint256 indexed periodId, uint256 grossAmount, uint256 netAmount);
+  event ClaimVerifierReward(address indexed verifier, uint256 indexed periodId, uint256 amount);
+  event ClaimMemberReward(address indexed verifier, uint256 indexed periodId, uint256 amount);
   event PeriodChange(
     uint256 newPeriodId,
     uint256 totalReward,
