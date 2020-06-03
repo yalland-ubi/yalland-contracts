@@ -35,10 +35,9 @@ contract YALLFeeWithdrawable is IYALLFeeWithdrawable, YALLRegistryHelpers {
       payout = balance - 1 ether;
     }
 
-    payout = _yallToken().deductTransferFee(payout);
-
     emit WithdrawFee(msg.sender, true, payout);
 
+    // the contract should be in noTransferFee whitelist
     IERC20(tokenAddress).transfer(msg.sender, payout);
   }
 }
