@@ -92,7 +92,7 @@ describe('YALLCommissionReward Integration tests', () => {
     await yallToken.setCanTransferWhitelistAddress(alice, true, { from: yallTokenManager });
   });
 
-  it.only('should distribute commission rewards correctly', async function () {
+  it('should distribute commission rewards correctly', async function () {
     const step1 = (await now()) - 100;
     const step2 = (await now()) - 50;
 
