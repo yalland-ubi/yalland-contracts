@@ -6,6 +6,26 @@ jobs:
   test:
     runs-on: ubuntu-18.04
     steps:
+    - uses: actions/checkout@v1
+    - name: Install Solidity compiler
+      run: |
+        wget https://github.com/ethereum/solidity/releases/download/v0.5.17/solc-static-linux
+        chmod ugo+x solc-static-linux
+        sudo mv solc-static-linux /usr/bin/solc
+    - uses: actions/setup-node@v1
+      with:
+        node-version: '10.x'
+    - uses: actions/cache@v1
+      with:
+        path: ~/.npm
+        key: tests-node-${{ hashFiles('**/package-lock.json') }}
+    - name: Run tests
+      run: |
+        npm install
+        make lint && make compile && npm run test
+  coverage:
+    runs-on: ubuntu-18.04
+    steps:
       - uses: actions/checkout@v1
       - name: Install Solidity compiler
         run: |
@@ -15,15 +35,11 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: '10.x'
+      - uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: coverage-node-${{ hashFiles('**/package-lock.json') }}
       - name: Run tests
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
-          eval $(ssh-agent -s)
-          echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
-          yarn
-          # TODO: enable js tests linter
-          yarn lint:sol && make compile && yarn test
+          npm install
+          make coverage
