@@ -182,9 +182,9 @@ async function buildCoinDistAndExchange(governance, config) {
   config.exchangeSuperOperator &&
     (await registry.setRole(config.exchangeSuperOperator, await exchange.EXCHANGE_SUPER_OPERATOR_ROLE(), true));
   config.commissionRewardPoolManager &&
-    (await registry.setRole(config.commissionRewardPoolManager, await exchange.COMMISSION_POOL_MANAGER_ROLE(), true));
+    (await registry.setRole(config.commissionRewardPoolManager, await dist.COMMISSION_POOL_MANAGER_ROLE(), true));
   config.emissionRewardPoolManager &&
-    (await registry.setRole(config.emissionRewardPoolManager, await exchange.EMMISSION_POOL_MANAGER_ROLE(), true));
+    (await registry.setRole(config.emissionRewardPoolManager, await dist.EMMISSION_POOL_MANAGER_ROLE(), true));
 
   // setup whitelisted contracts
   await registry.setRole(defaultSender, await yallToken.YALL_TOKEN_MANAGER_ROLE(), true);
@@ -205,6 +205,8 @@ async function buildCoinDistAndExchange(governance, config) {
   exchange && (await yallToken.setNoTransferFeeWhitelistAddress(exchange.address, true));
   commission && (await yallToken.setNoTransferFeeWhitelistAddress(commission.address, true));
   emission && (await yallToken.setNoTransferFeeWhitelistAddress(emission.address, true));
+  config.feeCollector && (await yallToken.setNoTransferFeeWhitelistAddress(config.feeCollector, true));
+  config.gsnFeeCollector && (await yallToken.setNoTransferFeeWhitelistAddress(config.gsnFeeCollector, true));
 
   await yallToken.setTransferRestrictionMode(TransferRestrictionsMode.ONLY_MEMBERS_OR_WHITELIST);
 

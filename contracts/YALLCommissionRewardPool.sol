@@ -98,12 +98,6 @@ contract YALLCommissionRewardPool is YALLCommissionRewardPoolCore {
   }
 
   // COMMISSION REWARD POOL MANAGER INTERFACE
-
-  function setSources(address[] calldata _sources) external onlyCommissionRewardPoolManager {
-    sources = _sources;
-    emit SetSources(_sources);
-  }
-
   function setShares(
     uint256 _delegatorsShare,
     uint256 _verifiersShare,
@@ -127,16 +121,14 @@ contract YALLCommissionRewardPool is YALLCommissionRewardPoolCore {
     require(totalSupply > 0, "YALLCommissionRewardPool: Total supply is 0 for given period");
 
     // periods[_periodId].totalDelegatorsReward * (balance / totalSupply)
-    uint256 grossReward = period.totalDelegatorsReward.mul(balance).div(totalSupply);
-    require(grossReward > 0, "YALLCommissionRewardPool: Calculated gross reward is 0");
+    uint256 reward = period.totalDelegatorsReward.mul(balance).div(totalSupply);
+    require(reward > 0, "YALLCommissionRewardPool: Calculated gross reward is 0");
 
     delegatorClaimedPeriods[_periodId][msg.sender] = true;
 
-    uint256 netReward = _yallToken().deductTransferFee(grossReward);
-    require(netReward > 0, "YALLCommissionRewardPool: Calculated net reward is 0");
-    emit ClaimDelegatorReward(msg.sender, _periodId, grossReward, netReward, balance, totalSupply);
+    emit ClaimDelegatorReward(msg.sender, _periodId, reward, balance, totalSupply);
 
-    _yallTokenIERC20().transfer(msg.sender, netReward);
+    _yallTokenIERC20().transfer(msg.sender, reward);
   }
 
   // VERIFIER INTERFACE
@@ -148,9 +140,9 @@ contract YALLCommissionRewardPool is YALLCommissionRewardPoolCore {
 
     requireVerifierCanClaimReward(msg.sender);
 
-    uint256 grossReward = period.verifierReward;
+    uint256 reward = period.verifierReward;
 
-    period.claimedVerifiersReward = period.claimedVerifiersReward.add(grossReward);
+    period.claimedVerifiersReward = period.claimedVerifiersReward.add(reward);
     require(
       period.claimedVerifiersReward <= period.totalVerifiersReward,
       "YALLCommissionRewardPool: Total claimed exceeds max due an unknown reason"
@@ -158,12 +150,12 @@ contract YALLCommissionRewardPool is YALLCommissionRewardPoolCore {
 
     verifierClaimedPeriods[currentPeriodId][msg.sender] = true;
 
-    uint256 netReward = _yallToken().deductTransferFee(grossReward);
+    uint256 netReward = _yallToken().deductTransferFee(reward);
     require(netReward > 0, "YALLCommissionRewardPool: Calculated net reward is 0");
 
-    emit ClaimVerifierReward(msg.sender, currentPeriodId, grossReward, netReward);
+    emit ClaimVerifierReward(msg.sender, currentPeriodId, reward);
 
-    _yallTokenIERC20().transfer(msg.sender, netReward);
+    _yallTokenIERC20().transfer(msg.sender, reward);
   }
 
   // MEMBER INTERFACE
@@ -175,9 +167,9 @@ contract YALLCommissionRewardPool is YALLCommissionRewardPoolCore {
 
     requireMemberCanClaimReward(msg.sender);
 
-    uint256 grossReward = period.memberReward;
+    uint256 reward = period.memberReward;
 
-    period.claimedMembersReward = period.claimedMembersReward.add(grossReward);
+    period.claimedMembersReward = period.claimedMembersReward.add(reward);
     require(
       period.claimedMembersReward <= period.totalMembersReward,
       "YALLCommissionRewardPool: Total claimed exceeds max due an unknown reason"
@@ -185,11 +177,9 @@ contract YALLCommissionRewardPool is YALLCommissionRewardPoolCore {
 
     memberClaimedPeriods[currentPeriodId][msg.sender] = true;
 
-    uint256 netReward = _yallToken().deductTransferFee(grossReward);
-    require(netReward > 0, "YALLCommissionRewardPool: Calculated net reward is 0");
-    emit ClaimMemberReward(msg.sender, currentPeriodId, grossReward, netReward);
+    emit ClaimMemberReward(msg.sender, currentPeriodId, reward);
 
-    _yallTokenIERC20().transfer(msg.sender, netReward);
+    _yallTokenIERC20().transfer(msg.sender, reward);
   }
 
   // INTERNAL METHODS
@@ -212,13 +202,11 @@ contract YALLCommissionRewardPool is YALLCommissionRewardPoolCore {
 
   // @dev YALL transfer fees are accounted within the diff variable
   function _withdrawFees() internal returns (uint256) {
-    uint256 len = sources.length;
+    address feeCollector = _feeCollector();
 
     uint256 balanceBefore = _yallTokenIERC20().balanceOf(address(this));
 
-    for (uint256 i = 0; i < len; i++) {
-      IYALLFeeWithdrawable(sources[i]).withdrawFee();
-    }
+    IYALLFeeWithdrawable(feeCollector).withdrawFee();
 
     uint256 balanceAfter = _yallTokenIERC20().balanceOf(address(this));
     uint256 diff = balanceAfter.sub(balanceBefore);
