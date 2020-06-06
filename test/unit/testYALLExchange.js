@@ -7,7 +7,9 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-const { accounts, contract, web3, defaultSender } = require('@openzeppelin/test-environment');
+const { accounts, defaultSender } = require('@openzeppelin/test-environment');
+// eslint-disable-next-line import/order
+const { contract } = require('../twrapper');
 const { assert } = require('chai');
 const BigNumber = require('bignumber.js');
 const { deployRelayHub, fundRecipient } = require('@openzeppelin/gsn-helpers');
@@ -21,7 +23,7 @@ const {
   assertErc20BalanceChanged,
 } = require('@galtproject/solidity-test-chest')(web3);
 
-const { approveFunction, assertRelayedCall, GSNRecipientSignatureErrorCodes } = require('../helpers')(web3);
+const { assertRelayedCall, GSNRecipientSignatureErrorCodes } = require('../helpers')(web3);
 const { buildCoinDistAndExchange } = require('../builders');
 
 const MockMeter = contract.fromArtifact('MockMeter');
@@ -100,9 +102,6 @@ describe('YALLExchange Unit tests', () => {
     await exchange.setDefaultMemberPeriodLimit(ether(30), { from: exchangeManager });
     await exchange.setTotalPeriodLimit(ether(70), { from: exchangeManager });
     await exchange.setGsnFee(ether('3'), { from: feeManager });
-
-    // this will affect on dist provider too
-    yallToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
 
     await deployRelayHub(web3);
     await fundRecipient(web3, { recipient: exchange.address, amount: ether(1) });

@@ -1,3 +1,5 @@
+// const coverage = process.env.TEST_ENV_COVERAGE !== undefined;
+
 module.exports = {
   accounts: {
     amount: 20, // Number of unlocked accounts
@@ -16,18 +18,24 @@ module.exports = {
   node: {
     // Options passed directly to Ganache client
     gasLimit: 96000000, // Maximum gas per block
-    gasPrice: 1e9, // Sets the default gas price for transactions if not otherwise specified.
+    gasPrice: 1, // Sets the default gas price for transactions if not otherwise specified.
   },
   setupProvider: (baseProvider) => {
     // eslint-disable-next-line global-require
     const { GSNDevProvider } = require('@openzeppelin/gsn-provider');
     // eslint-disable-next-line global-require
     const { accounts } = require('@openzeppelin/test-environment');
+    // eslint-disable-next-line global-require
+    const Web3 = require('web3');
+    // eslint-disable-next-line global-require
+    const { approveFunction } = require('./test/helpers')(new Web3(baseProvider));
 
     return new GSNDevProvider(baseProvider, {
+      fixedGasPrice: 1,
       txfee: 70,
       useGSN: false,
       debug: false,
+      approveFunction,
       ownerAddress: accounts[8],
       relayerAddress: accounts[9],
     });

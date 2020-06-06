@@ -31,7 +31,7 @@ const TransferRestrictionsMode = {
 };
 
 module.exports = async function (truffle, network, accounts) {
-  if (network === 'test' || network === 'local_test' || network === 'development') {
+  if (network === 'test' || network === 'soliditycoverage' || network === 'development') {
     console.log('Skipping deployment migration');
     return;
   }

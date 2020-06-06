@@ -1,6 +1,9 @@
 /* eslint-disable no-unused-expressions */
 
-const { contract, web3, defaultSender } = require('@openzeppelin/test-environment');
+const { defaultSender } = require('@openzeppelin/test-environment');
+const { contract } = require('./twrapper');
+// eslint-disable-next-line import/order
+const { ether, now } = require('@galtproject/solidity-test-chest')(web3);
 
 const YALLToken = contract.fromArtifact('YALLToken');
 const YALLRegistry = contract.fromArtifact('YALLRegistry');
@@ -19,8 +22,6 @@ YALLDistributor.numberFormat = 'String';
 YALLEmissionRewardPool.numberFormat = 'String';
 YALLCommissionRewardPool.numberFormat = 'String';
 StakingHomeMediator.numberFormat = 'String';
-
-const { ether, now } = require('@galtproject/solidity-test-chest')(web3);
 
 const TransferRestrictionsMode = {
   OFF: 0,

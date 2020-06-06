@@ -7,7 +7,9 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-const { accounts, defaultSender, contract, web3 } = require('@openzeppelin/test-environment');
+const { accounts, defaultSender } = require('@openzeppelin/test-environment');
+// eslint-disable-next-line import/order
+const { contract } = require('./twrapper');
 const { assert } = require('chai');
 const { BigNumber } = require('bignumber.js');
 const { deployRelayHub, fundRecipient } = require('@openzeppelin/gsn-helpers');
@@ -79,8 +81,6 @@ describe('YALLToken', () => {
       from: distributorVerifier,
     });
     await increaseTime(20);
-
-    yallToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
 
     await deployRelayHub(web3);
     await fundRecipient(web3, { recipient: dist.address, amount: ether(1) });

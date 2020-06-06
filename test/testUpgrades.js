@@ -1,16 +1,8 @@
-/*
- * Copyright ©️ 2018 Galt•Project Society Construction and Terraforming Company
- * (Founded by [Nikolai Popeka](https://github.com/npopeka)
- *
- * Copyright ©️ 2018 Galt•Core Blockchain Company
- * (Founded by [Nikolai Popeka](https://github.com/npopeka) by
- * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
- */
-
-const { accounts, contract, web3 } = require('@openzeppelin/test-environment');
+const { accounts } = require('@openzeppelin/test-environment');
 const { zeroAddress } = require('@galtproject/solidity-test-chest')(web3);
 const { assert } = require('chai');
 const { buildCoinDistAndExchange } = require('./builders');
+const { contract } = require('./twrapper');
 
 const ProxyAdmin = contract.fromArtifact('ProxyAdmin');
 const MockRegistryV2 = contract.fromArtifact('MockRegistryV2');

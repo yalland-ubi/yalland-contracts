@@ -7,11 +7,14 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-const { accounts, contract, web3, defaultSender } = require('@openzeppelin/test-environment');
+const { accounts, defaultSender } = require('@openzeppelin/test-environment');
+// eslint-disable-next-line import/order
+const { contract } = require('../twrapper');
 const { assert } = require('chai');
 const { deployRelayHub, fundRecipient } = require('@openzeppelin/gsn-helpers');
 const {
   ether,
+  now,
   int,
   increaseTime,
   assertRevert,
@@ -19,12 +22,12 @@ const {
   getResTimestamp,
   assertErc20BalanceChanged,
 } = require('@galtproject/solidity-test-chest')(web3);
-const { buildCoinDistAndExchange } = require('../builders');
+const { deployWithProxy, buildCoinDistAndExchange } = require('../builders');
 
 const YALLToken = contract.fromArtifact('YALLToken');
 const YALLDistributor = contract.fromArtifact('YALLDistributor');
 const MockMeter = contract.fromArtifact('MockMeter');
-const { approveFunction, assertRelayedCall, GSNRecipientSignatureErrorCodes } = require('../helpers')(web3);
+const { assertRelayedCall, GSNRecipientSignatureErrorCodes } = require('../helpers')(web3);
 
 YALLToken.numberFormat = 'String';
 YALLDistributor.numberFormat = 'String';
@@ -61,9 +64,10 @@ describe('YALLDistributor Unit tests', () => {
   let yallToken;
   let dist;
   let registry;
+  let proxyAdmin;
 
   beforeEach(async function () {
-    ({ registry, yallToken, dist } = await buildCoinDistAndExchange(defaultSender, {
+    ({ registry, yallToken, dist, proxyAdmin } = await buildCoinDistAndExchange(defaultSender, {
       periodVolume,
       pauser,
       feeManager,
@@ -87,9 +91,6 @@ describe('YALLDistributor Unit tests', () => {
 
     await dist.setGsnFee(ether('4.2'), { from: feeManager });
 
-    // this will affect on dist provider too
-    yallToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
-
     await deployRelayHub(web3);
     await fundRecipient(web3, { recipient: dist.address, amount: ether(1) });
   });
@@ -99,12 +100,26 @@ describe('YALLDistributor Unit tests', () => {
       const memberId = keccak256('bob');
 
       it('should deny calling the method before genesis', async function () {
-        await assertRevert(dist.addMember(memberId1, bob, { from: distributorVerifier }), ' Contract not initiated ye');
+        const distDeployment = await deployWithProxy(
+          YALLDistributor,
+          proxyAdmin.address,
+          periodVolume,
+          10,
+
+          registry.address,
+          periodLength,
+          parseInt(await now(), 10) + 10
+        );
+        const dist2 = distDeployment.contract;
+        await assertRevert(
+          dist2.addMember(memberId1, bob, { from: distributorVerifier }),
+          'Contract not initiated yet'
+        );
       });
 
       describe('after genesis', () => {
         beforeEach(async function () {
-          await increaseTime(11);
+          await increaseTime(21);
           assert.equal(await dist.getCurrentPeriodId(), 0);
         });
 

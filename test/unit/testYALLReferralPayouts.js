@@ -7,7 +7,9 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-const { accounts, contract, defaultSender, web3 } = require('@openzeppelin/test-environment');
+const { accounts, defaultSender } = require('@openzeppelin/test-environment');
+// eslint-disable-next-line import/order
+const { contract } = require('../twrapper');
 const { assert } = require('chai');
 const BigNumber = require('bignumber.js');
 const { ether, assertRevert, assertErc20BalanceChanged } = require('@galtproject/solidity-test-chest')(web3);
