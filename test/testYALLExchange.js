@@ -13,8 +13,6 @@ const { deployRelayHub, fundRecipient } = require('@openzeppelin/gsn-helpers');
 const { ether, increaseTime, assertRevert, getEventArg } = require('@galtproject/solidity-test-chest')(web3);
 const { buildCoinDistAndExchange } = require('./builders');
 
-const { approveFunction } = require('./helpers')(web3);
-
 const OrderStatus = {
   NULL: 0,
   OPEN: 1,

@@ -47,6 +47,7 @@ module.exports = {
     test: {
       // https://github.com/trufflesuite/ganache-core#usage
       provider() {
+        // eslint-disable-next-line global-require
         const { provider } = require('@openzeppelin/test-environment');
         return provider;
       },

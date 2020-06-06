@@ -1,8 +1,9 @@
+const { setupLoader } = require('@openzeppelin/contract-loader');
+
 const coverage = process.env.TEST_ENV_COVERAGE !== undefined;
 
 let provider;
 
-const { setupLoader } = require('@openzeppelin/contract-loader');
 const testHelpers = require('@openzeppelin/test-environment');
 const testEnvironmentConfig = require('../test-environment.config');
 

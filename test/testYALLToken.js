@@ -27,7 +27,7 @@ const zero = new BigNumber(0);
 
 YALLToken.numberFormat = 'String';
 
-const { approveFunction, assertRelayedCall } = require('./helpers')(web3);
+const { assertRelayedCall } = require('./helpers')(web3);
 
 const keccak256 = web3.utils.soliditySha3;
 
