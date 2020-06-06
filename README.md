@@ -8,6 +8,9 @@
 <div align="center">
 
 ![CI](https://github.com/yalland-ubi/yalland-contracts/workflows/CI/badge.svg)
+<a href="https://codecov.io/gh/yalland-ubi/yalland-contracts">
+  <img src="https://codecov.io/gh/yalland-ubi/yalland-contracts/branch/develop/graph/badge.svg" />
+</a>
 <img src="https://img.shields.io/github/issues-raw/yalland-ubi/yalland-contracts.svg?color=green&style=flat-square" alt="Opened issues"/>
 <img src="https://img.shields.io/github/issues-closed-raw/yalland-ubi/yalland-contracts.svg?color=blue&style=flat-square" alt="Closed issues" />
 <img src="https://img.shields.io/github/issues-pr-closed/yalland-ubi/yalland-contracts.svg?color=green&style=flat-square" alt="Closed PR"/>
