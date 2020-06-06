@@ -42,4 +42,4 @@ jobs:
       - name: Run tests
         run: |
           npm install
-          make coverage
+          make compile && make coverage
