@@ -7,19 +7,20 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-const { accounts, defaultSender, web3 } = require('@openzeppelin/test-environment');
+const { defaultSender } = require('@openzeppelin/test-environment/lib/accounts');
+const { accounts } = require('@openzeppelin/test-environment');
 const { assert } = require('chai');
 const { deployRelayHub, fundRecipient } = require('@openzeppelin/gsn-helpers');
 const { ether, getEventArg, increaseTime, assertRevert, assertGsnReject } = require('@galtproject/solidity-test-chest')(
   web3
 );
-const { buildCoinDistAndExchange } = require('./builders');
 
-const { approveFunction, GSNRecipientSignatureErrorCodes } = require('./helpers')(web3);
+const { buildCoinDistAndExchange } = require('./builders');
+const { GSNRecipientSignatureErrorCodes } = require('./helpers')(web3);
 
 const keccak256 = web3.utils.soliditySha3;
 
-describe('YALLDistribution Integration Tests', () => {
+describe('YALLDistribution Integration Tests', function () {
   const [
     distributorVerifier,
     distributorManager,
@@ -66,9 +67,6 @@ describe('YALLDistribution Integration Tests', () => {
 
     await yallToken.setTransferFee(ether(10), { from: feeManager });
     await yallToken.mint(alice, ether(baseAliceBalance), { from: yallMinter });
-
-    // this will affect on dist provider too
-    yallToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
 
     await deployRelayHub(web3);
     await fundRecipient(web3, { recipient: dist.address, amount: ether(1) });

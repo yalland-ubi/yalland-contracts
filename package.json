@@ -7,12 +7,13 @@
   },
   "scripts": {
     "test": "mocha --exit --recursive test --timeout 10000",
+    "ttest": "truffle test --network test",
     "ganache-fork": "ganache-cli --fork http://127.0.0.1:8245@4127311 --gasLimit 28000000",
     "compile": "truffle compile",
+    "coverage": "./scripts/coverage.sh",
     "format:js": "eslint --fix .",
     "format:sol": "prettier --write \"contracts/**/*.sol\"",
     "lint:js": "eslint .",
-    "pr": "prettier --version",
     "lint:sol": "solhint --max-warnings 0 \"contracts/**/*.sol\""
   },
   "repository": {
@@ -28,31 +29,31 @@
   "dependencies": {
     "@galtproject/eslint-config-galt": "github:galtproject/eslint-config-galt#ae71c5c49fa0e6b42fe40e89ec2825be19fb30e8",
     "@galtproject/solidity-test-chest": "https://github.com/galtproject/solidity-test-chest#46d6bc2a189ab0336ab4e08fceae1b06ffa17004",
+    "@openzeppelin/contract-loader": "^0.6.1",
     "@openzeppelin/contracts": "2.5.1",
     "@openzeppelin/gsn-helpers": "^0.2.3",
     "@openzeppelin/gsn-provider": "^0.1.10",
+    "@openzeppelin/test-environment": "^0.1.3",
     "@openzeppelin/upgrades": "2.8.0",
     "@truffle/hdwallet-provider": "^1.0.28",
     "axios": "^0.19.2",
     "bignumber.js": "^9.0.0",
+    "buffer": "^5.1.0",
+    "chai": "^4.2.0",
     "cli-table": "^0.3.1",
     "erc20-staking-contracts": "github:yalland-ubi/erc20-staking-contracts#2892bd9b8fb94425b37990e0fe55b43ab6d96c6f",
     "eth-sig-util": "^2.5.2",
     "ethlint": "^1.2.5",
     "ganache-core": "^2.10.2",
     "lodash": "^4.17.15",
+    "mocha": "^7.1.0",
     "rimraf": "^3.0.2",
     "solhint": "^3.0.0",
     "solhint-plugin-prettier": "0.0.4",
+    "solidity-coverage": "^0.7.5",
     "truffle": "5.1.28",
     "web3": "1.2.8",
-    "yamljs": "^0.3.0",
-    "@openzeppelin/test-environment": "^0.1.3",
-    "buffer": "^5.1.0",
-    "chai": "^4.2.0",
-    "ganache-cli": "^6.8.1",
-    "mocha": "^7.1.0"
+    "yamljs": "^0.3.0"
   },
-  "devDependencies": {
-  }
+  "devDependencies": {}
 }

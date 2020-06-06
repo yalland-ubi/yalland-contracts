@@ -7,13 +7,11 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-const { accounts, web3, defaultSender } = require('@openzeppelin/test-environment');
+const { accounts, defaultSender } = require('@openzeppelin/test-environment');
 const { assert } = require('chai');
 const { deployRelayHub, fundRecipient } = require('@openzeppelin/gsn-helpers');
 const { ether, increaseTime, assertRevert, getEventArg } = require('@galtproject/solidity-test-chest')(web3);
 const { buildCoinDistAndExchange } = require('./builders');
-
-const { approveFunction } = require('./helpers')(web3);
 
 const OrderStatus = {
   NULL: 0,
@@ -84,9 +82,6 @@ describe('YALLExchange Integration tests', () => {
 
     await yallToken.mint(dan, ether(11), { from: yallMinter });
     await yallToken.transfer(exchange.address, ether(10), { from: dan });
-
-    // this will affect on dist provider too
-    yallToken.contract.currentProvider.wrappedProvider.relayClient.approveFunction = approveFunction;
 
     await deployRelayHub(web3);
     await fundRecipient(web3, { recipient: dist.address, amount: ether(1) });

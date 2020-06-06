@@ -13,6 +13,10 @@ const YALLTokenEthereum = artifacts.require('./YALLTokenEthereum');
 const { web3 } = YALLTokenEthereum;
 
 module.exports = async function (truffle, network, accounts) {
+  if (network === 'test' || network === 'soliditycoverage' || network === 'development') {
+    console.log('Skipping deployment migration');
+    return;
+  }
   // eslint-disable-next-line global-require
   const { Deployment } = require('../scripts/deployment')(web3, Proxy);
   const deployment = new Deployment(truffle, network, accounts[0]);
