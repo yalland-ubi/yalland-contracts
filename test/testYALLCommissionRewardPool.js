@@ -28,7 +28,7 @@ const keccak256 = web3.utils.soliditySha3;
 BigNumber.set({ ROUNDING_MODE: BigNumber.ROUND_DOWN, DECIMAL_PLACES: 0, EXPONENTIAL_AT: [-30, 30] });
 const HUNDRED_PCT = new BigNumber(ether(100));
 
-describe.only('YALLCommissionReward Integration tests', () => {
+describe('YALLCommissionReward Integration tests', () => {
   const [
     alice,
     bob,
