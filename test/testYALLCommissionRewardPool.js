@@ -7,7 +7,9 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-const { accounts, contract, web3, defaultSender } = require('@openzeppelin/test-environment');
+const { accounts, defaultSender } = require('@openzeppelin/test-environment');
+// eslint-disable-next-line import/order
+const { contract } = require('./twrapper');
 const {
   ether,
   now,
@@ -26,7 +28,7 @@ const keccak256 = web3.utils.soliditySha3;
 BigNumber.set({ ROUNDING_MODE: BigNumber.ROUND_DOWN, DECIMAL_PLACES: 0, EXPONENTIAL_AT: [-30, 30] });
 const HUNDRED_PCT = new BigNumber(ether(100));
 
-describe('YALLCommissionReward Integration tests', () => {
+describe.only('YALLCommissionReward Integration tests', () => {
   const [
     alice,
     bob,
