@@ -68,7 +68,7 @@ contract YALLCommissionRewardPool is YALLCommissionRewardPoolCore {
     period.totalVerifiersReward = currentVerifiersReward.add(previousNotClaimedVerifiersReward);
     period.totalMembersReward = currentMembersReward.add(previousNotClaimedMembersReward);
 
-    uint256 activeVerifierCount = _yallVerification().activeVerifierCount();
+    uint256 activeVerifierCount = _yallVerification().getActiveVerifierCount();
     uint256 activeMemberCount = _yallDistributor().activeMemberCount();
 
     require(activeVerifierCount > 0, "YALLCommissionRewardPool: Doesn't support 0 verifier count");
@@ -225,7 +225,7 @@ contract YALLCommissionRewardPool is YALLCommissionRewardPoolCore {
       "YALLCommissionRewardPool: Already claimed for the current period"
     );
 
-    (bool active, , uint256 createdAt, uint256 lastEnabledAt, uint256 lastDisabledAt) = _yallVerification().verifiers(
+    (bool active, uint256 createdAt, uint256 lastEnabledAt, uint256 lastDisabledAt) = _yallVerification().verifiers(
       _verifier
     );
 

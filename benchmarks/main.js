@@ -1,7 +1,12 @@
-// const { getLoader } = require('../galtproject-gpc');
-const { accounts, contract, web3, defaultSender } = require('@openzeppelin/test-environment');
+let hook;
+global.before = function (_hook) {
+  hook = _hook;
+};
+const { accounts, contract, defaultSender } = require('@openzeppelin/test-environment');
 const assert = require('assert');
-const { buildCoinDistAndExchange } = require('../test/builders');
+// eslint-disable-next-line import/order
+// const { contract } = require('../test/twrapper');
+const { buildCoinDistAndExchange, deployWithProxy } = require('../test/builders');
 const benchmark = require('../benchmark');
 
 // eslint-disable-next-line import/order
@@ -10,13 +15,14 @@ const { getEventArg, ether } = require('@galtproject/solidity-test-chest')(web3)
 const keccak256 = web3.utils.soliditySha3;
 
 const YALLToken = contract.fromArtifact('YALLToken');
+const YALLVerification = contract.fromArtifact('YALLVerification');
 const Mock = contract.fromArtifact('MockRegistryV2');
 const ERC20Managed = contract.fromArtifact('ERC20Managed');
 
 YALLToken.numberFormat = 'String';
 ERC20Managed.numberFormat = 'String';
 
-const [alice, bob, charlie, distributorVerifier, feeManager, yallMinter, yallTokenManager] = accounts;
+const [alice, bob, charlie, distributorVerifier, feeManager, yallMinter, yallTokenManager, governance] = accounts;
 
 const memberId1 = keccak256('alice');
 const memberId2 = keccak256('bob');
@@ -26,16 +32,23 @@ benchmark(() => {
   let yallToken;
   let dist;
   let registry;
+  let proxyAdmin;
+  let verification;
   let feeCollector;
+  let gsnFeeCollector;
 
   before(async function () {
+    hook();
     feeCollector = (await Mock.new()).address;
-    ({ yallToken, dist, registry } = await buildCoinDistAndExchange(defaultSender, {
+    gsnFeeCollector = (await Mock.new()).address;
+    ({ yallToken, dist, registry, verification, proxyAdmin } = await buildCoinDistAndExchange(defaultSender, {
       distributorVerifier,
       feeManager,
       yallMinter,
       yallTokenManager,
       feeCollector,
+      gsnFeeCollector,
+      governance,
     }));
     await dist.addMembersBeforeGenesis([memberId1, memberId2, memberId3], [alice, bob, charlie], {
       from: distributorVerifier,
@@ -123,6 +136,37 @@ benchmark(() => {
       const res = await c1.transferFrom(c0.address, c2.address, ether(10));
       const gasUsed = getEventArg(res, 'GasUsedEvent', 'gasUsed');
       return parseInt(gasUsed, 10);
+    });
+  });
+
+  describe('#setVerifiers)', function () {
+    beforeEach(async function () {
+      const verificationDeployment = await deployWithProxy(YALLVerification, proxyAdmin.address, registry.address);
+      verification = verificationDeployment.contract;
+      await registry.setContract(await registry.YALL_VERIFICATION_KEY(), verification.address);
+    });
+
+    run('set 3 initial verifiers', async function () {
+      return verification.setVerifiers([alice, bob, charlie], 2, { from: governance });
+    });
+
+    run('set 20 initial verifiers', async function () {
+      const initialVerifiers = [];
+      for (let i = 0; i < 20; i++) {
+        initialVerifiers.push(web3.eth.accounts.create().address);
+      }
+      return verification.setVerifiers(initialVerifiers, 15, { from: governance });
+    });
+
+    run('replace 20 initial verifiers with 20 new', async function () {
+      const initialVerifiers = [];
+      const newVerifiers = [];
+      for (let i = 0; i < 20; i++) {
+        initialVerifiers.push(web3.eth.accounts.create().address);
+        newVerifiers.push(web3.eth.accounts.create().address);
+      }
+      await verification.setVerifiers(initialVerifiers, 15, { from: governance });
+      return verification.setVerifiers(newVerifiers, 15, { from: governance });
     });
   });
 });

@@ -10,18 +10,20 @@
 pragma solidity ^0.5.17;
 
 interface IYALLVerification {
-  function activeVerifierCount() external returns (uint256);
+  // OWNER INTERFACE
+  function setVerifiers(address[] calldata _newVerifierAddresses, uint256 _newM) external;
 
-  function addVerifiers(address[] calldata _verifierAddresses) external;
-
+  // PUBLIC MAPPINGS
   function verifiers(address _verifier)
     external
     view
     returns (
       bool active,
-      address addr,
       uint256 createdAt,
       uint256 lastEnabledAt,
       uint256 lastDisabledAt
     );
+
+  // GETTERS
+  function getActiveVerifierCount() external view returns (uint256);
 }

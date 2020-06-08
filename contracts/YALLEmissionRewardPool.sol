@@ -52,7 +52,7 @@ contract YALLEmissionRewardPool is YALLEmissionRewardPoolCore {
     // period.totalDelegatorsReward = totalReward * delegatorsShare / RATE_DIVIDER;
     period.totalDelegatorsReward = totalReward.mul(delegatorsShare) / RATE_DIVIDER;
 
-    uint256 activeVerifierCount = _yallVerification().activeVerifierCount();
+    uint256 activeVerifierCount = _yallVerification().getActiveVerifierCount();
     require(activeVerifierCount > 0, "YALLEmissionRewardPool: Doesn't support 0 verifier count");
 
     period.verifierReward = period.totalVerifiersReward / activeVerifierCount;
@@ -124,7 +124,7 @@ contract YALLEmissionRewardPool is YALLEmissionRewardPoolCore {
       "YALLEmissionRewardPool: Already claimed for the current period"
     );
 
-    (bool active, , uint256 createdAt, uint256 lastEnabledAt, uint256 lastDisabledAt) = _yallVerification().verifiers(
+    (bool active, uint256 createdAt, uint256 lastEnabledAt, uint256 lastDisabledAt) = _yallVerification().verifiers(
       _verifier
     );
 

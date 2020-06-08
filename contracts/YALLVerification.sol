@@ -11,70 +11,97 @@ pragma solidity ^0.5.17;
 
 import "./registry/YALLRegistryHelpers.sol";
 import "./YALLVerificationCore.sol";
+import "./traits/YALLRewardClaimer.sol";
 
 /**
  * @title YALLVerification contract
  * @author Galt Project
  * @notice Verification interface for verifiers
  **/
-contract YALLVerification is YALLVerificationCore {
+contract YALLVerification is YALLVerificationCore, YALLRewardClaimer {
   function initialize(address _yallRegistry) external initializer {
     yallRegistry = YALLRegistry(_yallRegistry);
   }
 
-  function addVerifiers(address[] calldata _verifierAddresses) external {
-    uint256 len = _verifierAddresses.length;
+  // GOVERNANCE INTERFACE
+  function setVerifiers(address[] calldata _newVerifierAddresses, uint256 newRequired) external onlyGovernance {
+    uint256 newLength = _newVerifierAddresses.length;
 
-    require(len > 0, "YALLVerification: Missing input verifiers");
+    require(newLength > 0, "YALLVerification: Missing input verifiers");
+    require(newRequired > 0, "YALLVerification: newRequired should be greater than 0");
+    require(newLength >= newRequired, "YALLVerification: Requires verifiers.length >= newRequired");
 
-    for (uint256 i = 0; i < len; i++) {
-      _addVerifier(_verifierAddresses[i]);
+    address[] memory existingVerifiers = getActiveVerifiers();
+    uint256 existingLength = existingVerifiers.length;
+
+    // Disable of required
+    for (uint256 i = 0; i < existingLength; i++) {
+      _disableIfRequired(existingVerifiers[i], _newVerifierAddresses);
     }
 
-    _incrementActiveVerifierCount(len);
-  }
-
-  function disableVerifiers(address[] calldata _verifierAddresses) external {
-    uint256 len = _verifierAddresses.length;
-
-    require(len > 0, "YALLDistributor: Missing input verifiers");
-
-    for (uint256 i = 0; i < len; i++) {
-      Verifier storage v = verifiers[_verifierAddresses[i]];
-      require(v.active == true, "YALLDistributor: One of the verifiers is inactive");
-
-      v.active = false;
-      v.lastDisabledAt = now;
-
-      //      emit DisableMember(memberId, addr);
+    // Add or enable
+    for (uint256 i = 0; i < newLength; i++) {
+      _addOrEnable(_newVerifierAddresses[i], existingVerifiers);
     }
 
-    _decrementActiveVerifierCount(len);
+    required = newRequired;
   }
 
-  function _addVerifier(address _verifierAddress) internal {
-    Verifier storage v = verifiers[_verifierAddress];
+  function _disableIfRequired(address _existingVerifier, address[] memory _newVerifierAddresses) internal {
+    uint256 newLength = _newVerifierAddresses.length;
 
-    v.addr = _verifierAddress;
-    v.active = true;
-    v.createdAt = now;
+    for (uint256 i = 0; i < newLength; i++) {
+      if (_newVerifierAddresses[i] == _existingVerifier) {
+        return;
+      }
+    }
 
-    _activeAddressesCache.add(_verifierAddress);
+    Verifier storage v = verifiers[_existingVerifier];
+    require(v.active == true, "YALLVerification: One of the verifiers is inactive");
 
-    //    emit AddMember(_verifierId, _verifierAddress);
+    v.active = false;
+    v.lastDisabledAt = now;
+
+    _activeAddressesCache.remove(_existingVerifier);
+
+    emit DisableVerifier(_existingVerifier);
   }
 
-  function _incrementActiveVerifierCount(uint256 _n) internal {
-    uint256 newActiveVerifierCount = activeVerifierCount.add(_n);
-    activeVerifierCount = newActiveVerifierCount;
+  function _addOrEnable(address _newVerifier, address[] memory _existingVerifierAddresses) internal {
+    uint256 existingLength = _existingVerifierAddresses.length;
 
-    //    emit ActiveMemberCountChanged(newActiveVerifierCount);
+    for (uint256 i = 0; i < existingLength; i++) {
+      if (_existingVerifierAddresses[i] == _newVerifier) {
+        return;
+      }
+    }
+
+    Verifier storage v = verifiers[_newVerifier];
+
+    if (v.createdAt == 0) {
+      // add
+      v.active = true;
+      v.createdAt = now;
+
+      emit AddVerifier(_newVerifier);
+    } else {
+      // enable
+      require(v.active == false, "YALLVerification: Verifier is already enabled");
+      v.active = true;
+      v.lastEnabledAt = now;
+
+      emit EnableVerifier(_newVerifier);
+    }
+
+    _activeAddressesCache.add(_newVerifier);
   }
 
-  function _decrementActiveVerifierCount(uint256 _n) internal {
-    uint256 newActiveVerifierCount = activeVerifierCount.sub(_n);
-    activeVerifierCount = newActiveVerifierCount;
+  // GETTERS
+  function getActiveVerifiers() public view returns (address[] memory) {
+    return _activeAddressesCache.enumerate();
+  }
 
-    //    emit ActiveMemberCountChanged(newActiveVerifierCount);
+  function getActiveVerifierCount() public view returns (uint256) {
+    return _activeAddressesCache.length();
   }
 }

@@ -24,15 +24,30 @@ contract YALLVerificationCore is IYALLVerification, Initializable, YALLRegistryH
   using SafeMath for uint256;
   using EnumerableSet for EnumerableSet.AddressSet;
 
+  event AddVerifier(address indexed verifier);
+  event DisableVerifier(address indexed verifier);
+  event EnableVerifier(address indexed verifier);
+
   struct Verifier {
     bool active;
-    address addr;
     uint256 createdAt;
     uint256 lastEnabledAt;
     uint256 lastDisabledAt;
   }
 
-  uint256 public activeVerifierCount;
+  struct Transaction {
+    address destination;
+    uint256 value;
+    bytes data;
+    bool executed;
+  }
+
+  uint256 public required;
+  uint256 public transactionCount;
+
   mapping(address => Verifier) public verifiers;
   EnumerableSet.AddressSet internal _activeAddressesCache;
+
+  mapping(uint256 => Transaction) public transactions;
+  mapping(uint256 => mapping(address => bool)) public confirmations;
 }
