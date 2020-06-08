@@ -38,11 +38,18 @@ describe('YALLCommissionReward Integration tests', () => {
     distributorVerifier,
     yallMinter,
     feeManager,
+    governance,
     yallTokenManager,
     v1,
     v2,
     v3,
     v4,
+    v1Payout,
+    v2Payout,
+    v3Payout,
+    v4Payout,
+    bar,
+    buzz,
   ] = accounts;
 
   const memberId1 = keccak256('bob');
@@ -76,6 +83,7 @@ describe('YALLCommissionReward Integration tests', () => {
         yallTokenManager,
         mediatorOnTheOtherSide,
         commissionRewardPoolManager,
+        governance,
         feeCollector: alice,
         gsnFeeCollector: alice,
         bridge: bridge.address,
@@ -110,7 +118,15 @@ describe('YALLCommissionReward Integration tests', () => {
     await dist.addMembersBeforeGenesis([memberId1, memberId2], [bob, charlie], { from: distributorVerifier });
     assert.equal(await dist.emissionPoolRewardShare(), ether(10));
 
-    await verification.addVerifiers([v1, v2, v3]);
+    await verification.setVerifiers([v1, v2, v3], 2, { from: governance });
+
+    await verification.setVerifierAddresses(bar, v1Payout, buzz, { from: v1 });
+    await verification.setVerifierAddresses(bar, v2Payout, buzz, { from: v2 });
+    await verification.setVerifierAddresses(bar, v3Payout, buzz, { from: v3 });
+
+    await yallToken.setCanTransferWhitelistAddress(v1Payout, true, { from: yallTokenManager });
+    await yallToken.setCanTransferWhitelistAddress(v2Payout, true, { from: yallTokenManager });
+    await yallToken.setCanTransferWhitelistAddress(v3Payout, true, { from: yallTokenManager });
 
     await increaseTime(21);
 
@@ -181,9 +197,9 @@ describe('YALLCommissionReward Integration tests', () => {
     assert.equal(res.claimedMembersReward, 0);
 
     // verifier can claim reward for 0th period
-    const v1BalanceBefore = await yallToken.balanceOf(v1);
-    await commission.claimVerifierReward({ from: v1 });
-    const v1BalanceAfter = await yallToken.balanceOf(v1);
+    const v1BalanceBefore = await yallToken.balanceOf(v1Payout);
+    await commission.claimVerifierReward(v1, { from: v1Payout });
+    const v1BalanceAfter = await yallToken.balanceOf(v1Payout);
     await assertErc20BalanceChanged(v1BalanceBefore, v1BalanceAfter, expectedVerifierRewardP0.toString());
 
     // delegator bob can  claim reward for 0th period
@@ -194,21 +210,25 @@ describe('YALLCommissionReward Integration tests', () => {
 
     // can't claim again
     await assertRevert(
-      commission.claimVerifierReward({ from: v1 }),
+      commission.claimVerifierReward(v1, { from: v1Payout }),
       'YALLCommissionRewardPool: Already claimed for the current period'
     );
 
     // a new added verifier can't claim a reward
-    await verification.addVerifiers([v4]);
+    await verification.setVerifiers([v1, v2, v3, v4], 3, { from: governance });
+
+    await verification.setVerifierAddresses(bar, v4Payout, buzz, { from: v4 });
+    await yallToken.setCanTransferWhitelistAddress(v4Payout, true, { from: yallTokenManager });
+
     await assertRevert(
-      commission.claimVerifierReward({ from: v4 }),
+      commission.claimVerifierReward(v4, { from: v4Payout }),
       "YALLRewardClaimer: Can't assign rewards for the creation period"
     );
 
     // change shares (delegators/verifiers/members)
     await commission.setShares(ether(10), ether(60), ether(30), { from: commissionRewardPoolManager });
     // change verifiers
-    await verification.disableVerifiers([v3], { from: distributorVerifier });
+    await verification.setVerifiers([v1, v2, v4], 3, { from: governance });
     // change members
     await dist.addMembers([memberId4], [alice], { from: distributorVerifier });
 
@@ -308,9 +328,9 @@ describe('YALLCommissionReward Integration tests', () => {
 
     // everyone claims their reward...
     await commission.claimDelegatorReward(1, { from: bob });
-    await commission.claimVerifierReward({ from: v1 });
-    await commission.claimVerifierReward({ from: v2 });
-    await commission.claimVerifierReward({ from: v4 });
+    await commission.claimVerifierReward(v1, { from: v1Payout });
+    await commission.claimVerifierReward(v2, { from: v2Payout });
+    await commission.claimVerifierReward(v4, { from: v4Payout });
     await commission.claimMemberReward({ from: alice });
     await commission.claimMemberReward({ from: bob });
     await commission.claimMemberReward({ from: charlie });

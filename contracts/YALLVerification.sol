@@ -96,7 +96,77 @@ contract YALLVerification is YALLVerificationCore, YALLRewardClaimer {
     _activeAddressesCache.add(_newVerifier);
   }
 
+  // VERIFIER INTERFACE
+  function setVerifierAddresses(
+    address _verificationAddress,
+    address _payoutAddress,
+    address _dataManagementAddress
+  ) external {
+    Verifier storage v = verifiers[msg.sender];
+
+    require(v.createdAt > 0, "YALLVerification: Invalid verifier");
+
+    v.verificationAddress = _verificationAddress;
+    v.payoutAddress = _payoutAddress;
+    v.dataManagementAddress = _dataManagementAddress;
+
+    emit SetVerifierAddresses(msg.sender, _verificationAddress, _payoutAddress, _dataManagementAddress);
+  }
+
+  event SetVerifierAddresses(
+    address indexed rootAddress,
+    address verificationAddress,
+    address payoutAddress,
+    address dataManagementAddress
+  );
+
   // GETTERS
+
+  /*
+   * @dev In most cases YALLEmissionRewardPool and YALLCommissionRewardPool use the same general approach
+   *      when deciding whether a member is eligible for a payout or not. If this approach can't be applied
+   *      for a particular case, the decision should be made somewhere outside this contract.
+   */
+  function requireVerifierCanClaimRewardGeneralized(address _rootAddress, address _payoutAddress) external view {
+    Verifier storage v = verifiers[_rootAddress];
+
+    require(v.payoutAddress == _payoutAddress, "YALLVerification: Payout address mismatches");
+
+    IYALLDistributor dist = _yallDistributor();
+
+    _requireCanClaimReward(
+      v.active,
+      dist.getCurrentPeriodId(),
+      dist.getCurrentPeriodBeginsAt(),
+      v.createdAt,
+      v.lastEnabledAt,
+      v.lastDisabledAt
+    );
+  }
+
+  function isVerificationAddressActive(address _rootAddress, address _verificationAddress)
+    external
+    view
+    returns (bool)
+  {
+    Verifier storage v = verifiers[_rootAddress];
+    return v.active == true && v.verificationAddress == _verificationAddress;
+  }
+
+  function isPayoutAddressActive(address _rootAddress, address _payoutAddress) external view returns (bool) {
+    Verifier storage v = verifiers[_rootAddress];
+    return v.active == true && v.payoutAddress == _payoutAddress;
+  }
+
+  function isDataManagementAddressActive(address _rootAddress, address _dataManagementAddress)
+    external
+    view
+    returns (bool)
+  {
+    Verifier storage v = verifiers[_rootAddress];
+    return v.active == true && v.dataManagementAddress == _dataManagementAddress;
+  }
+
   function getActiveVerifiers() public view returns (address[] memory) {
     return _activeAddressesCache.enumerate();
   }

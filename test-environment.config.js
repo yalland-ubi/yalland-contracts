@@ -2,7 +2,7 @@
 
 module.exports = {
   accounts: {
-    amount: 20, // Number of unlocked accounts
+    amount: 25, // Number of unlocked accounts
     ether: 5000000, // Initial balance of unlocked accounts (in ether)
   },
 

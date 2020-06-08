@@ -34,7 +34,12 @@ contract YALLEmissionRewardPoolCore is Initializable, YALLRegistryHelpers, ACLPa
     uint256 stakeBalance,
     uint256 stakeTotalSupply
   );
-  event ClaimVerifierReward(address indexed verifier, uint256 indexed periodId, uint256 amount);
+  event ClaimVerifierReward(
+    address indexed verifierRootAddress,
+    address indexed verifierPayoutAddress,
+    uint256 indexed periodId,
+    uint256 amount
+  );
 
   struct Period {
     bool transitionHandled;

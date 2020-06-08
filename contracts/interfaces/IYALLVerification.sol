@@ -19,11 +19,16 @@ interface IYALLVerification {
     view
     returns (
       bool active,
+      address verificationAddress,
+      address payoutAddress,
+      address dataManagementAddress,
       uint256 createdAt,
       uint256 lastEnabledAt,
       uint256 lastDisabledAt
     );
 
   // GETTERS
+  function requireVerifierCanClaimRewardGeneralized(address _rootAddress, address _payoutAddress) external view;
+
   function getActiveVerifierCount() external view returns (uint256);
 }

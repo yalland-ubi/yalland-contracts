@@ -90,17 +90,17 @@ contract YALLEmissionRewardPool is YALLEmissionRewardPoolCore {
   }
 
   // VERIFIER INTERFACE
-  function claimVerifierReward() external triggerTransition {
+  function claimVerifierReward(address _rootAddress) external triggerTransition {
     IYALLDistributor dist = _yallDistributor();
     uint256 currentPeriodId = dist.getCurrentPeriodId();
 
     Period storage period = periods[currentPeriodId];
 
-    requireVerifierCanClaimReward(msg.sender);
+    requireVerifierCanClaimReward(_rootAddress, msg.sender);
 
-    verifierClaimedPeriods[currentPeriodId][msg.sender] = true;
+    verifierClaimedPeriods[currentPeriodId][_rootAddress] = true;
 
-    emit ClaimVerifierReward(msg.sender, currentPeriodId, period.verifierReward);
+    emit ClaimVerifierReward(_rootAddress, msg.sender, currentPeriodId, period.verifierReward);
 
     _yallDistributor().distributeEmissionPoolReward(currentPeriodId, msg.sender, period.verifierReward);
   }
@@ -116,26 +116,15 @@ contract YALLEmissionRewardPool is YALLEmissionRewardPoolCore {
   }
 
   // REQUIRES
-  function requireVerifierCanClaimReward(address _verifier) public view {
+  function requireVerifierCanClaimReward(address _rootAddress, address _payoutAddress) public view {
     uint256 currentPeriodId = _yallDistributor().getCurrentPeriodId();
 
     require(
-      verifierClaimedPeriods[currentPeriodId][_verifier] == false,
+      verifierClaimedPeriods[currentPeriodId][_rootAddress] == false,
       "YALLEmissionRewardPool: Already claimed for the current period"
     );
 
-    (bool active, uint256 createdAt, uint256 lastEnabledAt, uint256 lastDisabledAt) = _yallVerification().verifiers(
-      _verifier
-    );
-
-    _requireCanClaimReward(
-      active,
-      currentPeriodId,
-      _yallDistributor().getCurrentPeriodBeginsAt(),
-      createdAt,
-      lastEnabledAt,
-      lastDisabledAt
-    );
+    _yallVerification().requireVerifierCanClaimRewardGeneralized(_rootAddress, _payoutAddress);
   }
 
   // GETTERS

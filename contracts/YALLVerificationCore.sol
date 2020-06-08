@@ -30,6 +30,12 @@ contract YALLVerificationCore is IYALLVerification, Initializable, YALLRegistryH
 
   struct Verifier {
     bool active;
+    // used to vote on "add/disable member" proposals;
+    address verificationAddress;
+    // used to claim rewards from pools;
+    address payoutAddress;
+    // used to set data (name, legal, etc)
+    address dataManagementAddress;
     uint256 createdAt;
     uint256 lastEnabledAt;
     uint256 lastDisabledAt;

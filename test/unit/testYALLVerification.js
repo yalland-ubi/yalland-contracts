@@ -21,6 +21,9 @@ describe('YALLVerification Unit tests', () => {
     dan,
     eve,
     frank,
+    foo,
+    bar,
+    buzz,
     governance,
     yallMinter,
     yallBurner,
@@ -57,6 +60,85 @@ describe('YALLVerification Unit tests', () => {
       disableEmission: true,
       disableCommission: true,
     }));
+  });
+
+  describe('Getters', () => {
+    it('provide correct getters for minor key statuses', async function () {
+      await verification.setVerifiers([alice, bob, charlie], 2, { from: governance });
+      await verification.setVerifiers([bob, charlie], 2, { from: governance });
+      // now bob is active and alice is inactive
+
+      const aliceVerification = web3.eth.accounts.create().address;
+      const alicePayout = web3.eth.accounts.create().address;
+      const aliceDataManagement = web3.eth.accounts.create().address;
+
+      const bobVerification = web3.eth.accounts.create().address;
+      const bobPayout = web3.eth.accounts.create().address;
+      const bobDataManagement = web3.eth.accounts.create().address;
+
+      await verification.setVerifierAddresses(aliceVerification, alicePayout, aliceDataManagement, { from: alice });
+      await verification.setVerifierAddresses(bobVerification, bobPayout, bobDataManagement, { from: bob });
+
+      const aliceDetails = await verification.verifiers(alice);
+      assert.equal(aliceDetails.active, false);
+      const bobDetails = await verification.verifiers(bob);
+      assert.equal(bobDetails.active, true);
+
+      assert.equal(await verification.isVerificationAddressActive(alice, aliceVerification), false);
+      assert.equal(await verification.isPayoutAddressActive(alice, alicePayout), false);
+      assert.equal(await verification.isDataManagementAddressActive(alice, aliceDataManagement), false);
+
+      assert.equal(await verification.isVerificationAddressActive(alice, bobVerification), false);
+      assert.equal(await verification.isPayoutAddressActive(alice, bobPayout), false);
+      assert.equal(await verification.isDataManagementAddressActive(alice, bobDataManagement), false);
+
+      assert.equal(await verification.isVerificationAddressActive(bob, bobVerification), true);
+      assert.equal(await verification.isPayoutAddressActive(bob, bobPayout), true);
+      assert.equal(await verification.isDataManagementAddressActive(bob, bobDataManagement), true);
+
+      assert.equal(await verification.isVerificationAddressActive(bob, aliceVerification), false);
+      assert.equal(await verification.isPayoutAddressActive(bob, alicePayout), false);
+      assert.equal(await verification.isDataManagementAddressActive(bob, aliceDataManagement), false);
+    });
+  });
+
+  describe('Verifier Interface', () => {
+    beforeEach(async function () {
+      await increaseTime(11);
+      assert.equal(await dist.getCurrentPeriodId(), 0);
+
+      const verificationDeployment = await deployWithProxy(YALLVerification, proxyAdmin.address, registry.address);
+      verification = verificationDeployment.contract;
+      await registry.setContract(await registry.YALL_VERIFICATION_KEY(), verification.address);
+      await verification.setVerifiers([alice, bob, charlie], 2, { from: governance });
+      await verification.setVerifiers([bob, charlie], 2, { from: governance });
+    });
+
+    describe('#setVerifierAddresses()', () => {
+      it('should allow an active validator setting their addresses', async function () {
+        await verification.setVerifierAddresses(foo, bar, buzz, { from: bob });
+
+        const bobDetails = await verification.verifiers(bob);
+        assert.equal(bobDetails.active, true);
+        assert.equal(bobDetails.verificationAddress, foo);
+        assert.equal(bobDetails.payoutAddress, bar);
+        assert.equal(bobDetails.dataManagementAddress, buzz);
+      });
+
+      it('should allow a disabled validator setting their addresses', async function () {
+        await verification.setVerifierAddresses(foo, bar, buzz, { from: alice });
+
+        const bobDetails = await verification.verifiers(alice);
+        assert.equal(bobDetails.active, false);
+        assert.equal(bobDetails.verificationAddress, foo);
+        assert.equal(bobDetails.payoutAddress, bar);
+        assert.equal(bobDetails.dataManagementAddress, buzz);
+      });
+
+      it('should deny non existing verifier setting their addresses', async function () {
+        await assertRevert(verification.setVerifierAddresses(foo, bar, buzz, { from: frank }));
+      });
+    });
   });
 
   describe('Governance Interface', () => {
