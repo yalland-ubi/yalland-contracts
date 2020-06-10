@@ -19,6 +19,52 @@ import "./traits/YALLRewardClaimer.sol";
  * @notice Verification interface for verifiers
  **/
 contract YALLVerification is YALLVerificationCore, YALLRewardClaimer {
+  uint256 public constant MAX_VERIFIER_COUNT = 50;
+
+  // MODIFIERS
+  modifier verifierExists(address _rootAddress, address _verificationAddress) {
+    requireVerificationAddressActive(_rootAddress, _verificationAddress);
+    _;
+  }
+
+  modifier transactionExists(uint256 _transactionId) {
+    require(transactions[_transactionId].destination != address(0), "YALLVerification: Only wallet allowed");
+    _;
+  }
+
+  modifier confirmed(uint256 _transactionId, address _rootAddress) {
+    require(confirmations[_transactionId][_rootAddress], "YALLVerification: Not confirmed by the msg.sender");
+    _;
+  }
+
+  modifier notConfirmed(
+    uint256 _transactionId,
+    address _rootAddress,
+    address _verificationAddress
+  ) {
+    require(!confirmations[_transactionId][_rootAddress], "YALLVerification: Is confirmed by the msg.sender");
+    _;
+  }
+
+  modifier notExecuted(uint256 _transactionId) {
+    require(!transactions[_transactionId].executed, "YALLVerification: Already executed");
+    _;
+  }
+
+  modifier notNull(address _address) {
+    require(_address != address(0), "YALLVerification: Can't send to 0x0 address");
+    _;
+  }
+
+  modifier validRequirement(uint256 _verifierCount, uint256 _required) {
+    require(
+      _verifierCount <= MAX_VERIFIER_COUNT && _required <= _verifierCount && _required != 0 && _verifierCount != 0,
+      "YALLVerification: Only wallet allowed"
+    );
+    _;
+  }
+
+  // INITIALIZER
   function initialize(address _yallRegistry) external initializer {
     yallRegistry = YALLRegistry(_yallRegistry);
   }
@@ -42,6 +88,10 @@ contract YALLVerification is YALLVerificationCore, YALLRewardClaimer {
     // Add or enable
     for (uint256 i = 0; i < newLength; i++) {
       _addOrEnable(_newVerifierAddresses[i], existingVerifiers);
+    }
+
+    if (required != newRequired) {
+      emit ChangeRequired(newRequired);
     }
 
     required = newRequired;
@@ -113,15 +163,94 @@ contract YALLVerification is YALLVerificationCore, YALLRewardClaimer {
     emit SetVerifierAddresses(msg.sender, _verificationAddress, _payoutAddress, _dataManagementAddress);
   }
 
-  event SetVerifierAddresses(
-    address indexed rootAddress,
-    address verificationAddress,
-    address payoutAddress,
-    address dataManagementAddress
-  );
+  function submitTransaction(
+    address _destination,
+    uint256 _value,
+    bytes memory _data,
+    address _rootAddress
+  ) public returns (uint256 transactionId) {
+    transactionId = _addTransaction(_destination, _value, _data);
+    confirmTransaction(transactionId, _rootAddress);
+  }
+
+  function confirmTransaction(uint256 _transactionId, address _rootAddress)
+    public
+    verifierExists(_rootAddress, msg.sender)
+    transactionExists(_transactionId)
+    notConfirmed(_transactionId, _rootAddress, msg.sender)
+  {
+    confirmations[_transactionId][_rootAddress] = true;
+    emit Confirmation(_rootAddress, _transactionId);
+    executeTransaction(_transactionId, _rootAddress);
+  }
+
+  function revokeConfirmation(uint256 _transactionId, address _rootAddress)
+    public
+    verifierExists(_rootAddress, msg.sender)
+    confirmed(_transactionId, _rootAddress)
+    notExecuted(_transactionId)
+  {
+    confirmations[_transactionId][_rootAddress] = false;
+    emit Revocation(_rootAddress, _transactionId);
+  }
+
+  function executeTransaction(uint256 _transactionId, address _rootAddress)
+    public
+    verifierExists(_rootAddress, msg.sender)
+    confirmed(_transactionId, _rootAddress)
+    notExecuted(_transactionId)
+  {
+    if (isConfirmed(_transactionId)) {
+      Transaction storage txn = transactions[_transactionId];
+      txn.executed = true;
+      if (_externalCall(txn.destination, txn.value, txn.data.length, txn.data)) emit Execution(_transactionId);
+      else {
+        emit ExecutionFailure(_transactionId);
+        txn.executed = false;
+      }
+    }
+  }
+
+  // INTERNAL
+  function _addTransaction(
+    address _destination,
+    uint256 _value,
+    bytes memory _data
+  ) internal notNull(_destination) returns (uint256 transactionId) {
+    transactionId = transactionCount;
+    transactions[transactionId] = Transaction({destination: _destination, value: _value, data: _data, executed: false});
+    transactionCount += 1;
+    emit Submission(transactionId);
+  }
+
+  // PRIVATE
+  function _externalCall(
+    address destination,
+    uint256 value,
+    uint256 dataLength,
+    bytes memory data
+  ) private returns (bool) {
+    bool result;
+    /* solhint-disable no-inline-assembly */
+    assembly {
+      let x := mload(0x40) // "Allocate" memory for output (0x40 is where "free memory" pointer is stored by convention)
+      let d := add(data, 32) // First 32 bytes are the padded length of data, so exclude that
+      result := call(
+        sub(gas, 34710), // 34710 is the value that solidity is currently emitting
+        // It includes callGas (700) + callVeryLow (3, to pay for SUB) + callValueTransferGas (9000) +
+        // callNewAccountGas (25000, in case the destination address does not exist and needs creating)
+        destination,
+        value,
+        d,
+        dataLength, // Size of the input (in bytes) - this is what fixes the padding problem
+        x,
+        0 // Output is ignored, therefore the output size is zero
+      )
+    }
+    return result;
+  }
 
   // GETTERS
-
   /*
    * @dev In most cases YALLEmissionRewardPool and YALLCommissionRewardPool use the same general approach
    *      when deciding whether a member is eligible for a payout or not. If this approach can't be applied
@@ -144,22 +273,39 @@ contract YALLVerification is YALLVerificationCore, YALLRewardClaimer {
     );
   }
 
-  function isVerificationAddressActive(address _rootAddress, address _verificationAddress)
-    external
-    view
-    returns (bool)
-  {
+  function requireVerificationAddressActive(address _rootAddress, address _verificationAddress) public view {
+    require(
+      isVerificationAddressActive(_rootAddress, _verificationAddress) == true,
+      "YALLVerification: Invalid address pair for verification"
+    );
+  }
+
+  function requirePayoutAddressActive(address _rootAddress, address _payoutAddress) public view {
+    require(
+      isPayoutAddressActive(_rootAddress, _payoutAddress) == true,
+      "YALLVerification: Invalid address pair for payout"
+    );
+  }
+
+  function requireDataManagementAddressActive(address _rootAddress, address _dataManagementAddress) public view {
+    require(
+      isDataManagementAddressActive(_rootAddress, _dataManagementAddress) == true,
+      "YALLVerification: Invalid address pair for dataManagement"
+    );
+  }
+
+  function isVerificationAddressActive(address _rootAddress, address _verificationAddress) public view returns (bool) {
     Verifier storage v = verifiers[_rootAddress];
     return v.active == true && v.verificationAddress == _verificationAddress;
   }
 
-  function isPayoutAddressActive(address _rootAddress, address _payoutAddress) external view returns (bool) {
+  function isPayoutAddressActive(address _rootAddress, address _payoutAddress) public view returns (bool) {
     Verifier storage v = verifiers[_rootAddress];
     return v.active == true && v.payoutAddress == _payoutAddress;
   }
 
   function isDataManagementAddressActive(address _rootAddress, address _dataManagementAddress)
-    external
+    public
     view
     returns (bool)
   {
@@ -173,5 +319,18 @@ contract YALLVerification is YALLVerificationCore, YALLRewardClaimer {
 
   function getActiveVerifierCount() public view returns (uint256) {
     return _activeAddressesCache.length();
+  }
+
+  function isConfirmed(uint256 _transactionId) public view returns (bool) {
+    uint256 count = 0;
+    address[] memory verifiers = getActiveVerifiers();
+    uint256 len = verifiers.length;
+
+    for (uint256 i = 0; i < len; i++) {
+      if (confirmations[_transactionId][verifiers[i]]) count += 1;
+      if (count == required) return true;
+    }
+
+    return false;
   }
 }

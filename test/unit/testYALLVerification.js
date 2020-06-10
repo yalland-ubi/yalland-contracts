@@ -9,6 +9,8 @@ const YALLVerification = contract.fromArtifact('YALLVerification');
 
 YALLVerification.numberFormat = 'String';
 
+const keccak256 = web3.utils.soliditySha3;
+
 describe('YALLVerification Unit tests', () => {
   const [
     distributorVerifier,
@@ -21,9 +23,14 @@ describe('YALLVerification Unit tests', () => {
     dan,
     eve,
     frank,
+    george,
     foo,
     bar,
     buzz,
+    aliceVerification,
+    bobVerification,
+    charlieVerification,
+    danVerification,
     governance,
     yallMinter,
     yallBurner,
@@ -68,11 +75,9 @@ describe('YALLVerification Unit tests', () => {
       await verification.setVerifiers([bob, charlie], 2, { from: governance });
       // now bob is active and alice is inactive
 
-      const aliceVerification = web3.eth.accounts.create().address;
       const alicePayout = web3.eth.accounts.create().address;
       const aliceDataManagement = web3.eth.accounts.create().address;
 
-      const bobVerification = web3.eth.accounts.create().address;
       const bobPayout = web3.eth.accounts.create().address;
       const bobDataManagement = web3.eth.accounts.create().address;
 
@@ -111,7 +116,7 @@ describe('YALLVerification Unit tests', () => {
       verification = verificationDeployment.contract;
       await registry.setContract(await registry.YALL_VERIFICATION_KEY(), verification.address);
       await verification.setVerifiers([alice, bob, charlie], 2, { from: governance });
-      await verification.setVerifiers([bob, charlie], 2, { from: governance });
+      await verification.setVerifiers([bob, charlie, dan, eve, frank], 3, { from: governance });
     });
 
     describe('#setVerifierAddresses()', () => {
@@ -136,7 +141,160 @@ describe('YALLVerification Unit tests', () => {
       });
 
       it('should deny non existing verifier setting their addresses', async function () {
-        await assertRevert(verification.setVerifierAddresses(foo, bar, buzz, { from: frank }));
+        await assertRevert(verification.setVerifierAddresses(foo, bar, buzz, { from: george }));
+      });
+    });
+
+    describe('#submitTransaction()', () => {
+      let data;
+      const memberId1 = keccak256('memberId1');
+
+      beforeEach(async function () {
+        await verification.setVerifierAddresses(aliceVerification, bar, buzz, { from: alice });
+        await verification.setVerifierAddresses(bobVerification, bar, buzz, { from: bob });
+        data = dist.contract.methods.addMember(memberId1, eve).encodeABI();
+      });
+
+      it('should allow an active verifier submitting tx', async function () {
+        await verification.submitTransaction(dist.address, 0, data, bob, { from: bobVerification });
+
+        assert.equal(await verification.transactionCount(), 1);
+        assert.equal(await verification.confirmations(0, bob), true);
+        assert.equal(await verification.confirmations(0, bobVerification), false);
+
+        const tx0 = await verification.transactions(0);
+
+        assert.equal(tx0.destination, dist.address);
+        assert.equal(tx0.value, 0);
+        assert.equal(tx0.data, data);
+        assert.equal(tx0.executed, false);
+      });
+
+      it('should deny an active submitting tx using root key', async function () {
+        await assertRevert(
+          verification.submitTransaction(dist.address, 0, data, bob, { from: bob }),
+          'YALLVerification: Invalid address pair for verification'
+        );
+      });
+
+      it('should deny a disabled verifier submitting tx', async function () {
+        await assertRevert(
+          verification.submitTransaction(dist.address, 0, data, alice, { from: aliceVerification }),
+          'YALLVerification: Invalid address pair for verification'
+        );
+      });
+    });
+
+    describe('#confirmTransaction()', () => {
+      let data;
+      const memberId1 = keccak256('memberId1');
+
+      beforeEach(async function () {
+        await verification.setVerifierAddresses(aliceVerification, bar, buzz, { from: alice });
+        await verification.setVerifierAddresses(bobVerification, bar, buzz, { from: bob });
+        await verification.setVerifierAddresses(charlieVerification, bar, buzz, { from: charlie });
+        data = dist.contract.methods.addMember(memberId1, eve).encodeABI();
+        await verification.submitTransaction(dist.address, 0, data, bob, { from: bobVerification });
+      });
+
+      it('should allow an active verifier confirming transaction', async function () {
+        await verification.confirmTransaction(0, charlie, { from: charlieVerification });
+
+        assert.equal(await verification.confirmations(0, charlie), true);
+        assert.equal(await verification.confirmations(0, charlieVerification), false);
+      });
+
+      it('should deny an active verifier confirming tx using a root key', async function () {
+        await assertRevert(
+          verification.confirmTransaction(0, charlie, { from: charlie }),
+          'YALLVerification: Invalid address pair for verification'
+        );
+      });
+
+      it('should deny a disabled active verifier confirming transaction', async function () {
+        await assertRevert(
+          verification.confirmTransaction(0, alice, { from: aliceVerification }),
+          'YALLVerification: Invalid address pair for verification'
+        );
+      });
+    });
+
+    describe('#revokeConfirmation()', () => {
+      let data;
+      const memberId1 = keccak256('memberId1');
+
+      beforeEach(async function () {
+        await verification.setVerifierAddresses(aliceVerification, bar, buzz, { from: alice });
+        await verification.setVerifierAddresses(bobVerification, bar, buzz, { from: bob });
+        await verification.setVerifierAddresses(charlieVerification, bar, buzz, { from: charlie });
+        data = dist.contract.methods.addMember(memberId1, eve).encodeABI();
+        await verification.submitTransaction(dist.address, 0, data, bob, { from: bobVerification });
+        await verification.confirmTransaction(0, charlie, { from: charlieVerification });
+      });
+
+      it('should allow an active verifier revoking a confirmation', async function () {
+        assert.equal(await verification.confirmations(0, charlie), true);
+        await verification.revokeConfirmation(0, charlie, { from: charlieVerification });
+        assert.equal(await verification.confirmations(0, charlie), false);
+      });
+
+      it('should deny an active verifier confirming tx using a root key', async function () {
+        await assertRevert(
+          verification.revokeConfirmation(0, charlie, { from: charlie }),
+          'YALLVerification: Invalid address pair for verification'
+        );
+      });
+
+      it('should deny a disabled active verifier confirming transaction', async function () {
+        await verification.setVerifiers([bob, dan, eve, frank], 3, { from: governance });
+        await assertRevert(
+          verification.revokeConfirmation(0, charlie, { from: charlieVerification }),
+          'YALLVerification: Invalid address pair for verification'
+        );
+      });
+    });
+
+    describe('#executeTransaction()', () => {
+      let data;
+      const memberId1 = keccak256('memberId1');
+
+      beforeEach(async function () {
+        await verification.setVerifierAddresses(aliceVerification, bar, buzz, { from: alice });
+        await verification.setVerifierAddresses(bobVerification, bar, buzz, { from: bob });
+        await verification.setVerifierAddresses(charlieVerification, bar, buzz, { from: charlie });
+        await verification.setVerifierAddresses(danVerification, bar, buzz, { from: dan });
+        data = dist.contract.methods.addMember(memberId1, eve).encodeABI();
+        await verification.submitTransaction(dist.address, 0, data, bob, { from: bobVerification });
+        await verification.confirmTransaction(0, charlie, { from: charlieVerification });
+        await registry.setRole(verification.address, await dist.DISTRIBUTOR_VERIFIER_ROLE(), false);
+        await verification.confirmTransaction(0, dan, { from: danVerification });
+        await registry.setRole(verification.address, await dist.DISTRIBUTOR_VERIFIER_ROLE(), true);
+      });
+
+      it('should allow an active verifier revoking a confirmation', async function () {
+        assert.equal(await verification.required(), 3);
+        assert.equal(await verification.confirmations(0, bob), true);
+        assert.equal(await verification.confirmations(0, charlie), true);
+        assert.equal(await verification.confirmations(0, dan), true);
+        assert.equal((await verification.transactions(0)).executed, false);
+
+        await verification.executeTransaction(0, charlie, { from: charlieVerification });
+
+        assert.equal((await verification.transactions(0)).executed, true);
+      });
+
+      it('should deny an active verifier confirming tx using a root key', async function () {
+        await assertRevert(
+          verification.executeTransaction(0, charlie, { from: charlie }),
+          'YALLVerification: Invalid address pair for verification'
+        );
+      });
+
+      it('should deny a disabled verifier confirming transaction', async function () {
+        await assertRevert(
+          verification.executeTransaction(0, alice, { from: aliceVerification }),
+          'YALLVerification: Invalid address pair for verification'
+        );
       });
     });
   });

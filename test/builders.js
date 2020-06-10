@@ -157,6 +157,7 @@ async function buildCoinDistAndExchange(governance, config) {
     await registry.setRole(dist.address, await yallToken.YALL_TOKEN_BURNER_ROLE(), true);
     emission && (await registry.setRole(emission.address, await yallToken.DISTRIBUTOR_EMISSION_CLAIMER_ROLE(), true));
     commission && (await registry.setRole(commission.address, await yallToken.FEE_CLAIMER_ROLE(), true));
+    verification && (await registry.setRole(verification.address, await dist.DISTRIBUTOR_VERIFIER_ROLE(), true));
   }
   // Setting up ACL roles
   // common

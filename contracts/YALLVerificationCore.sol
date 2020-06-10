@@ -27,6 +27,19 @@ contract YALLVerificationCore is IYALLVerification, Initializable, YALLRegistryH
   event AddVerifier(address indexed verifier);
   event DisableVerifier(address indexed verifier);
   event EnableVerifier(address indexed verifier);
+  event SetVerifierAddresses(
+    address indexed rootAddress,
+    address verificationAddress,
+    address payoutAddress,
+    address dataManagementAddress
+  );
+  event ChangeRequired(uint256 required);
+
+  event Confirmation(address indexed sender, uint256 indexed transactionId);
+  event Revocation(address indexed sender, uint256 indexed transactionId);
+  event Submission(uint256 indexed transactionId);
+  event Execution(uint256 indexed transactionId);
+  event ExecutionFailure(uint256 indexed transactionId);
 
   struct Verifier {
     bool active;
