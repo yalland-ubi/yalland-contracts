@@ -25,6 +25,7 @@ contract YALLRegistryHelpers {
   YALLRegistry public yallRegistry;
 
   // Common Role Constants
+  bytes32 public constant GOVERNANCE_ROLE = bytes32("GOVERNANCE");
   bytes32 public constant FEE_CLAIMER_ROLE = bytes32("FEE_CLAIMER");
   bytes32 public constant FEE_MANAGER_ROLE = bytes32("FEE_MANAGER");
   bytes32 public constant PAUSER_ROLE = bytes32("PAUSER");
@@ -46,6 +47,11 @@ contract YALLRegistryHelpers {
   bytes32 public constant COMMISSION_POOL_MANAGER_ROLE = bytes32("COMMISSION_POOL_MANAGER");
 
   // Common Role Checkers
+
+  modifier onlyGovernance() {
+    require(yallRegistry.hasRole(msg.sender, GOVERNANCE_ROLE), "YALLHelpers: Only GOVERNANCE allowed");
+    _;
+  }
 
   modifier onlyFeeClaimer() {
     require(yallRegistry.hasRole(msg.sender, FEE_CLAIMER_ROLE), "YALLHelpers: Only FEE_CLAIMER allowed");

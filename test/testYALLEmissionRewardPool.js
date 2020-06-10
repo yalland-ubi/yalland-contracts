@@ -44,9 +44,15 @@ describe('YALLEmissionReward Integration tests', () => {
     exchangeOperator,
     exchangeSuperOperator,
     yallTokenManager,
+    governance,
     v1,
     v2,
     v3,
+    v1Payout,
+    v2Payout,
+    v3Payout,
+    bar,
+    buzz,
   ] = accounts;
   const memberId1 = keccak256('bob');
   const periodLength = 7 * 24 * 60 * 60;
@@ -63,6 +69,7 @@ describe('YALLEmissionReward Integration tests', () => {
     await bridge.setMaxGasPerTx(2000000);
     ({ yallToken, dist, emission, homeMediator, verification } = await buildCoinDistAndExchange(defaultSender, {
       distributorVerifier,
+      governance,
       yallMinter,
       feeManager,
       feeCollector,
@@ -93,7 +100,11 @@ describe('YALLEmissionReward Integration tests', () => {
     await dist.addMembersBeforeGenesis([memberId1], [bob], { from: distributorVerifier });
     assert.equal(await dist.emissionPoolRewardShare(), ether(10));
 
-    await verification.addVerifiers([v1, v2, v3]);
+    await verification.setVerifiers([v1, v2, v3], 2, { from: governance });
+
+    await verification.setVerifierAddresses(bar, v1Payout, buzz, { from: v1 });
+    await verification.setVerifierAddresses(bar, v2Payout, buzz, { from: v2 });
+    await verification.setVerifierAddresses(bar, v3Payout, buzz, { from: v3 });
 
     // TODO: set delegate balance
     // TODO: add verifiers
@@ -108,9 +119,9 @@ describe('YALLEmissionReward Integration tests', () => {
     assert.equal(res.emissionPoolRewardTotal, ether(25));
     assert.equal(res.emissionPoolRewardClaimed, 0);
 
-    let v1BalanceBefore = await yallToken.balanceOf(v1);
-    await emission.claimVerifierReward({ from: v1 });
-    let v1BalanceAfter = await yallToken.balanceOf(v1);
+    let v1BalanceBefore = await yallToken.balanceOf(v1Payout);
+    await emission.claimVerifierReward(v1, { from: v1Payout });
+    let v1BalanceAfter = await yallToken.balanceOf(v1Payout);
     // v1Reward = 25 * (60/100) * (1/3) = 5
     await assertErc20BalanceChanged(v1BalanceBefore, v1BalanceAfter, ether(5));
 
@@ -119,19 +130,19 @@ describe('YALLEmissionReward Integration tests', () => {
     assert.equal(res.emissionPoolRewardClaimed, ether(5));
 
     await assertRevert(
-      emission.claimVerifierReward({ from: v1 }),
+      emission.claimVerifierReward(v1, { from: v1Payout }),
       'YALLEmissionRewardPool: Already claimed for the current period'
     );
 
-    await verification.addVerifiers([alice, charlie]);
+    await verification.setVerifiers([v1, v2, v3, alice, charlie], 3, { from: governance });
 
     // period #1
     await increaseTime(periodLength);
     assert.equal(await dist.getCurrentPeriodId(), 1);
 
-    v1BalanceBefore = await yallToken.balanceOf(v1);
-    await emission.claimVerifierReward({ from: v1 });
-    v1BalanceAfter = await yallToken.balanceOf(v1);
+    v1BalanceBefore = await yallToken.balanceOf(v1Payout);
+    await emission.claimVerifierReward(v1, { from: v1Payout });
+    v1BalanceAfter = await yallToken.balanceOf(v1Payout);
     // v1Reward = 25 * (60/100) * (1/5) = 3
     await assertErc20BalanceChanged(v1BalanceBefore, v1BalanceAfter, ether(3));
 

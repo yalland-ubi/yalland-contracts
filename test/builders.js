@@ -21,6 +21,7 @@ YALLExchange.numberFormat = 'String';
 YALLDistributor.numberFormat = 'String';
 YALLEmissionRewardPool.numberFormat = 'String';
 YALLCommissionRewardPool.numberFormat = 'String';
+YALLVerification.numberFormat = 'String';
 StakingHomeMediator.numberFormat = 'String';
 
 const TransferRestrictionsMode = {
@@ -156,9 +157,11 @@ async function buildCoinDistAndExchange(governance, config) {
     await registry.setRole(dist.address, await yallToken.YALL_TOKEN_BURNER_ROLE(), true);
     emission && (await registry.setRole(emission.address, await yallToken.DISTRIBUTOR_EMISSION_CLAIMER_ROLE(), true));
     commission && (await registry.setRole(commission.address, await yallToken.FEE_CLAIMER_ROLE(), true));
+    verification && (await registry.setRole(verification.address, await dist.DISTRIBUTOR_VERIFIER_ROLE(), true));
   }
   // Setting up ACL roles
   // common
+  config.governance && (await registry.setRole(config.governance, await dist.GOVERNANCE_ROLE(), true));
   config.pauser && (await registry.setRole(config.pauser, await dist.PAUSER_ROLE(), true));
   config.feeManager && (await registry.setRole(config.feeManager, await yallToken.FEE_MANAGER_ROLE(), true));
   config.feeClaimer && (await registry.setRole(config.feeClaimer, await yallToken.FEE_CLAIMER_ROLE(), true));
