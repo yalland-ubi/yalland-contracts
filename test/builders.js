@@ -48,6 +48,18 @@ async function deployWithProxy(contractFactory, proxyAdminAddress, ...args) {
   };
 }
 
+async function buildOnlyRegistry() {
+  const proxyAdmin = await ProxyAdmin.new();
+
+  const registryDeployment = await deployWithProxy(YALLRegistry, proxyAdmin.address);
+  const registry = registryDeployment.contract;
+
+  return {
+    proxyAdmin,
+    registry,
+  };
+}
+
 async function buildCoinDistAndExchange(governance, config) {
   const periodVolume = config.periodVolume || ether(250);
 
@@ -235,5 +247,6 @@ async function buildCoinDistAndExchange(governance, config) {
 module.exports = {
   buildCoinDistAndExchange,
   deployWithProxy,
+  buildOnlyRegistry,
   TransferRestrictionsMode,
 };
