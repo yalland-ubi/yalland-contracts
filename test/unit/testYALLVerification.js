@@ -70,20 +70,21 @@ describe('YALLVerification Unit tests', () => {
   });
 
   describe('Getters', () => {
-    it('provide correct getters for minor key statuses', async function () {
+    const alicePayout = web3.eth.accounts.create().address;
+    const aliceDataManagement = web3.eth.accounts.create().address;
+
+    const bobPayout = web3.eth.accounts.create().address;
+    const bobDataManagement = web3.eth.accounts.create().address;
+    beforeEach(async function () {
       await verification.setVerifiers([alice, bob, charlie], 2, { from: governance });
       await verification.setVerifiers([bob, charlie], 2, { from: governance });
       // now bob is active and alice is inactive
 
-      const alicePayout = web3.eth.accounts.create().address;
-      const aliceDataManagement = web3.eth.accounts.create().address;
-
-      const bobPayout = web3.eth.accounts.create().address;
-      const bobDataManagement = web3.eth.accounts.create().address;
-
       await verification.setVerifierAddresses(aliceVerification, alicePayout, aliceDataManagement, { from: alice });
       await verification.setVerifierAddresses(bobVerification, bobPayout, bobDataManagement, { from: bob });
+    });
 
+    it('provide correct getters for minor key statuses', async function () {
       const aliceDetails = await verification.verifiers(alice);
       assert.equal(aliceDetails.active, false);
       const bobDetails = await verification.verifiers(bob);
@@ -104,6 +105,20 @@ describe('YALLVerification Unit tests', () => {
       assert.equal(await verification.isVerificationAddressActive(bob, aliceVerification), false);
       assert.equal(await verification.isPayoutAddressActive(bob, alicePayout), false);
       assert.equal(await verification.isDataManagementAddressActive(bob, aliceDataManagement), false);
+    });
+
+    it('should provide methods for counting txs', async function () {
+      const memberId1 = keccak256('memberId1');
+      const data = dist.contract.methods.addMember(memberId1, eve).encodeABI();
+
+      assert.equal(await verification.getTransactionCount(true, false), 0);
+
+      await verification.submitTransaction(dist.address, 0, data, bob, { from: bobVerification });
+      await verification.submitTransaction(dist.address, 0, data, bob, { from: bobVerification });
+      await verification.submitTransaction(dist.address, 0, data, bob, { from: bobVerification });
+      await verification.submitTransaction(dist.address, 0, data, bob, { from: bobVerification });
+
+      assert.equal(await verification.getTransactionCount(true, false), 4);
     });
   });
 

@@ -333,4 +333,57 @@ contract YALLVerification is YALLVerificationCore, YALLRewardClaimer {
 
     return false;
   }
+
+  function getConfirmationCount(uint256 transactionId) public view returns (uint256 count) {
+    address[] memory verifiers = getActiveVerifiers();
+    uint256 len = verifiers.length;
+
+    for (uint256 i = 0; i < len; i++) {
+      if (confirmations[transactionId][verifiers[i]]) {
+        count += 1;
+      }
+    }
+  }
+
+  function getTransactionCount(bool pending, bool executed) public view returns (uint256 count) {
+    for (uint256 i = 0; i < transactionCount; i++) {
+      if ((pending && !transactions[i].executed) || (executed && transactions[i].executed)) {
+        count += 1;
+      }
+    }
+  }
+
+  function getConfirmations(uint256 transactionId) public view returns (address[] memory _confirmations) {
+    address[] memory verifiers = getActiveVerifiers();
+    uint256 len = verifiers.length;
+
+    address[] memory confirmationsTemp = new address[](len);
+    uint256 count = 0;
+    uint256 i;
+    for (i = 0; i < verifiers.length; i++)
+      if (confirmations[transactionId][verifiers[i]]) {
+        confirmationsTemp[count] = verifiers[i];
+        count += 1;
+      }
+    _confirmations = new address[](count);
+    for (i = 0; i < count; i++) _confirmations[i] = confirmationsTemp[i];
+  }
+
+  function getTransactionIds(
+    uint256 from,
+    uint256 to,
+    bool pending,
+    bool executed
+  ) public view returns (uint256[] memory _transactionIds) {
+    uint256[] memory transactionIdsTemp = new uint256[](transactionCount);
+    uint256 count = 0;
+    uint256 i;
+    for (i = 0; i < transactionCount; i++)
+      if ((pending && !transactions[i].executed) || (executed && transactions[i].executed)) {
+        transactionIdsTemp[count] = i;
+        count += 1;
+      }
+    _transactionIds = new uint256[](to - from);
+    for (i = from; i < to; i++) _transactionIds[i - from] = transactionIdsTemp[i];
+  }
 }
