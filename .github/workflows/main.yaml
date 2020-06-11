@@ -20,8 +20,15 @@ jobs:
         path: ~/.npm
         key: tests-node-${{ hashFiles('**/package-lock.json') }}
     - name: Run tests
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       run: |
-        npm install
+        eval $(ssh-agent -s)
+        echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+        yarn
         make lint && make compile && npm run test
   coverage:
     runs-on: ubuntu-18.04
@@ -40,6 +47,13 @@ jobs:
           path: ~/.npm
           key: coverage-node-${{ hashFiles('**/package-lock.json') }}
       - name: Run tests
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
-          npm install
+          eval $(ssh-agent -s)
+          echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+          yarn
           make compile && make coverage
