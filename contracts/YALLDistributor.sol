@@ -298,6 +298,21 @@ contract YALLDistributor is
     }
   }
 
+  function setMemberLocations(bytes32[] calldata _memberIds, uint256[] calldata _locations)
+    external
+    whenNotPaused
+    onlyDistributorVerifier
+  {
+    uint256 len = _memberIds.length;
+    require(_locations.length == len, "YALLDistributor: ID an location arrays should match");
+
+    for (uint256 i = 0; i < len; i++) {
+      member[_memberIds[i]].location = _locations[i];
+    }
+
+    emit SetMemberLocations(len);
+  }
+
   // VERIFIER INTERNAL INTERFACE
 
   function _addMembers(bytes32[] memory _memberIds, address[] memory _memberAddresses) internal {
@@ -562,6 +577,10 @@ contract YALLDistributor is
 
   function getMemberAddress(bytes32 _memberId) external view returns (address) {
     return member[_memberId].addr;
+  }
+
+  function getMemberLocation(bytes32 _memberId) external view returns (uint256) {
+    return member[_memberId].location;
   }
 
   function getMemberByAddress(address _memberAddress)

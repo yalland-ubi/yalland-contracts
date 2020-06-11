@@ -1,4 +1,5 @@
 const { accounts, defaultSender } = require('@openzeppelin/test-environment');
+const contractPoint = require('@galtproject/utils').contractPoint;
 // eslint-disable-next-line import/order
 const { contract } = require('../twrapper');
 const { assert } = require('chai');
@@ -17,6 +18,23 @@ const YALLQuestionnaire = contract.fromArtifact('YALLQuestionnaire');
 YALLQuestionnaire.numberFormat = 'String';
 
 const keccak256 = web3.utils.soliditySha3;
+
+// Contour #1
+// 40.594870, -73.949618 dr5qvnpd300r
+// 40.594843, -73.949866 dr5qvnp655pq
+// 40.594791, -73.949857 dr5qvnp3g3w0
+// 40.594816, -73.949608 dr5qvnp9cnpt
+
+// Contour #2 (intersects 1)
+// 40.594844, -73.949631 dr5qvnpd0eqs
+// 40.594859, -73.949522 dr5qvnpd5npy
+// 40.594825, -73.949512 dr5qvnp9grz7
+// 40.594827, -73.949617 dr5qvnpd100z
+
+const rawContour1 = ['dr5qvnpd300r', 'dr5qvnp655pq', 'dr5qvnp3g3w0', 'dr5qvnp9cnpt'];
+const contour1 = rawContour1.map(contractPoint.encodeFromGeohash);
+const rawContour2 = ['dr5qvnpd0eqs', 'dr5qvnpd5npy', 'dr5qvnp9grz7', 'dr5qvnpd100z'];
+const contour2 = rawContour2.map(contractPoint.encodeFromGeohash);
 
 describe('YALLQuestionnaire Unit tests', () => {
   const [
@@ -76,7 +94,7 @@ describe('YALLQuestionnaire Unit tests', () => {
 
     it('should send values to 3 attached members', async function () {
       await yallToken.approve(questionnaire.address, ether(30), { from: alice });
-      const res = await questionnaire.createQuestionnaire(activeTill, ether(30), ether(2), 'buzz', { from: alice });
+      const res = await questionnaire.createQuestionnaire(activeTill, ether(30), ether(2), 'buzz', [], { from: alice });
       const qId = getEventArg(res, 'CreateQuestionnaire', 'questionnaireId');
 
       const details = await questionnaire.questionnaires(qId);
@@ -90,7 +108,7 @@ describe('YALLQuestionnaire Unit tests', () => {
     it('should deny a disabled member creating questionnaire', async function () {
       await yallToken.approve(questionnaire.address, ether(30), { from: bob });
       await assertRevert(
-        questionnaire.createQuestionnaire(activeTill, ether(30), ether(2), 'buzz', { from: bob }),
+        questionnaire.createQuestionnaire(activeTill, ether(30), ether(2), 'buzz', [], { from: bob }),
         'YALLQuestionnaire: Member is inactive'
       );
     });
@@ -98,15 +116,27 @@ describe('YALLQuestionnaire Unit tests', () => {
     it('should deny creating a questionnaire without a reward', async function () {
       await yallToken.approve(questionnaire.address, ether(30), { from: alice });
       await assertRevert(
-        questionnaire.createQuestionnaire(activeTill, ether(30), 0, 'buzz', { from: alice }),
+        questionnaire.createQuestionnaire(activeTill, ether(30), 0, 'buzz', [], { from: alice }),
         'YALLQuestionnaire: Reward should be greater than 0'
+      );
+    });
+
+    it('should deny creating a questionnaire without one or two contour points', async function () {
+      await yallToken.approve(questionnaire.address, ether(30), { from: alice });
+      await assertRevert(
+        questionnaire.createQuestionnaire(activeTill, ether(30), ether(1), 'buzz', [123], { from: alice }),
+        'YALLQuestionnaire: contour length should be 0 or be >= 3'
+      );
+      await assertRevert(
+        questionnaire.createQuestionnaire(activeTill, ether(30), ether(1), 'buzz', [123, 456], { from: alice }),
+        'YALLQuestionnaire: contour length should be 0 or be >= 3'
       );
     });
 
     it('should deny creating a questionnaire with a deposit less than a reward', async function () {
       await yallToken.approve(questionnaire.address, ether(30), { from: alice });
       await assertRevert(
-        questionnaire.createQuestionnaire(activeTill, ether(2), ether(3), 'buzz', { from: alice }),
+        questionnaire.createQuestionnaire(activeTill, ether(2), ether(3), 'buzz', [], { from: alice }),
         'YALLQuestionnaire: Insufficient deposit'
       );
     });
@@ -115,7 +145,7 @@ describe('YALLQuestionnaire Unit tests', () => {
       activeTill = (await now()) - 10;
       await yallToken.approve(questionnaire.address, ether(30), { from: alice });
       await assertRevert(
-        questionnaire.createQuestionnaire(activeTill, ether(30), ether(3), 'buzz', { from: alice }),
+        questionnaire.createQuestionnaire(activeTill, ether(30), ether(3), 'buzz', [], { from: alice }),
         'YALLQuestionnaire: Invalid activeTill'
       );
     });
@@ -128,7 +158,7 @@ describe('YALLQuestionnaire Unit tests', () => {
     beforeEach(async function () {
       activeTill = (await now()) + 3600;
       await yallToken.approve(questionnaire.address, ether(30), { from: alice });
-      const res = await questionnaire.createQuestionnaire(activeTill, ether(30), ether(2), 'buzz', { from: alice });
+      const res = await questionnaire.createQuestionnaire(activeTill, ether(30), ether(2), 'buzz', [], { from: alice });
       qId = getEventArg(res, 'CreateQuestionnaire', 'questionnaireId');
     });
 
@@ -159,7 +189,7 @@ describe('YALLQuestionnaire Unit tests', () => {
     beforeEach(async function () {
       activeTill = (await now()) + 3600;
       await yallToken.approve(questionnaire.address, ether(30), { from: alice });
-      const res = await questionnaire.createQuestionnaire(activeTill, ether(30), ether(2), 'buzz', { from: alice });
+      const res = await questionnaire.createQuestionnaire(activeTill, ether(30), ether(2), 'buzz', [], { from: alice });
       qId = getEventArg(res, 'CreateQuestionnaire', 'questionnaireId');
     });
 
@@ -197,7 +227,7 @@ describe('YALLQuestionnaire Unit tests', () => {
     beforeEach(async function () {
       activeTill = (await now()) + 3600;
       await yallToken.approve(questionnaire.address, ether(30), { from: alice });
-      const res = await questionnaire.createQuestionnaire(activeTill, ether(30), ether(2), 'buzz', { from: alice });
+      const res = await questionnaire.createQuestionnaire(activeTill, ether(30), ether(2), 'buzz', [], { from: alice });
       qId = getEventArg(res, 'CreateQuestionnaire', 'questionnaireId');
     });
 
@@ -243,7 +273,9 @@ describe('YALLQuestionnaire Unit tests', () => {
     beforeEach(async function () {
       activeTill = (await now()) + 3600;
       await yallToken.approve(questionnaire.address, ether(30), { from: alice });
-      const res = await questionnaire.createQuestionnaire(activeTill, ether(30), ether(12), 'buzz', { from: alice });
+      const res = await questionnaire.createQuestionnaire(activeTill, ether(30), ether(12), 'buzz', [], {
+        from: alice,
+      });
       qId = getEventArg(res, 'CreateQuestionnaire', 'questionnaireId');
     });
 
@@ -294,6 +326,41 @@ describe('YALLQuestionnaire Unit tests', () => {
       await increaseTime(3700);
       await assertRevert(questionnaire.submitAnswers(qId, answers, { from: charlie }), 'YALLQuestionnaire: Not active');
     });
+
+    describe('with a area contour specified', () => {
+      beforeEach(async function () {
+        await yallToken.approve(questionnaire.address, ether(30), { from: alice });
+        const res = await questionnaire.createQuestionnaire(activeTill, ether(30), ether(12), 'buzz', contour1, {
+          from: alice,
+        });
+        qId = getEventArg(res, 'CreateQuestionnaire', 'questionnaireId');
+
+        await dist.setMemberLocations(
+          [aliceId, bobId, charlieId, danId],
+          [contour2[0], contour2[1], contour2[2], contour2[3]],
+          { from: distributorVerifier }
+        );
+      });
+
+      it('should allow an active member submitting answers if the contour includes his location', async function () {
+        await questionnaire.submitAnswers(qId, answers, { from: alice });
+        await questionnaire.submitAnswers(qId, answers, { from: dan });
+      });
+
+      it('should deny an active member submitting answers if the contour doesnt include location', async function () {
+        await dist.enableMembers([bob], { from: distributorVerifier });
+        await assertRevert(
+          questionnaire.submitAnswers(qId, answers, { from: bob }),
+          'YALLQuestionnaire: Wrong location'
+        );
+        await dist.disableMembers([bob], { from: distributorVerifier });
+
+        await assertRevert(
+          questionnaire.submitAnswers(qId, answers, { from: charlie }),
+          'YALLQuestionnaire: Wrong location'
+        );
+      });
+    });
   });
 
   describe('getters', async function () {
@@ -304,7 +371,9 @@ describe('YALLQuestionnaire Unit tests', () => {
     beforeEach(async function () {
       activeTill = (await now()) + 3600;
       await yallToken.approve(questionnaire.address, ether(30), { from: alice });
-      const res = await questionnaire.createQuestionnaire(activeTill, ether(30), ether(12), 'buzz', { from: alice });
+      const res = await questionnaire.createQuestionnaire(activeTill, ether(30), ether(12), 'buzz', [], {
+        from: alice,
+      });
       qId = getEventArg(res, 'CreateQuestionnaire', 'questionnaireId');
     });
 
