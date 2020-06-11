@@ -147,9 +147,9 @@
   dependencies:
     "@galtproject/eslint-config-galt" "github:galtproject/eslint-config-galt#ae71c5c49fa0e6b42fe40e89ec2825be19fb30e8"
 
-"@galtproject/utils@git+ssh://git@github.com/galtproject/galtproject-utils-js.git#be10174":
+"@galtproject/utils@github:galtproject/galtproject-utils-js.git#be10174":
   version "0.9.1"
-  resolved "git+ssh://git@github.com/galtproject/galtproject-utils-js.git#be10174b3817f243109e98e38a6286a18691486b"
+  resolved "https://codeload.github.com/galtproject/galtproject-utils-js/tar.gz/be10174b3817f243109e98e38a6286a18691486b"
   dependencies:
     bn.js "^4.11.8"
     bs58 "^4.0.1"
