@@ -189,9 +189,12 @@ contract YALLQuestionnaire is Initializable, NumericIdCounter, YALLRegistryHelpe
   function getSubmittedAnswers(uint256 _questionnaireId, bytes32 _submitterId)
     external
     view
-    returns (bytes32[] memory)
+    returns (uint256 submittedAt, bytes32[] memory answers)
   {
-    return questionnaires[_questionnaireId].submissions[_submitterId].answers;
+    return (
+      questionnaires[_questionnaireId].submissions[_submitterId].submittedAt,
+      questionnaires[_questionnaireId].submissions[_submitterId].answers
+    );
   }
 
   function getQuestionnaireContour(uint256 _questionnaireId) external view returns (uint256[] memory) {

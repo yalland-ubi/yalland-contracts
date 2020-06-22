@@ -8,6 +8,7 @@ const {
   increaseTime,
   assertErc20BalanceChanged,
   assertRevert,
+  getResTimestamp,
   getEventArg,
   now,
 } = require('@galtproject/solidity-test-chest')(web3);
@@ -391,9 +392,16 @@ describe('YALLQuestionnaire Unit tests', () => {
     });
 
     it('should return submitted answers', async function () {
-      assert.sameMembers(await questionnaire.getSubmittedAnswers(qId, charlieId), []);
-      await questionnaire.submitAnswers(qId, answers, { from: charlie });
-      assert.sameMembers(await questionnaire.getSubmittedAnswers(qId, charlieId), answers);
+      let res = await questionnaire.getSubmittedAnswers(qId, charlieId);
+      assert.sameMembers(res.answers, []);
+      assert.equal(res.submittedAt, 0);
+
+      res = await questionnaire.submitAnswers(qId, answers, { from: charlie });
+      const submittedAt = await getResTimestamp(res);
+
+      res = await questionnaire.getSubmittedAnswers(qId, charlieId);
+      assert.sameMembers(res.answers, answers);
+      assert.equal(res.submittedAt, submittedAt);
     });
   });
 });
