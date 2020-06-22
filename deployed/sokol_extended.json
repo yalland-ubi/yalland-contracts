@@ -195,7 +195,7 @@
         }
       ],
       "constructorArguments": "",
-      "address": "0x0987cb009e73f885101f2C8e7cd4763823E1220D"
+      "address": "0x43beBbf106E9F117303378a21F75a23BB7F2e58d"
     },
     "yallRegistry": {
       "factory": "YALLRegistry",
@@ -947,10 +947,10 @@
           "signature": "0x10cee8d2"
         }
       ],
-      "address": "0xda7C99345b3218082b8769A6DFc58DB89ac5bfA7",
+      "address": "0x48aF2Fec9aC2a9F1f2ca1Ea00ef14e4D6Ea86e82",
       "proxied": true,
-      "implementation": "0x0C209c2C818e4d39F7c3fF8628fB8fc459FcB574",
-      "proxyArguments": "0000000000000000000000000c209c2c818e4d39f7c3ff8628fb8fc459fcb5740000000000000000000000000987cb009e73f885101f2c8e7cd4763823e1220d000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000048129fc1c00000000000000000000000000000000000000000000000000000000"
+      "implementation": "0x3B5a17C1d7cc8c92c81756C6EEcaf281599eEA21",
+      "proxyArguments": "0000000000000000000000003b5a17c1d7cc8c92c81756c6eecaf281599eea2100000000000000000000000043bebbf106e9f117303378a21f75a23bb7f2e58d000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000048129fc1c00000000000000000000000000000000000000000000000000000000"
     },
     "yallDistributor": {
       "factory": "YALLDistributor",
@@ -1252,6 +1252,20 @@
             {
               "indexed": false,
               "internalType": "uint256",
+              "name": "len",
+              "type": "uint256"
+            }
+          ],
+          "name": "SetMemberLocations",
+          "type": "event",
+          "signature": "0x48dd5ccf3c067738120275aee2c94d1fd5c860b7ea858f3509b5b68aecd62569"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "internalType": "uint256",
               "name": "oldPeriodVolume",
               "type": "uint256"
             },
@@ -1439,6 +1453,22 @@
           "stateMutability": "view",
           "type": "function",
           "signature": "0x05db2f41"
+        },
+        {
+          "constant": true,
+          "inputs": [],
+          "name": "GOVERNANCE_ROLE",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0xf36c8f5c"
         },
         {
           "constant": true,
@@ -1728,6 +1758,11 @@
             {
               "internalType": "uint256",
               "name": "totalClaimed",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "location",
               "type": "uint256"
             }
           ],
@@ -2194,6 +2229,27 @@
           "constant": false,
           "inputs": [
             {
+              "internalType": "bytes32[]",
+              "name": "_memberIds",
+              "type": "bytes32[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "_locations",
+              "type": "uint256[]"
+            }
+          ],
+          "name": "setMemberLocations",
+          "outputs": [],
+          "payable": false,
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "signature": "0x4f0b008f"
+        },
+        {
+          "constant": false,
+          "inputs": [
+            {
               "internalType": "uint256",
               "name": "_periodId",
               "type": "uint256"
@@ -2640,6 +2696,28 @@
           "constant": true,
           "inputs": [
             {
+              "internalType": "bytes32",
+              "name": "_memberId",
+              "type": "bytes32"
+            }
+          ],
+          "name": "getMemberLocation",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0x4c81d38c"
+        },
+        {
+          "constant": true,
+          "inputs": [
+            {
               "internalType": "address",
               "name": "_memberAddress",
               "type": "address"
@@ -2689,10 +2767,10 @@
           "signature": "0x3dd9899f"
         }
       ],
-      "address": "0x2c8974dCFe1C67eA99db7f508Cf1fB81A2C91079",
+      "address": "0x33D9Bd0B35C4629e5eaEd7BC79e9112A647144da",
       "proxied": true,
-      "implementation": "0xeB821ee99F25A419eb2FD65f9E004E5f3bA69014",
-      "proxyArguments": "000000000000000000000000eb821ee99f25a419eb2fd65f9e004e5f3ba690140000000000000000000000000987cb009e73f885101f2c8e7cd4763823e1220d000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a43f490e71000000000000000000000000000000000000000000003a3bc7a5ab8e25e000000000000000000000000000000000000000000000000000008ac7230489e80000000000000000000000000000da7c99345b3218082b8769a6dfc58db89ac5bfa7000000000000000000000000000000000000000000000000000000000000012c000000000000000000000000000000000000000000000000000000005ecbdb3b00000000000000000000000000000000000000000000000000000000"
+      "implementation": "0xAdf0858620EAFE97e8D411293b4320b3f974Da94",
+      "proxyArguments": "000000000000000000000000adf0858620eafe97e8d411293b4320b3f974da9400000000000000000000000043bebbf106e9f117303378a21f75a23bb7f2e58d000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a43f490e71000000000000000000000000000000000000000000003a3bc7a5ab8e25e000000000000000000000000000000000000000000000000000008ac7230489e8000000000000000000000000000048af2fec9ac2a9f1f2ca1ea00ef14e4d6ea86e82000000000000000000000000000000000000000000000000000000000000012c000000000000000000000000000000000000000000000000000000005ef07d0100000000000000000000000000000000000000000000000000000000"
     },
     "yallExchange": {
       "factory": "YALLExchange",
@@ -3141,6 +3219,22 @@
           "stateMutability": "view",
           "type": "function",
           "signature": "0x05db2f41"
+        },
+        {
+          "constant": true,
+          "inputs": [],
+          "name": "GOVERNANCE_ROLE",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0xf36c8f5c"
         },
         {
           "constant": true,
@@ -4113,10 +4207,10 @@
           "signature": "0x1fafd366"
         }
       ],
-      "address": "0x9D7e918cd48354Ef572C9664C7f40f76266bCf9a",
+      "address": "0x1EBBCa4E9021c634D28c74F03d9CbCe35b5e9054",
       "proxied": true,
-      "implementation": "0xC56d4654816AD08cad216c52f52aEB63C7bc8F22",
-      "proxyArguments": "000000000000000000000000c56d4654816ad08cad216c52f52aeb63c7bc8f220000000000000000000000000987cb009e73f885101f2c8e7cd4763823e1220d00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000044cd6dc687000000000000000000000000da7c99345b3218082b8769a6dfc58db89ac5bfa700000000000000000000000000000000000000000000000246ddf9797668000000000000000000000000000000000000000000000000000000000000"
+      "implementation": "0x419Aa42CE43C590BA1ea18908016530E237b90AA",
+      "proxyArguments": "000000000000000000000000419aa42ce43c590ba1ea18908016530e237b90aa00000000000000000000000043bebbf106e9f117303378a21f75a23bb7f2e58d00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000044cd6dc68700000000000000000000000048af2fec9ac2a9f1f2ca1ea00ef14e4d6ea86e8200000000000000000000000000000000000000000000000246ddf9797668000000000000000000000000000000000000000000000000000000000000"
     },
     "yallToken": {
       "factory": "YALLToken",
@@ -4586,6 +4680,22 @@
           "stateMutability": "view",
           "type": "function",
           "signature": "0x05db2f41"
+        },
+        {
+          "constant": true,
+          "inputs": [],
+          "name": "GOVERNANCE_ROLE",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ],
+          "payable": false,
+          "stateMutability": "view",
+          "type": "function",
+          "signature": "0xf36c8f5c"
         },
         {
           "constant": true,
@@ -5594,8 +5704,8 @@
           "signature": "0x28912822"
         }
       ],
-      "constructorArguments": "000000000000000000000000da7c99345b3218082b8769a6dfc58db89ac5bfa7000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000000c59616c6c616e6420546573740000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000459414c5400000000000000000000000000000000000000000000000000000000",
-      "address": "0x1EefC0216aC65358432AF87df9E3184798e0Fb1c"
+      "constructorArguments": "00000000000000000000000048af2fec9ac2a9f1f2ca1ea00ef14e4d6ea86e82000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000000c59616c6c616e6420546573740000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000459414c5400000000000000000000000000000000000000000000000000000000",
+      "address": "0x38eCE15Ef7568679DbE5AC0889F2A8284CfB731C"
     }
   },
   "compiler": {

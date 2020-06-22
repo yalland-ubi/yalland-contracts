@@ -1,5 +1,5 @@
 {
-  "yallProxyAdminAddress": "0x0987cb009e73f885101f2C8e7cd4763823E1220D",
+  "yallProxyAdminAddress": "0x43beBbf106E9F117303378a21F75a23BB7F2e58d",
   "yallProxyAdminAbi": [
     {
       "anonymous": false,
@@ -192,7 +192,7 @@
       "signature": "0x9623609d"
     }
   ],
-  "yallRegistryAddress": "0xda7C99345b3218082b8769A6DFc58DB89ac5bfA7",
+  "yallRegistryAddress": "0x48aF2Fec9aC2a9F1f2ca1Ea00ef14e4D6Ea86e82",
   "yallRegistryAbi": [
     {
       "anonymous": false,
@@ -941,7 +941,7 @@
       "signature": "0x10cee8d2"
     }
   ],
-  "yallDistributorAddress": "0x2c8974dCFe1C67eA99db7f508Cf1fB81A2C91079",
+  "yallDistributorAddress": "0x33D9Bd0B35C4629e5eaEd7BC79e9112A647144da",
   "yallDistributorAbi": [
     {
       "inputs": [],
@@ -1240,6 +1240,20 @@
         {
           "indexed": false,
           "internalType": "uint256",
+          "name": "len",
+          "type": "uint256"
+        }
+      ],
+      "name": "SetMemberLocations",
+      "type": "event",
+      "signature": "0x48dd5ccf3c067738120275aee2c94d1fd5c860b7ea858f3509b5b68aecd62569"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
           "name": "oldPeriodVolume",
           "type": "uint256"
         },
@@ -1427,6 +1441,22 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0x05db2f41"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "GOVERNANCE_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xf36c8f5c"
     },
     {
       "constant": true,
@@ -1716,6 +1746,11 @@
         {
           "internalType": "uint256",
           "name": "totalClaimed",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "location",
           "type": "uint256"
         }
       ],
@@ -2182,6 +2217,27 @@
       "constant": false,
       "inputs": [
         {
+          "internalType": "bytes32[]",
+          "name": "_memberIds",
+          "type": "bytes32[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "_locations",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "setMemberLocations",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0x4f0b008f"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
           "internalType": "uint256",
           "name": "_periodId",
           "type": "uint256"
@@ -2628,6 +2684,28 @@
       "constant": true,
       "inputs": [
         {
+          "internalType": "bytes32",
+          "name": "_memberId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getMemberLocation",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x4c81d38c"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
           "internalType": "address",
           "name": "_memberAddress",
           "type": "address"
@@ -2677,7 +2755,7 @@
       "signature": "0x3dd9899f"
     }
   ],
-  "yallExchangeAddress": "0x9D7e918cd48354Ef572C9664C7f40f76266bCf9a",
+  "yallExchangeAddress": "0x1EBBCa4E9021c634D28c74F03d9CbCe35b5e9054",
   "yallExchangeAbi": [
     {
       "inputs": [],
@@ -3123,6 +3201,22 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0x05db2f41"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "GOVERNANCE_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xf36c8f5c"
     },
     {
       "constant": true,
@@ -4095,7 +4189,7 @@
       "signature": "0x1fafd366"
     }
   ],
-  "yallTokenAddress": "0x1EefC0216aC65358432AF87df9E3184798e0Fb1c",
+  "yallTokenAddress": "0x38eCE15Ef7568679DbE5AC0889F2A8284CfB731C",
   "yallTokenAbi": [
     {
       "inputs": [
@@ -4562,6 +4656,22 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0x05db2f41"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "GOVERNANCE_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xf36c8f5c"
     },
     {
       "constant": true,
