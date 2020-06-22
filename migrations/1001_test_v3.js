@@ -13,6 +13,7 @@ const YALLToken = artifacts.require('./YALLToken');
 const YALLDistributor = artifacts.require('./YALLDistributor');
 const YALLExchange = artifacts.require('./YALLExchange');
 const YALLRegistry = artifacts.require('./YALLRegistry');
+const YALLReferralPayouts = artifacts.require('./YALLReferralPayouts');
 const Proxy = artifacts.require('AdminUpgradeabilityProxy');
 const ProxyAdmin = artifacts.require('ProxyAdmin');
 const { web3 } = YALLDistributor;
@@ -135,6 +136,12 @@ module.exports = async function (truffle, network, accounts) {
       .name('yallToken')
       .arguments(registry.address, 'Yalland Test', 'YALT', 18)
       .deploy();
+
+    await deployment
+      .factory(YALLReferralPayouts)
+      .name('yallReferralPayouts')
+      .arguments(superuser, yall.address)
+      .deployWithProxy(proxyAdmin.address);
 
     deployment.save();
 
