@@ -37,7 +37,8 @@ interface IYALLDistributor {
       uint256 createdAt,
       uint256 lastEnabledAt,
       uint256 lastDisabledAt,
-      uint256 totalClaimed
+      uint256 totalClaimed,
+      uint256 location
     );
 
   function period(uint256 _periodId)
@@ -124,6 +125,8 @@ interface IYALLDistributor {
   function getTotalClaimed(bytes32 _memberId) external view returns (uint256);
 
   function getMemberAddress(bytes32 _memberId) external view returns (address);
+
+  function getMemberLocation(bytes32 _memberId) external view returns (uint256);
 
   function getMemberByAddress(address _memberAddress)
     external

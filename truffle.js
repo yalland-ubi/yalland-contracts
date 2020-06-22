@@ -60,7 +60,7 @@ module.exports = {
   },
   compilers: {
     solc: {
-      version: process.env.SOLC || 'native',
+      version: process.env.SOLC || 'v0.5.17',
       settings: {
         optimizer: {
           enabled: true,

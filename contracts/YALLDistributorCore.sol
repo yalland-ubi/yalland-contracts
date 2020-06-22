@@ -42,6 +42,7 @@ contract YALLDistributorCore is Initializable, YALLRegistryHelpers, ACLPausable 
     uint256 activeMemberCount
   );
   event SetGsnFee(uint256 value);
+  event SetMemberLocations(uint256 len);
   event SetPeriodVolume(uint256 oldPeriodVolume, uint256 newPeriodVolume);
   event SetEmissionPoolRewardShare(uint256 rewardShare);
 
@@ -58,6 +59,7 @@ contract YALLDistributorCore is Initializable, YALLRegistryHelpers, ACLPausable 
     uint256 lastEnabledAt;
     uint256 lastDisabledAt;
     uint256 totalClaimed;
+    uint256 location;
     // periodId => claimed
     mapping(uint256 => bool) claimedPeriods;
   }

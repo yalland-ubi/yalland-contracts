@@ -2,15 +2,15 @@ let hook;
 global.before = function (_hook) {
   hook = _hook;
 };
+const contractPoint = require('@galtproject/utils').contractPoint;
 const { accounts, contract, defaultSender } = require('@openzeppelin/test-environment');
 const assert = require('assert');
 // eslint-disable-next-line import/order
-// const { contract } = require('../test/twrapper');
 const { buildCoinDistAndExchange, deployWithProxy } = require('../test/builders');
 const benchmark = require('../benchmark');
 
 // eslint-disable-next-line import/order
-const { getEventArg, ether } = require('@galtproject/solidity-test-chest')(web3);
+const { getEventArg, ether, now } = require('@galtproject/solidity-test-chest')(web3);
 
 const keccak256 = web3.utils.soliditySha3;
 
@@ -18,7 +18,9 @@ const YALLToken = contract.fromArtifact('YALLToken');
 const YALLVerification = contract.fromArtifact('YALLVerification');
 const Mock = contract.fromArtifact('MockRegistryV2');
 const ERC20Managed = contract.fromArtifact('ERC20Managed');
+const YALLQuestionnaire = contract.fromArtifact('YALLQuestionnaire');
 
+YALLQuestionnaire.numberFormat = 'String';
 YALLToken.numberFormat = 'String';
 ERC20Managed.numberFormat = 'String';
 
@@ -139,7 +141,7 @@ benchmark(() => {
     });
   });
 
-  describe('#setVerifiers)', function () {
+  describe('YALLVerification->setVerifiers()', function () {
     beforeEach(async function () {
       const verificationDeployment = await deployWithProxy(YALLVerification, proxyAdmin.address, registry.address);
       verification = verificationDeployment.contract;
@@ -167,6 +169,41 @@ benchmark(() => {
       }
       await verification.setVerifiers(initialVerifiers, 15, { from: governance });
       return verification.setVerifiers(newVerifiers, 15, { from: governance });
+    });
+  });
+
+  describe('YALLQuestionnaire->submitAnswers()', function () {
+    let questionnaire;
+    let activeTill;
+    const answers = [keccak256('foo'), keccak256('bar'), keccak256('buzz')];
+
+    const rawContour1 = ['dr5qvnpd300r', 'dr5qvnp655pq', 'dr5qvnp3g3w0', 'dr5qvnp9cnpt'];
+    const contour1 = rawContour1.map(contractPoint.encodeFromGeohash);
+    const rawContour2 = ['dr5qvnpd0eqs', 'dr5qvnpd5npy', 'dr5qvnp9grz7', 'dr5qvnpd100z'];
+    const contour2 = rawContour2.map(contractPoint.encodeFromGeohash);
+
+    beforeEach(async function () {
+      activeTill = (await now()) + 3600;
+      questionnaire = await YALLQuestionnaire.new();
+      await questionnaire.initialize(registry.address);
+      await yallToken.approve(questionnaire.address, ether(30), { from: alice });
+      await dist.setMemberLocations([memberId1, memberId2], [contour2[0], contour2[1]], { from: distributorVerifier });
+    });
+
+    run('without contour inclusion check', async function () {
+      const res = await questionnaire.createQuestionnaire(activeTill, ether(30), ether(12), 'buzz', [], {
+        from: alice,
+      });
+      const qId = getEventArg(res, 'CreateQuestionnaire', 'questionnaireId');
+      return questionnaire.submitAnswers(qId, answers, { from: alice });
+    });
+
+    run('with contour inclusion check', async function () {
+      const res = await questionnaire.createQuestionnaire(activeTill, ether(30), ether(12), 'buzz', contour1, {
+        from: alice,
+      });
+      const qId = getEventArg(res, 'CreateQuestionnaire', 'questionnaireId');
+      return questionnaire.submitAnswers(qId, answers, { from: alice });
     });
   });
 });
