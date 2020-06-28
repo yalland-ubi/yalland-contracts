@@ -2922,9 +2922,9 @@ eol@^0.9.1:
   resolved "https://registry.yarnpkg.com/eol/-/eol-0.9.1.tgz#f701912f504074be35c6117a5c4ade49cd547acd"
   integrity sha512-Ds/TEoZjwggRoz/Q2O7SE3i4Jm66mqTDfmdHdq/7DKVk3bro9Q8h6WdXKdPqFLMoqxrDK5SVRzHVPOS6uuGtrg==
 
-"erc20-staking-contracts@github:yalland-ubi/erc20-staking-contracts#2892bd9b8fb94425b37990e0fe55b43ab6d96c6f":
+"erc20-staking-contracts@github:yalland-ubi/erc20-staking-contracts#9ab724f":
   version "1.0.0"
-  resolved "https://codeload.github.com/yalland-ubi/erc20-staking-contracts/tar.gz/2892bd9b8fb94425b37990e0fe55b43ab6d96c6f"
+  resolved "https://codeload.github.com/yalland-ubi/erc20-staking-contracts/tar.gz/9ab724f934cbc979b3671651cee9bd9c79e198e9"
 
 errno@~0.1.1:
   version "0.1.7"
