@@ -81,6 +81,17 @@ describe('YALLVerification Unit tests', () => {
     await verification.setVerifierMinimalLockedStake(ether(300), { from: governance });
   });
 
+  async function setVerifierStake(verifier, amount) {
+    const stakeData = await homeMediator.contract.methods.setLockedStake(verifier, amount).encodeABI();
+    await bridge.executeMessageCall(
+      homeMediator.address,
+      mediatorOnTheOtherSide,
+      stakeData,
+      keccak256('blah'),
+      20000000
+    );
+  }
+
   describe('Getters', () => {
     const alicePayout = web3.eth.accounts.create().address;
     const aliceDataManagement = web3.eth.accounts.create().address;
@@ -123,14 +134,7 @@ describe('YALLVerification Unit tests', () => {
       const memberId1 = keccak256('memberId1');
       const data = dist.contract.methods.addMember(memberId1, eve).encodeABI();
 
-      const stakeData = await homeMediator.contract.methods.setLockedStake(bob, ether(310)).encodeABI();
-      await bridge.executeMessageCall(
-        homeMediator.address,
-        mediatorOnTheOtherSide,
-        stakeData,
-        keccak256('blah'),
-        20000000
-      );
+      setVerifierStake(bob, ether(310));
 
       assert.equal(await verification.getTransactionCount(true, false), 0);
 
@@ -191,22 +195,8 @@ describe('YALLVerification Unit tests', () => {
         await verification.setVerifierAddresses(bobVerification, bar, buzz, { from: bob });
         data = dist.contract.methods.addMember(memberId1, eve).encodeABI();
 
-        let stakeData = await homeMediator.contract.methods.setLockedStake(bob, ether(300)).encodeABI();
-        await bridge.executeMessageCall(
-          homeMediator.address,
-          mediatorOnTheOtherSide,
-          stakeData,
-          keccak256('blah'),
-          20000000
-        );
-        stakeData = await homeMediator.contract.methods.setLockedStake(alice, ether(300)).encodeABI();
-        await bridge.executeMessageCall(
-          homeMediator.address,
-          mediatorOnTheOtherSide,
-          stakeData,
-          keccak256('blah'),
-          20000000
-        );
+        await setVerifierStake(alice, ether(300));
+        await setVerifierStake(bob, ether(300));
       });
 
       it('should allow an active verifier submitting tx', async function () {
@@ -225,14 +215,7 @@ describe('YALLVerification Unit tests', () => {
       });
 
       it('should deny an active submitting tx without sufficient deposit', async function () {
-        const stakeData = await homeMediator.contract.methods.setLockedStake(bob, ether(299)).encodeABI();
-        await bridge.executeMessageCall(
-          homeMediator.address,
-          mediatorOnTheOtherSide,
-          stakeData,
-          keccak256('blah'),
-          20000000
-        );
+        await setVerifierStake(bob, ether(299));
         await assertRevert(
           verification.submitTransaction(dist.address, 0, data, bob, { from: bob }),
           'YALLVerification: Not enough locked stake'
@@ -263,30 +246,11 @@ describe('YALLVerification Unit tests', () => {
         await verification.setVerifierAddresses(bobVerification, bar, buzz, { from: bob });
         await verification.setVerifierAddresses(charlieVerification, bar, buzz, { from: charlie });
         data = dist.contract.methods.addMember(memberId1, eve).encodeABI();
-        let stakeData = await homeMediator.contract.methods.setLockedStake(bob, ether(300)).encodeABI();
-        await bridge.executeMessageCall(
-          homeMediator.address,
-          mediatorOnTheOtherSide,
-          stakeData,
-          keccak256('blah'),
-          20000000
-        );
-        stakeData = await homeMediator.contract.methods.setLockedStake(charlie, ether(300)).encodeABI();
-        await bridge.executeMessageCall(
-          homeMediator.address,
-          mediatorOnTheOtherSide,
-          stakeData,
-          keccak256('blah'),
-          20000000
-        );
-        stakeData = await homeMediator.contract.methods.setLockedStake(alice, ether(300)).encodeABI();
-        await bridge.executeMessageCall(
-          homeMediator.address,
-          mediatorOnTheOtherSide,
-          stakeData,
-          keccak256('blah'),
-          20000000
-        );
+
+        await setVerifierStake(alice, ether(300));
+        await setVerifierStake(bob, ether(300));
+        await setVerifierStake(charlie, ether(300));
+
         await verification.submitTransaction(dist.address, 0, data, bob, { from: bobVerification });
       });
 
@@ -298,14 +262,7 @@ describe('YALLVerification Unit tests', () => {
       });
 
       it('should deny an active verifier confirming tx without sufficient deposit', async function () {
-        const stakeData = await homeMediator.contract.methods.setLockedStake(charlie, ether(299)).encodeABI();
-        await bridge.executeMessageCall(
-          homeMediator.address,
-          mediatorOnTheOtherSide,
-          stakeData,
-          keccak256('blah'),
-          20000000
-        );
+        await setVerifierStake(charlie, ether(299));
         await assertRevert(
           verification.confirmTransaction(0, charlie, { from: charlieVerification }),
           'YALLVerification: Not enough locked stake'
@@ -372,6 +329,11 @@ describe('YALLVerification Unit tests', () => {
         await verification.setVerifierAddresses(charlieVerification, bar, buzz, { from: charlie });
         await verification.setVerifierAddresses(danVerification, bar, buzz, { from: dan });
         data = dist.contract.methods.addMember(memberId1, eve).encodeABI();
+
+        await setVerifierStake(bob, ether(300));
+        await setVerifierStake(charlie, ether(300));
+        await setVerifierStake(dan, ether(300));
+
         await verification.submitTransaction(dist.address, 0, data, bob, { from: bobVerification });
         await verification.confirmTransaction(0, charlie, { from: charlieVerification });
         await registry.setRole(verification.address, await dist.DISTRIBUTOR_VERIFIER_ROLE(), false);
