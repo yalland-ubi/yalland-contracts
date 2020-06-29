@@ -6,8 +6,11 @@ const { ether, increaseTime, assertRevert, getResTimestamp } = require('@galtpro
 const { deployWithProxy, buildCoinDistAndExchange } = require('../builders');
 
 const YALLVerification = contract.fromArtifact('YALLVerification');
+const StakingHomeMediator = contract.fromArtifact('StakingHomeMediator');
+const AMBMock = contract.fromArtifact('AMBMock');
 
 YALLVerification.numberFormat = 'String';
+StakingHomeMediator.numberFormat = 'String';
 
 const keccak256 = web3.utils.soliditySha3;
 
@@ -39,14 +42,17 @@ describe('YALLVerification Unit tests', () => {
     yallTokenManager,
     pauser,
     distributorEmissionClaimer,
+    mediatorOnTheOtherSide,
   ] = accounts;
 
   // 7 days
   const periodVolume = ether(250 * 1000);
   let dist;
+  let bridge;
   let proxyAdmin;
   let registry;
   let verification;
+  let homeMediator;
 
   before(async function () {
     ({ dist, verification, registry, proxyAdmin } = await buildCoinDistAndExchange(defaultSender, {
@@ -67,7 +73,24 @@ describe('YALLVerification Unit tests', () => {
       disableEmission: true,
       disableCommission: true,
     }));
+    bridge = await AMBMock.new();
+    await bridge.setMaxGasPerTx(20000000);
+    homeMediator = await StakingHomeMediator.new();
+    await homeMediator.initialize(bridge.address, mediatorOnTheOtherSide, 20000000, 123, defaultSender);
+    await registry.setContract(await registry.YALL_HOME_MEDIATOR_KEY(), homeMediator.address);
+    await verification.setVerifierMinimalLockedStake(ether(300), { from: governance });
   });
+
+  async function setVerifierStake(verifier, amount) {
+    const stakeData = await homeMediator.contract.methods.setLockedStake(verifier, amount).encodeABI();
+    await bridge.executeMessageCall(
+      homeMediator.address,
+      mediatorOnTheOtherSide,
+      stakeData,
+      keccak256('blah'),
+      20000000
+    );
+  }
 
   describe('Getters', () => {
     const alicePayout = web3.eth.accounts.create().address;
@@ -111,6 +134,8 @@ describe('YALLVerification Unit tests', () => {
       const memberId1 = keccak256('memberId1');
       const data = dist.contract.methods.addMember(memberId1, eve).encodeABI();
 
+      setVerifierStake(bob, ether(310));
+
       assert.equal(await verification.getTransactionCount(true, false), 0);
 
       await verification.submitTransaction(dist.address, 0, data, bob, { from: bobVerification });
@@ -132,6 +157,7 @@ describe('YALLVerification Unit tests', () => {
       await registry.setContract(await registry.YALL_VERIFICATION_KEY(), verification.address);
       await verification.setVerifiers([alice, bob, charlie], 2, { from: governance });
       await verification.setVerifiers([bob, charlie, dan, eve, frank], 3, { from: governance });
+      await verification.setVerifierMinimalLockedStake(ether(300), { from: governance });
     });
 
     describe('#setVerifierAddresses()', () => {
@@ -168,6 +194,9 @@ describe('YALLVerification Unit tests', () => {
         await verification.setVerifierAddresses(aliceVerification, bar, buzz, { from: alice });
         await verification.setVerifierAddresses(bobVerification, bar, buzz, { from: bob });
         data = dist.contract.methods.addMember(memberId1, eve).encodeABI();
+
+        await setVerifierStake(alice, ether(300));
+        await setVerifierStake(bob, ether(300));
       });
 
       it('should allow an active verifier submitting tx', async function () {
@@ -183,6 +212,14 @@ describe('YALLVerification Unit tests', () => {
         assert.equal(tx0.value, 0);
         assert.equal(tx0.data, data);
         assert.equal(tx0.executed, false);
+      });
+
+      it('should deny an active submitting tx without sufficient deposit', async function () {
+        await setVerifierStake(bob, ether(299));
+        await assertRevert(
+          verification.submitTransaction(dist.address, 0, data, bob, { from: bob }),
+          'YALLVerification: Not enough locked stake'
+        );
       });
 
       it('should deny an active submitting tx using root key', async function () {
@@ -209,6 +246,11 @@ describe('YALLVerification Unit tests', () => {
         await verification.setVerifierAddresses(bobVerification, bar, buzz, { from: bob });
         await verification.setVerifierAddresses(charlieVerification, bar, buzz, { from: charlie });
         data = dist.contract.methods.addMember(memberId1, eve).encodeABI();
+
+        await setVerifierStake(alice, ether(300));
+        await setVerifierStake(bob, ether(300));
+        await setVerifierStake(charlie, ether(300));
+
         await verification.submitTransaction(dist.address, 0, data, bob, { from: bobVerification });
       });
 
@@ -217,6 +259,14 @@ describe('YALLVerification Unit tests', () => {
 
         assert.equal(await verification.confirmations(0, charlie), true);
         assert.equal(await verification.confirmations(0, charlieVerification), false);
+      });
+
+      it('should deny an active verifier confirming tx without sufficient deposit', async function () {
+        await setVerifierStake(charlie, ether(299));
+        await assertRevert(
+          verification.confirmTransaction(0, charlie, { from: charlieVerification }),
+          'YALLVerification: Not enough locked stake'
+        );
       });
 
       it('should deny an active verifier confirming tx using a root key', async function () {
@@ -279,6 +329,11 @@ describe('YALLVerification Unit tests', () => {
         await verification.setVerifierAddresses(charlieVerification, bar, buzz, { from: charlie });
         await verification.setVerifierAddresses(danVerification, bar, buzz, { from: dan });
         data = dist.contract.methods.addMember(memberId1, eve).encodeABI();
+
+        await setVerifierStake(bob, ether(300));
+        await setVerifierStake(charlie, ether(300));
+        await setVerifierStake(dan, ether(300));
+
         await verification.submitTransaction(dist.address, 0, data, bob, { from: bobVerification });
         await verification.confirmTransaction(0, charlie, { from: charlieVerification });
         await registry.setRole(verification.address, await dist.DISTRIBUTOR_VERIFIER_ROLE(), false);
@@ -315,6 +370,20 @@ describe('YALLVerification Unit tests', () => {
   });
 
   describe('Governance Interface', () => {
+    describe('#setVerifierMinimalLockedStake()', () => {
+      it('should allow setting verifierMinimalLockedStake', async function () {
+        await verification.setVerifierMinimalLockedStake(ether(42), { from: governance });
+        assert.equal(await verification.verifierMinimalLockedStake(), ether(42));
+      });
+
+      it('should deny non-governance setting verifierMinimalLockedStake', async function () {
+        await assertRevert(
+          verification.setVerifierMinimalLockedStake(ether(42), { from: alice }),
+          'YALLHelpers: Only GOVERNANCE allowed'
+        );
+      });
+    });
+
     describe('#setVerifiers()', () => {
       beforeEach(async function () {
         await increaseTime(11);

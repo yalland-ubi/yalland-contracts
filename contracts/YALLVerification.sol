@@ -21,6 +21,8 @@ import "./traits/YALLRewardClaimer.sol";
 contract YALLVerification is YALLVerificationCore, YALLRewardClaimer {
   uint256 public constant MAX_VERIFIER_COUNT = 50;
 
+  uint256 public verifierMinimalLockedStake;
+
   // MODIFIERS
   modifier verifierExists(address _rootAddress, address _verificationAddress) {
     requireVerificationAddressActive(_rootAddress, _verificationAddress);
@@ -29,6 +31,12 @@ contract YALLVerification is YALLVerificationCore, YALLRewardClaimer {
 
   modifier transactionExists(uint256 _transactionId) {
     require(transactions[_transactionId].destination != address(0), "YALLVerification: Only wallet allowed");
+    _;
+  }
+
+  modifier hasEnoughLockedStake(address _rootKey) {
+    uint256 currentLockedStake = _homeMediator().lockedBalanceOf(_rootKey);
+    require(currentLockedStake >= verifierMinimalLockedStake, "YALLVerification: Not enough locked stake");
     _;
   }
 
@@ -70,6 +78,10 @@ contract YALLVerification is YALLVerificationCore, YALLRewardClaimer {
   }
 
   // GOVERNANCE INTERFACE
+  function setVerifierMinimalLockedStake(uint256 _verifierMinimalLockedStake) external onlyGovernance {
+    verifierMinimalLockedStake = _verifierMinimalLockedStake;
+  }
+
   function setVerifiers(address[] calldata _newVerifierAddresses, uint256 newRequired) external onlyGovernance {
     uint256 newLength = _newVerifierAddresses.length;
 
@@ -168,13 +180,14 @@ contract YALLVerification is YALLVerificationCore, YALLRewardClaimer {
     uint256 _value,
     bytes memory _data,
     address _rootAddress
-  ) public returns (uint256 transactionId) {
+  ) public hasEnoughLockedStake(_rootAddress) returns (uint256 transactionId) {
     transactionId = _addTransaction(_destination, _value, _data);
     confirmTransaction(transactionId, _rootAddress);
   }
 
   function confirmTransaction(uint256 _transactionId, address _rootAddress)
     public
+    hasEnoughLockedStake(_rootAddress)
     verifierExists(_rootAddress, msg.sender)
     transactionExists(_transactionId)
     notConfirmed(_transactionId, _rootAddress, msg.sender)
