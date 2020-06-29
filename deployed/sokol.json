@@ -1,5 +1,5 @@
 {
-  "yallProxyAdminAddress": "0x0987cb009e73f885101f2C8e7cd4763823E1220D",
+  "yallProxyAdminAddress": "0xAD8ADFa8bbF80e9E3520BF380E950e1be36dDa70",
   "yallProxyAdminAbi": [
     {
       "anonymous": false,
@@ -192,7 +192,7 @@
       "signature": "0x9623609d"
     }
   ],
-  "yallRegistryAddress": "0xda7C99345b3218082b8769A6DFc58DB89ac5bfA7",
+  "yallRegistryAddress": "0x4AE7e134eD1e881BaE4b2b1519A005a8D532FEA1",
   "yallRegistryAbi": [
     {
       "anonymous": false,
@@ -941,7 +941,7 @@
       "signature": "0x10cee8d2"
     }
   ],
-  "yallDistributorAddress": "0x2c8974dCFe1C67eA99db7f508Cf1fB81A2C91079",
+  "yallDistributorAddress": "0x28c5C4354FBC4E609fC727dEED5936F8e7708143",
   "yallDistributorAbi": [
     {
       "inputs": [],
@@ -1240,6 +1240,20 @@
         {
           "indexed": false,
           "internalType": "uint256",
+          "name": "len",
+          "type": "uint256"
+        }
+      ],
+      "name": "SetMemberLocations",
+      "type": "event",
+      "signature": "0x48dd5ccf3c067738120275aee2c94d1fd5c860b7ea858f3509b5b68aecd62569"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
           "name": "oldPeriodVolume",
           "type": "uint256"
         },
@@ -1427,6 +1441,22 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0x05db2f41"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "GOVERNANCE_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xf36c8f5c"
     },
     {
       "constant": true,
@@ -1716,6 +1746,11 @@
         {
           "internalType": "uint256",
           "name": "totalClaimed",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "location",
           "type": "uint256"
         }
       ],
@@ -2182,6 +2217,27 @@
       "constant": false,
       "inputs": [
         {
+          "internalType": "bytes32[]",
+          "name": "_memberIds",
+          "type": "bytes32[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "_locations",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "setMemberLocations",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0x4f0b008f"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
           "internalType": "uint256",
           "name": "_periodId",
           "type": "uint256"
@@ -2628,6 +2684,28 @@
       "constant": true,
       "inputs": [
         {
+          "internalType": "bytes32",
+          "name": "_memberId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getMemberLocation",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x4c81d38c"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
           "internalType": "address",
           "name": "_memberAddress",
           "type": "address"
@@ -2677,7 +2755,7 @@
       "signature": "0x3dd9899f"
     }
   ],
-  "yallExchangeAddress": "0x9D7e918cd48354Ef572C9664C7f40f76266bCf9a",
+  "yallExchangeAddress": "0x1EC65354CA895f16cE88Bc378FFf0b92a38b3E43",
   "yallExchangeAbi": [
     {
       "inputs": [],
@@ -3123,6 +3201,22 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0x05db2f41"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "GOVERNANCE_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xf36c8f5c"
     },
     {
       "constant": true,
@@ -4095,7 +4189,7 @@
       "signature": "0x1fafd366"
     }
   ],
-  "yallTokenAddress": "0x1EefC0216aC65358432AF87df9E3184798e0Fb1c",
+  "yallTokenAddress": "0xb1f9050E21e4911e6E279eFE6CA46069Af5ea46f",
   "yallTokenAbi": [
     {
       "inputs": [
@@ -4562,6 +4656,22 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0x05db2f41"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "GOVERNANCE_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xf36c8f5c"
     },
     {
       "constant": true,
@@ -5568,6 +5678,350 @@
       "stateMutability": "view",
       "type": "function",
       "signature": "0x28912822"
+    }
+  ],
+  "yallReferralPayoutsAddress": "0xD991BcceeD71eea74B797A966CBaf2f0b5fD3e17",
+  "yallReferralPayoutsAbi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "role",
+          "type": "string"
+        }
+      ],
+      "name": "AddRole",
+      "type": "event",
+      "signature": "0x60d922ed6e09041466ecf5369712429241ff3ec617c6990b654076a4eb8f5c59"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event",
+      "signature": "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "operator",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "_to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "Payout",
+      "type": "event",
+      "signature": "0x2c896a36ae426429416b4de992a50e7559a1d362a88cb68ee22bc3dc3c07c071"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "role",
+          "type": "string"
+        }
+      ],
+      "name": "RemoveRole",
+      "type": "event",
+      "signature": "0x30954af82dcb8608d8cb8254608a6ff5df999cb3f00c18bb0c607dd49ff2628b"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "OPERATOR_ROLE",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xf5b541a6"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_account",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "_role",
+          "type": "string"
+        }
+      ],
+      "name": "addRoleTo",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0x726661c3"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_account",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "_role",
+          "type": "string"
+        }
+      ],
+      "name": "hasRole",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x217fe6c6"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "isOwner",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x8f32d59b"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x8da5cb5b"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "payouts",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x29652e86"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_account",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "_role",
+          "type": "string"
+        }
+      ],
+      "name": "removeRoleFrom",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0x0d31e2ea"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0x715018a6"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_account",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "_role",
+          "type": "string"
+        }
+      ],
+      "name": "requireHasRole",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x1d17ea2c"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0xf2fde38b"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "yallToken",
+      "outputs": [
+        {
+          "internalType": "contract IERC20",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x8167aeae"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_initialOwner",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_yallToken",
+          "type": "address"
+        }
+      ],
+      "name": "initialize",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0x485cc955"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "_to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "payout",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0xae2f5d93"
     }
   ]
 }
