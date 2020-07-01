@@ -7,8 +7,14 @@
  * [Basic Agreement](ipfs/QmaCiXUmSrP16Gz8Jdzq6AJESY1EAANmmwha15uR3c1bsS)).
  */
 
-const Migrations = artifacts.require('./Migrations.sol');
+pragma solidity ^0.5.17;
 
-module.exports = function (deployer) {
-  deployer.deploy(Migrations);
-};
+import "./traits/YALLFeeWithdrawable.sol";
+import "./registry/YALLRegistry.sol";
+
+contract YALLFeeCollector is YALLFeeWithdrawable {
+  // ಠ_ಠ
+  constructor(address _yallRegistry) public {
+    yallRegistry = YALLRegistry(_yallRegistry);
+  }
+}
