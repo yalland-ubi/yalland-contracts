@@ -36,13 +36,13 @@ const settingsForNetwork = (network) => {
 
 // Lazily loaded provider
 const httpProviderForNetwork = (network) => () => {
-  let { rpc, key } = settingsForNetwork(network);
+  let { rpc, keys } = settingsForNetwork(network);
   rpc = rpc.http || defaultHTTPRPC(network);
 
-  assert(key.length > 0, `GPC: No private key for ${network} specified in ~/.gpc/keys.yaml`);
+  assert(keys.length > 0, `GPC: No private key for ${network} specified in ~/.gpc/keys.yaml`);
 
   // TODO: improve
-  return new HDWalletProvider([key], rpc);
+  return new HDWalletProvider(keys, rpc);
 };
 
 const wsProviderForNetwork = (network) => () => {

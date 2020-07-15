@@ -25,6 +25,16 @@ module.exports = {
       provider: wsProviderForNetwork('sokol'),
       network_id: '*',
     },
+    xdai: {
+      // 1 gwei
+      gasPrice: 1000 * 1000 * 1000,
+      // 10M
+      gasLimit: 9 * 1000 * 1000,
+      skipDryRun: true,
+      websockets: true,
+      provider: wsProviderForNetwork('xdai'),
+      network_id: '*',
+    },
     kovan: {
       // 1 gwei
       gasPrice: 9000 * 1000 * 1000,

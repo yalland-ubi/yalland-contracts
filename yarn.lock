@@ -125,13 +125,13 @@
   version "1.2.0"
   resolved "https://codeload.github.com/galtproject/eslint-config-galt/tar.gz/ae71c5c49fa0e6b42fe40e89ec2825be19fb30e8"
   dependencies:
-    eslint "^6.8.0"
+    eslint "^7.1.0"
     eslint-config-airbnb-base "^14.1.0"
     eslint-config-prettier "^6.11.0"
     eslint-plugin-import "^2.20.2"
     eslint-plugin-prettier "^3.1.3"
     prettier "^2.0.5"
-    prettier-plugin-solidity "^1.0.0-alpha.49"
+    prettier-plugin-solidity "^1.0.0-alpha.53"
 
 "@galtproject/geodesic@github:galtproject/galtproject-geodesic#067375f":
   version "0.1.0"
@@ -2922,9 +2922,9 @@ eol@^0.9.1:
   resolved "https://registry.yarnpkg.com/eol/-/eol-0.9.1.tgz#f701912f504074be35c6117a5c4ade49cd547acd"
   integrity sha512-Ds/TEoZjwggRoz/Q2O7SE3i4Jm66mqTDfmdHdq/7DKVk3bro9Q8h6WdXKdPqFLMoqxrDK5SVRzHVPOS6uuGtrg==
 
-"erc20-staking-contracts@github:yalland-ubi/erc20-staking-contracts#9ab724f":
+"erc20-staking-contracts@github:yalland-ubi/erc20-staking-contracts#cf92d6a":
   version "1.0.0"
-  resolved "https://codeload.github.com/yalland-ubi/erc20-staking-contracts/tar.gz/9ab724f934cbc979b3671651cee9bd9c79e198e9"
+  resolved "https://codeload.github.com/yalland-ubi/erc20-staking-contracts/tar.gz/cf92d6aeccf2359d74d2f2a915e7f782a042d156"
 
 errno@~0.1.1:
   version "0.1.7"
