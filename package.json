@@ -48,7 +48,7 @@
     "eth-sig-util": "^2.5.2",
     "ethlint": "^1.2.5",
     "ganache-core": "^2.10.2",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "mocha": "^7.1.0",
     "rimraf": "^3.0.2",
     "solhint": "^3.0.0",
